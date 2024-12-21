@@ -5,13 +5,17 @@ import (
 	"strconv"
 
 	"backend/internal/models"
-	"backend/internal/services"
+	"backend/internal/services/interfaces"
 
 	"github.com/gin-gonic/gin"
 )
 
 type UserController struct {
-	Service *services.UserService
+	service interfaces.UserServiceInterface
+}
+
+func NewUserController(service interfaces.UserServiceInterface) *UserController {
+	return &UserController{service: service}
 }
 
 // HandleCreateUser handles POST /users
@@ -24,7 +28,7 @@ func (c *UserController) HandleCreateUser(ctx *gin.Context) {
 	}
 
 	// Call the service layer to register the user
-	if err := c.Service.RegisterUser(&user); err != nil {
+	if err := c.service.RegisterUser(&user); err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to register user"})
 		return
 	}
@@ -47,7 +51,7 @@ func (c *UserController) HandleGetUser(ctx *gin.Context) {
 	uid := uint(id)
 
 	// Call the service layer to fetch the user
-	user, err := c.Service.GetUser(uid)
+	user, err := c.service.GetUser(uid)
 	if err != nil {
 		ctx.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
 		return
@@ -62,7 +66,7 @@ func (c *UserController) HandleGetUserByEmail(ctx *gin.Context) {
 	email := ctx.Param("email")
 
 	// Call the service layer to fetch the user
-	user, err := c.Service.GetUserByEmail(email)
+	user, err := c.service.GetUserByEmail(email)
 	if err != nil {
 		ctx.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
 		return
@@ -77,7 +81,7 @@ func (c *UserController) HandleGetUserByUsername(ctx *gin.Context) {
 	username := ctx.Param("username")
 
 	// Call the service layer to fetch the user
-	user, err := c.Service.GetUserByUsername(username)
+	user, err := c.service.GetUserByUsername(username)
 	if err != nil {
 		ctx.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
 		return
@@ -97,7 +101,7 @@ func (c *UserController) HandleUpdateUser(ctx *gin.Context) {
 	}
 
 	// Call the service layer to update the user
-	if err := c.Service.UpdateUser(&user); err != nil {
+	if err := c.service.UpdateUser(&user); err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update user"})
 		return
 	}
@@ -118,7 +122,7 @@ func (c *UserController) HandleDeleteUser(ctx *gin.Context) {
 	uid := uint(id)
 
 	// Call the service layer to delete the user
-	err = c.Service.DeleteUser(uid)
+	err = c.service.DeleteUser(uid)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete user"})
 		return
@@ -136,7 +140,7 @@ func (c *UserController) HandleVerifyEmail(ctx *gin.Context) {
 	}
 
 	// Call the service layer to verify the email
-	err := c.Service.VerifyEmail(verificationToken)
+	err := c.service.VerifyEmail(verificationToken)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to verify email"})
 		return

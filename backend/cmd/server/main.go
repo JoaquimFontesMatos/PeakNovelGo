@@ -10,10 +10,11 @@ import (
 
 func main() {
 	db := config.ConnectDB(false)
-	userRepo := repositories.UserRepository{DB: db}
-	userService := services.UserService{Repo: &userRepo}
-	userController := controllers.UserController{Service: &userService}
 
-	router := routes.SetupRouter(&userController)
+	userRepo := repositories.NewUserRepository(db)
+	userService := services.NewUserService(userRepo)
+	userController := controllers.NewUserController(userService)
+
+	router := routes.SetupRouter(userController)
 	router.Run(":8080") // Start server on port 8080
 }

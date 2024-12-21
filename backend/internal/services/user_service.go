@@ -2,18 +2,23 @@ package services
 
 import (
 	"backend/internal/models"
-	"backend/internal/repositories"
+	"backend/internal/repositories/interfaces"
 	"backend/internal/utils"
 	"backend/internal/validators"
 	"errors"
 )
 
 type UserService struct {
-	Repo *repositories.UserRepository
+	repo interfaces.UserRepositoryInterface
 }
 
+func NewUserService(repo interfaces.UserRepositoryInterface) *UserService {
+	return &UserService{repo: repo}
+}
+
+
 func (s *UserService) GetUser(id uint) (*models.User, error) {
-	return s.Repo.GetUserByID(id)
+	return s.repo.GetUserByID(id)
 }
 
 // User registration (simplified)
@@ -24,7 +29,7 @@ func (s *UserService) RegisterUser(user *models.User) error {
 	user.EmailVerified = false
 
 	// Save user to DB
-	if err := s.Repo.CreateUser(user); err != nil {
+	if err := s.repo.CreateUser(user); err != nil {
 		return err
 	}
 
@@ -43,7 +48,7 @@ func (s *UserService) RegisterUser(user *models.User) error {
 
 // Email verification
 func (s *UserService) VerifyEmail(token string) error {
-	user, err := s.Repo.GetUserByVerificationToken(token)
+	user, err := s.repo.GetUserByVerificationToken(token)
 	if err != nil {
 		return err
 	}
@@ -56,7 +61,7 @@ func (s *UserService) VerifyEmail(token string) error {
 	user.VerificationToken = "" // Clear the token after verification
 
 	// Save changes
-	if err := s.Repo.UpdateUser(user); err != nil {
+	if err := s.repo.UpdateUser(user); err != nil {
 		return err
 	}
 
@@ -65,25 +70,25 @@ func (s *UserService) VerifyEmail(token string) error {
 
 func (s *UserService) UpdateUser(user *models.User) error {
 	// Business logic before saving
-	return s.Repo.UpdateUser(user)
+	return s.repo.UpdateUser(user)
 }
 
 func (s *UserService) GetUserByEmail(email string) (*models.User, error) {
-	return s.Repo.GetUserByEmail(email)
+	return s.repo.GetUserByEmail(email)
 }
 
 func (s *UserService) GetUserByUsername(username string) (*models.User, error) {
-	return s.Repo.GetUserByUsername(username)
+	return s.repo.GetUserByUsername(username)
 }
 
 // User deletion
 func (s *UserService) DeleteUser(id uint) error {
-	user, err := s.Repo.GetUserByID(id)
+	user, err := s.repo.GetUserByID(id)
 	if err != nil {
 		return err
 	}
 
-	if err := s.Repo.DeleteUser(user); err != nil {
+	if err := s.repo.DeleteUser(user); err != nil {
 		return err
 	}
 

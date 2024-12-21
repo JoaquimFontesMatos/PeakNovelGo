@@ -10,9 +10,12 @@ import (
 )
 
 type UserRepository struct {
-	DB *gorm.DB
+	db *gorm.DB
 }
 
+func NewUserRepository(db *gorm.DB) *UserRepository {
+	return &UserRepository{db: db}
+}
 func (r *UserRepository) CreateUser(user *models.User) error {
 	// Validate the user input
 	if err := validators.ValidateUser(user); err != nil {
@@ -21,7 +24,7 @@ func (r *UserRepository) CreateUser(user *models.User) error {
 	}
 
 	// Create a new user in the database
-	if err := r.DB.Create(user).Error; err != nil {
+	if err := r.db.Create(user).Error; err != nil {
 		log.Printf("Failed to insert user: %v", err)
 		return err
 	}
@@ -31,7 +34,7 @@ func (r *UserRepository) CreateUser(user *models.User) error {
 func (r *UserRepository) GetUserByID(id uint) (*models.User, error) {
 	user := &models.User{}
 	// Fetch user by ID
-	if err := r.DB.First(user, id).Error; err != nil {
+	if err := r.db.First(user, id).Error; err != nil {
 		log.Printf("Failed to fetch user: %v", err)
 		return nil, err
 	}
@@ -41,7 +44,7 @@ func (r *UserRepository) GetUserByID(id uint) (*models.User, error) {
 func (r *UserRepository) GetUserByVerificationToken(token string) (*models.User, error) {
 	user := &models.User{}
 	// Fetch user by verification token
-	if err := r.DB.Where("verification_token = ?", token).First(user).Error; err != nil {
+	if err := r.db.Where("verification_token = ?", token).First(user).Error; err != nil {
 		log.Printf("Failed to fetch user: %v", err)
 		return nil, err
 	}
@@ -50,7 +53,7 @@ func (r *UserRepository) GetUserByVerificationToken(token string) (*models.User,
 
 func (r *UserRepository) UpdateUser(user *models.User) error {
 	// Update user in the database
-	if err := r.DB.Save(user).Error; err != nil {
+	if err := r.db.Save(user).Error; err != nil {
 		log.Printf("Failed to update user: %v", err)
 		return err
 	}
@@ -67,7 +70,7 @@ func (r *UserRepository) DeleteUser(user *models.User) error {
 func (r *UserRepository) GetUserByEmail(email string) (*models.User, error) {
 	user := &models.User{}
 	// Fetch user by email
-	if err := r.DB.Where("email = ?", email).First(user).Error; err != nil {
+	if err := r.db.Where("email = ?", email).First(user).Error; err != nil {
 		log.Printf("Failed to fetch user: %v", err)
 		return nil, err
 	}
@@ -77,7 +80,7 @@ func (r *UserRepository) GetUserByEmail(email string) (*models.User, error) {
 func (r *UserRepository) GetUserByUsername(username string) (*models.User, error) {
 	user := &models.User{}
 	// Fetch user by username
-	if err := r.DB.Where("username = ?", username).First(user).Error; err != nil {
+	if err := r.db.Where("username = ?", username).First(user).Error; err != nil {
 		log.Printf("Failed to fetch user: %v", err)
 		return nil, err
 	}

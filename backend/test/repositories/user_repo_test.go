@@ -4,6 +4,7 @@ import (
 	"backend/config"
 	"backend/internal/models"
 	"backend/internal/repositories"
+	"backend/internal/repositories/interfaces"
 	"log"
 	"os"
 	"testing"
@@ -13,7 +14,7 @@ import (
 )
 
 var db *gorm.DB
-var userRepo repositories.UserRepository
+var userRepo interfaces.UserRepositoryInterface
 
 func cleanDB() {
 	// Reset all tables by deleting rows (works for both SQLite and PostgreSQL)
@@ -32,7 +33,7 @@ func cleanDB() {
 func TestMain(m *testing.M) {
 	// Setup: initialize the database connection and repositories
 	db = config.ConnectDB(true) // true for test DB or in-memory DB
-	userRepo = repositories.UserRepository{DB: db}
+	userRepo = repositories.NewUserRepository(db)
 
 	// Run tests
 	code := m.Run()
