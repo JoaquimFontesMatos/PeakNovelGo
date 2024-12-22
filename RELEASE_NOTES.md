@@ -1,3 +1,6 @@
+## v0.2.1 - 2024-12-22
+* Update config.go
+* chore: update release notes and changelog for v0.2.0
 ## v0.2.0 - 2024-12-22
 * Merge branch 'dev'
 * feat: added dockerfile and auth
