@@ -1,2 +1,17 @@
+## v0.2.1 - 2024-12-22
+* Update config.go
+* chore: update release notes and changelog for v0.2.0
+## v0.2.0 - 2024-12-22
+* Merge branch 'dev'
+* feat: added dockerfile and auth
+* fix: fixed gitignore
+* fix: Added tests to user service
+* fix: forgot these ones
+* fix: Added interfaces to facilitate the testing and to decouple the classes
+* fix: Added a readme
+* feat: Added the code and tests (not finished) for the userController and its dependencies
+* chore: update release notes and changelog for v0.1.0
+* Reapply "feat: Design of the project"
+* Revert "feat: Design of the project"
 ## v0.1.0 - 2024-12-21
 * feat: Design of the project
