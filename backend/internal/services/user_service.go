@@ -28,6 +28,13 @@ func (s *UserService) RegisterUser(user *models.User) error {
 		return err
 	}
 
+	// Hash the user's password
+	hashedPassword, err := utils.HashPassword(user.Password)
+	if err != nil {
+		return err
+	}
+	user.Password = hashedPassword
+
 	// Generate verification token
 	token := utils.GenerateVerificationToken()
 	user.VerificationToken = token
