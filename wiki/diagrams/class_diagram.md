@@ -3,17 +3,19 @@
 ```mermaid
 classDiagram
 
-UserController -- UserService: Uses
+UserController "1" o-- "1" UserRepositoryInterface: Interacts with
 
-UserService -- UserRepository: Interacts with
+UserService ..|> UserServiceInterface: Implements
+UserService "1" o-- "1" UserRepositoryInterface: Interacts with
 UserService -- EmailManager: Uses
 UserService -- ExpirationValidator: Uses
 UserService -- TokenGenerator: Uses
 
 UserRepository -- UserValidator: Uses
-UserRepository -- User: Interacts with
+UserRepositoryInterface ..> User: Interacts with
+UserRepositoryInterface <|.. UserRepository: Implements
 
-EmailManager -- EmailSender: Sends email using
+EmailManager ..> EmailSender: Sends email using
 
 class UserController {
     + HandleCreateUser(ctx *gin.Context)
@@ -27,20 +29,20 @@ class UserController {
 
 class UserService {
     + GetUser(id uint) (*models.User, error)
-    + RegisterUser(user *models.User) (*models.User, error)
+    + RegisterUser(user *models.User) error
     + GetUserByEmail(email string) (*models.User, error)
     + GetUserByUsername(username string) (*models.User, error)
-    + UpdateUser(user *models.User) (*models.User, error)
+    + UpdateUser(user *models.User) error
     + DeleteUser(id uint) error
     + VerifyEmail(token string) error
 }
 
 class UserRepository {
-    + CreateUser(user *models.User) (*models.User, error)
+    + CreateUser(user *models.User) error
     + GetUserByID(id uint) (*models.User, error)
     + GetUserByVerificationToken(token string) (*models.User, error)
-    + UpdateUser(user *models.User) (*models.User, error)
-    + DeleteUser(user *models.User) (*models.User, error)
+    + UpdateUser(user *models.User) error
+    + DeleteUser(user *models.User) error
     + GetUserByEmail(email string) (*models.User, error)
     + GetUserByUsername(username string) (*models.User, error)
 }
@@ -74,7 +76,7 @@ class EmailSender {
     + SendMail(addr string, auth smtp.Auth, from string, to []string, msg []byte) error
 }
 
-class     TokenGenerator {
+class TokenGenerator {
     + GenerateVerificationToken() string
 }
 
@@ -86,5 +88,23 @@ class ExpirationValidator {
     + IsVerificationTokenExpired(createdAt time.Time, emailVerified bool) bool
 }
 
+class UserRepositoryInterface {
+    + CreateUser(user *models.User) error
+    + GetUserByID(id uint) (*models.User, error)
+    + GetUserByVerificationToken(token string) (*models.User, error)
+    + UpdateUser(user *models.User) error
+    + DeleteUser(user *models.User) error
+    + GetUserByEmail(email string) (*models.User, error)
+    + GetUserByUsername(username string) (*models.User, error)
+}
 
+class UserServiceInterface {
+    + GetUser(id uint) (*models.User, error)
+    + RegisterUser(user *models.User) error
+    + GetUserByEmail(email string) (*models.User, error)
+    + GetUserByUsername(username string) (*models.User, error)
+    + UpdateUser(user *models.User) error
+    + DeleteUser(id uint) error
+    + VerifyEmail(token string) error
+}
 ```

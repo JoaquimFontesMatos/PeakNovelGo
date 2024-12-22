@@ -9,7 +9,7 @@ func IsVerificationTokenExpired(createdAt time.Time, emailVerified bool) bool {
 
 	// Check if the token is expired
 	if timeDifference >= 15*time.Minute || emailVerified {
-		return false
+		return true
 	}
-	return true
+	return false
 }

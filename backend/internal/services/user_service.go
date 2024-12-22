@@ -6,6 +6,7 @@ import (
 	"backend/internal/utils"
 	"backend/internal/validators"
 	"errors"
+	"os"
 )
 
 type UserService struct {
@@ -16,13 +17,17 @@ func NewUserService(repo interfaces.UserRepositoryInterface) *UserService {
 	return &UserService{repo: repo}
 }
 
-
 func (s *UserService) GetUser(id uint) (*models.User, error) {
 	return s.repo.GetUserByID(id)
 }
 
 // User registration (simplified)
 func (s *UserService) RegisterUser(user *models.User) error {
+	// Validate the user input
+	if err := validators.ValidateUser(user); err != nil {
+		return err
+	}
+
 	// Generate verification token
 	token := utils.GenerateVerificationToken()
 	user.VerificationToken = token
@@ -36,11 +41,12 @@ func (s *UserService) RegisterUser(user *models.User) error {
 	// Create an email sender
 	sender := &models.SmtpEmailSender{}
 
-	// Send verification email (you would implement the actual email sending)
-	err := utils.SendVerificationEmail(*user, sender)
+	if os.Getenv("TESTING") != "true" {
+		err := utils.SendVerificationEmail(models.User{}, sender)
 
-	if err != nil {
-		return err
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil

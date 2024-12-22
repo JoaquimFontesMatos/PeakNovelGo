@@ -4,7 +4,6 @@ import (
 	"log"
 
 	"backend/internal/models"
-	"backend/internal/validators"
 
 	"gorm.io/gorm"
 )
@@ -17,12 +16,6 @@ func NewUserRepository(db *gorm.DB) *UserRepository {
 	return &UserRepository{db: db}
 }
 func (r *UserRepository) CreateUser(user *models.User) error {
-	// Validate the user input
-	if err := validators.ValidateUser(user); err != nil {
-		log.Printf("Validation failed: %v", err)
-		return err
-	}
-
 	// Create a new user in the database
 	if err := r.db.Create(user).Error; err != nil {
 		log.Printf("Failed to insert user: %v", err)

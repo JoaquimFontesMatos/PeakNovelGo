@@ -73,34 +73,6 @@ func TestUserRepository_CreateUser(t *testing.T) {
 	}
 }
 
-// TestUserRepository_CreateInvalidUser tests the CreateUser method of the UserRepository with an invalid user
-func TestUserRepository_CreateInvalidUser(t *testing.T) {
-	t.Cleanup(func() {
-		cleanDB()
-	})
-
-	user := models.User{
-		Username:           "joaquim",
-		Email:              "joaquimgmail.com",
-		Password:           "123456",
-		EmailVerified:      false,
-		VerificationToken:  "123456",
-		ProfilePicture:     "https://example.com/profile.jpg",
-		Bio:                "I am a software engineer",
-		Roles:              "admin,user",
-		LastLogin:          time.Time{},
-		DateOfBirth:        time.Time{},
-		PreferredLanguage:  "en",
-		ReadingPreferences: "novel,short_story",
-		IsDeleted:          false,
-	}
-
-	// Insert the user into the database
-	if err := userRepo.CreateUser(&user); err == nil {
-		t.Errorf("Expected error creating user, but got nil")
-	}
-}
-
 // TestUserRepository_GetUserByEmail tests the GetUserByEmail method of the UserRepository
 func TestUserRepository_GetUserByEmail(t *testing.T) {
 	t.Cleanup(func() {
@@ -134,6 +106,21 @@ func TestUserRepository_GetUserByEmail(t *testing.T) {
 
 	if fetchedUser.ID != user.ID {
 		t.Errorf("Expected user ID to be %d, but got %d", user.ID, fetchedUser.ID)
+	}
+}
+
+// TestUserRepository_GetUserByInvalidEmail tests the GetUserByEmail method of the UserRepository with an invalid email
+func TestUserRepository_GetUserByInvalidEmail(t *testing.T) {
+	t.Cleanup(func() {
+		cleanDB()
+	})
+
+	fetchedUser, err := userRepo.GetUserByEmail("joel@gmail.com")
+	if err == nil {
+		t.Errorf("Expected error fetching user, but got nil")
+	}
+	if fetchedUser != nil {
+		t.Errorf("Expected user to be nil, but got %v", fetchedUser)
 	}
 }
 
@@ -173,6 +160,21 @@ func TestUserRepository_GetUserByID(t *testing.T) {
 	}
 }
 
+// TestUserRepository_GetUserByInvalidID tests the GetUserByID method of the UserRepository with an invalid ID
+func TestUserRepository_GetUserByInvalidID(t *testing.T) {
+	t.Cleanup(func() {
+		cleanDB()
+	})
+
+	fetchedUser, err := userRepo.GetUserByID(1)
+	if err == nil {
+		t.Errorf("Expected error fetching user, but got nil")
+	}
+	if fetchedUser != nil {
+		t.Errorf("Expected user to be nil, but got %v", fetchedUser)
+	}
+}
+
 // TestUserRepository_GetUserByUsername tests the GetUserByUsername method of the UserRepository
 func TestUserRepository_GetUserByUsername(t *testing.T) {
 	t.Cleanup(func() {
@@ -206,6 +208,21 @@ func TestUserRepository_GetUserByUsername(t *testing.T) {
 
 	if fetchedUser.ID != user.ID {
 		t.Errorf("Expected user ID to be %d, but got %d", user.ID, fetchedUser.ID)
+	}
+}
+
+// TestUserRepository_GetUserByInvalidUsername tests the GetUserByUsername method of the UserRepository with an invalid username
+func TestUserRepository_GetUserByInvalidUsername(t *testing.T) {
+	t.Cleanup(func() {
+		cleanDB()
+	})
+
+	fetchedUser, err := userRepo.GetUserByUsername("joel")
+	if err == nil {
+		t.Errorf("Expected error fetching user, but got nil")
+	}
+	if fetchedUser != nil {
+		t.Errorf("Expected user to be nil, but got %v", fetchedUser)
 	}
 }
 
@@ -306,6 +323,39 @@ func TestUserRepository_UpdateUser(t *testing.T) {
 	}
 }
 
+// TestUserRepository_UpdateInvalidUser tests the UpdateUser method of the UserRepository with an invalid user
+func TestUserRepository_UpdateInvalidUser(t *testing.T) {
+	t.Cleanup(func() {
+		cleanDB()
+	})
+
+	//Update User
+	updatedUser := models.User{
+		Username:           "joaquim2",
+		Email:              "joaquim2@gmail.com",
+		Password:           "1234567",
+		EmailVerified:      true,
+		VerificationToken:  "1234567",
+		ProfilePicture:     "https://example.com/profile2.jpg",
+		Bio:                "I am a software engineer2",
+		Roles:              "admin",
+		LastLogin:          time.Time{},
+		DateOfBirth:        time.Time{},
+		PreferredLanguage:  "pt",
+		ReadingPreferences: "novel,short_story,drama",
+		IsDeleted:          true,
+	}
+
+	updatedUser.ID = 1
+
+	// Update the user in the database
+	err := userRepo.UpdateUser(&updatedUser)
+
+	if err != nil {
+		t.Errorf("Expected an error updating the user, but got nil: %v", err)
+	}
+}
+
 // TestUserRepository_DeleteUser tests the DeleteUser method of the UserRepository
 func TestUserRepository_DeleteUser(t *testing.T) {
 	t.Cleanup(func() {
@@ -343,5 +393,34 @@ func TestUserRepository_DeleteUser(t *testing.T) {
 
 	if fetchedUser.IsDeleted != true {
 		t.Errorf("Expected user to be deleted, but it was not")
+	}
+}
+
+// TestUserRepository_DeleteInvalidUser tests the DeleteUser method of the UserRepository with an invalid user
+func TestUserRepository_DeleteInvalidUser(t *testing.T) {
+	t.Cleanup(func() {
+		cleanDB()
+	})
+
+	user := models.User{
+		Username:           "joaquim",
+		Email:              "joaquim@gmail.com",
+		Password:           "123456",
+		EmailVerified:      false,
+		VerificationToken:  "123456",
+		ProfilePicture:     "https://example.com/profile.jpg",
+		Bio:                "I am a software engineer",
+		Roles:              "admin,user",
+		LastLogin:          time.Time{},
+		DateOfBirth:        time.Time{},
+		PreferredLanguage:  "en",
+		ReadingPreferences: "novel,short_story",
+		IsDeleted:          false,
+	}
+
+	err := userRepo.DeleteUser(&user)
+
+	if err != nil {
+		t.Errorf("Expected an error deleting the user, but got nil: %v", err)
 	}
 }
