@@ -1,3 +1,9 @@
+## v0.2.2 - 2024-12-22
+* Merge branch 'main' of https://github.com/JoaquimFontesMatos/PeakNovelGo
+* fix: removed a file and fixed config
+* chore: update release notes and changelog for v0.2.1
+* Update config.go
+* chore: update release notes and changelog for v0.2.0
 ## v0.2.1 - 2024-12-22
 * Update config.go
 * chore: update release notes and changelog for v0.2.0
