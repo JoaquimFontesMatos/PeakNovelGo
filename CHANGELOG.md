@@ -1,3 +1,7 @@
+## v0.3.0 - 2024-12-23
+* Merge branch 'main' of https://github.com/JoaquimFontesMatos/PeakNovelGo
+* feat: fixed some auth and user endpoints
+* chore: update release notes and changelog for v0.2.2
 ## v0.2.2 - 2024-12-22
 * Merge branch 'main' of https://github.com/JoaquimFontesMatos/PeakNovelGo
 * fix: removed a file and fixed config
