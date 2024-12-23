@@ -2,28 +2,31 @@ package routes
 
 import (
 	"backend/internal/controllers"
+	"backend/internal/middleware"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 )
 
 func SetupRoutes(r *gin.Engine, authController *controllers.AuthController, userController *controllers.UserController) {
+	r.StaticFile("/", "./static/index.html")
+
 	auth := r.Group("/auth")
 	{
 		auth.POST("/register", authController.Register)
 		auth.POST("/login", authController.Login)
-		auth.POST("/refresh-token", authController.RefreshToken)
+		auth.POST("/refresh-token", middleware.AuthMiddleware(), authController.RefreshToken)
 		auth.GET("/verify-email", authController.VerifyEmail)
 	}
 	user := r.Group("/user")
 	{
 		user.GET("/users/:id", userController.HandleGetUser)
-		user.GET("/users/email/:email", userController.HandleGetUserByEmail)
-		user.GET("/users/username/:username", userController.HandleGetUserByUsername)
-		user.PUT("/users/:id/password", userController.UpdatePassword)
-		user.PUT("/users/:id/email", userController.UpdateEmail)
-		user.PUT("/users/:id/fields", userController.UpdateUserFields)
-		user.DELETE("/users/:id", userController.HandleDeleteUser)
+		user.GET("/users/email/:email", middleware.AuthMiddleware(), userController.HandleGetUserByEmail)
+		user.GET("/users/username/:username", middleware.AuthMiddleware(), userController.HandleGetUserByUsername)
+		user.PUT("/users/:id/password", middleware.AuthMiddleware(), userController.UpdatePassword)
+		user.PUT("/users/:id/email", middleware.AuthMiddleware(), userController.UpdateEmail)
+		user.PUT("/users/:id/fields", middleware.AuthMiddleware(), userController.UpdateUserFields)
+		user.DELETE("/users/:id", middleware.AuthMiddleware(), userController.HandleDeleteUser)
 	}
 
 	// Health check route

@@ -24,6 +24,12 @@ func (s *AuthService) ValidateCredentials(email, password string) (*models.User,
 	if err != nil || !utils.ComparePassword(user.Password, password) {
 		return nil, errors.New("invalid credentials")
 	}
+
+	user.LastLogin = time.Now()
+	if err := s.UserRepo.UpdateUser(user); err != nil {
+		return nil, err
+	}
+
 	return user, nil
 }
 
@@ -38,7 +44,6 @@ func (s *AuthService) GenerateToken(user *models.User) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	return token.SignedString([]byte("your_secret_key")) // Replace with your actual secret key
 }
-
 
 func (s *AuthService) RefreshToken(refreshToken string) (string, error) {
 	// Validate and parse the refresh token

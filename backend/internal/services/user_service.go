@@ -81,12 +81,19 @@ func (s *UserService) VerifyEmail(token string) error {
 	return nil
 }
 
-func (s *UserService) UpdateUserFields(userID uint, fields interface{}) error {
-	// Update logic for general fields like bio, profile picture, etc.
+func (s *UserService) UpdateUserFields(userID uint, fields models.UpdateFields) error {
+	if err := validators.ValidateUserFields(fields); err != nil {
+		return err
+	}
+
 	return s.repo.UpdateUserFields(userID, fields)
 }
 
 func (s *UserService) UpdatePassword(userID uint, currentPassword string, newPassword string) error {
+	if err := validators.ValidatePassword(currentPassword); err != nil {
+		return err
+	}
+
 	user, err := s.repo.GetUserByID(userID)
 	if err != nil {
 		return err
@@ -106,6 +113,10 @@ func (s *UserService) UpdatePassword(userID uint, currentPassword string, newPas
 }
 
 func (s *UserService) UpdateEmail(userID uint, newEmail string) error {
+	if err := validators.ValidateEmail(newEmail); err != nil {
+		return err
+	}
+
 	// Generate a new verification token
 	token := utils.GenerateVerificationToken()
 

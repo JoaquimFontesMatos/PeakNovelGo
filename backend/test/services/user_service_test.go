@@ -30,14 +30,14 @@ func TestUserService_RegisterUser(t *testing.T) {
 	user := models.User{
 		Username:           "joaquim",
 		Email:              "example@gmail.com",
-		Password:           "123456",
+		Password:           "12345678",
 		EmailVerified:      false,
 		VerificationToken:  "123456",
 		ProfilePicture:     "https://example.com/profile.jpg",
 		Bio:                "I am a software engineer",
 		Roles:              "admin,user",
 		LastLogin:          time.Time{},
-		DateOfBirth:        time.Time{},
+		DateOfBirth:        time.Time{}.Add(-19 * time.Hour),
 		PreferredLanguage:  "en",
 		ReadingPreferences: "novel,short_story",
 		IsDeleted:          false,
@@ -309,5 +309,150 @@ func TestUserService_DeleteInvalidUser(t *testing.T) {
 
 	assert.Error(t, err)
 	assert.Equal(t, "user not found", err.Error())
+	mockRepo.AssertExpectations(t)
+}
+
+// TestUserService_UpdateUserFields tests the UpdateUserFields method of the UserService
+func TestUserService_UpdateUserFields(t *testing.T) {
+	mockRepo = new(mocks.MockUserRepository)
+	service = services.NewUserService(mockRepo)
+
+	user := models.User{
+		Username:           "joaquim",
+		Email:              "example@gmail.com",
+		Password:           "123456",
+		EmailVerified:      false,
+		VerificationToken:  "123456",
+		ProfilePicture:     "https://example.com/profile.jpg",
+		Bio:                "I am a software engineer",
+		Roles:              "admin,user",
+		LastLogin:          time.Time{},
+		DateOfBirth:        time.Time{},
+		PreferredLanguage:  "en",
+		ReadingPreferences: "novel,short_story",
+		IsDeleted:          false,
+	}
+
+	mockRepo.On("GetUserByID", uint(1)).Return(&user, nil)
+	fields := models.UpdateFields{
+		Bio: "new bio",
+	}
+
+	mockRepo.On("UpdateUserFields", uint(1), fields).Return(nil)
+
+	err := service.UpdateUserFields(1, fields)
+	assert.NoError(t, err)
+
+	updatedUser, err := service.GetUser(1)
+	updatedUser.Bio = "new bio"
+
+	assert.NoError(t, err)
+	assert.Equal(t, "new bio", updatedUser.Bio)
+	mockRepo.AssertExpectations(t)
+}
+
+// TestUserService_UpdateUserFieldsInvalidUser tests the UpdateUserFields method of the UserService with an invalid user
+func TestUserService_UpdateUserFieldsInvalidUser(t *testing.T) {
+	mockRepo = new(mocks.MockUserRepository)
+	service = services.NewUserService(mockRepo)
+
+	mockRepo.On("GetUserByID", uint(1)).Return((*models.User)(nil), errors.New("user not found"))
+
+	fields := models.UpdateFields{
+		Bio: "new bio",
+	}
+
+	err := service.UpdateUserFields(1, fields)
+
+	assert.Error(t, err)
+	assert.Equal(t, "user not found", err.Error())
+	mockRepo.AssertExpectations(t)
+}
+
+// TestUserService_UpdatePassword tests the UpdatePassword method of the UserService
+func TestUserService_UpdatePassword(t *testing.T) {
+	mockRepo = new(mocks.MockUserRepository)
+	service = services.NewUserService(mockRepo)
+
+	user := models.User{
+		Username:           "joaquim",
+		Email:              "example@gmail.com",
+		Password:           "123456",
+		EmailVerified:      false,
+		VerificationToken:  "123456",
+		ProfilePicture:     "https://example.com/profile.jpg",
+		Bio:                "I am a software engineer",
+		Roles:              "admin,user",
+		LastLogin:          time.Time{},
+		DateOfBirth:        time.Time{},
+		PreferredLanguage:  "en",
+		ReadingPreferences: "novel,short_story",
+		IsDeleted:          false,
+	}
+
+	mockRepo.On("GetUserByID", uint(1)).Return(&user, nil)
+	mockRepo.On("UpdateUser", &user).Return(nil)
+
+	err := service.UpdatePassword(1, "newpassword", "123456")
+
+	assert.NoError(t, err)
+	assert.Equal(t, "newpassword", user.Password)
+	mockRepo.AssertExpectations(t)
+}
+
+// TestUserService_UpdatePasswordInvalidUser tests the UpdatePassword method of the UserService with an invalid user
+func TestUserService_UpdatePasswordInvalidUser(t *testing.T) {
+	mockRepo = new(mocks.MockUserRepository)
+	service = services.NewUserService(mockRepo)
+
+	mockRepo.On("GetUserByID", uint(1)).Return((*models.User)(nil), errors.New("user not found"))
+
+	err := service.UpdatePassword(1, "newpassword", "123456")
+
+	assert.Error(t, err)
+	assert.Equal(t, "user not found", err.Error())
+	mockRepo.AssertExpectations(t)
+}
+
+// TestUserService_UpdateEmail tests the UpdateEmail method of the UserService
+func TestUserService_UpdateEmail(t *testing.T) {
+	mockRepo = new(mocks.MockUserRepository)
+	service = services.NewUserService(mockRepo)
+
+	user := models.User{
+		Username:           "joaquim",
+		Email:              "example@gmail.com",
+		Password:           "123456",
+		EmailVerified:      false,
+		VerificationToken:  "123456",
+		ProfilePicture:     "https://example.com/profile.jpg",
+		Bio:                "I am a software engineer",
+		Roles:              "admin,user",
+		LastLogin:          time.Time{},
+		DateOfBirth:        time.Time{},
+		PreferredLanguage:  "en",
+		ReadingPreferences: "novel,short_story",
+		IsDeleted:          false,
+	}
+
+	mockRepo.On("GetUserByID", uint(1)).Return(&user, nil)
+	mockRepo.On("UpdateUserEmail", uint(1), "newemail", "123456").Return(nil)
+
+	err := service.UpdateEmail(1, "newemail")
+
+	assert.NoError(t, err)
+	assert.Equal(t, "newemail", user.Email)
+	mockRepo.AssertExpectations(t)
+}
+
+// TestUserService_UpdateInvalidEmailFormat tests the UpdateEmail method of the UserService with an invalid format
+func TestUserService_UpdateInvalidEmailFormat(t *testing.T) {
+	mockRepo = new(mocks.MockUserRepository)
+	service = services.NewUserService(mockRepo)
+
+	err := service.UpdateEmail(1, "newemail")
+
+	assert.Error(t, err)
+	assert.Equal(t, "invalid email format", err.Error())
 	mockRepo.AssertExpectations(t)
 }

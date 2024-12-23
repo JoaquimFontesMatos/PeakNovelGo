@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"backend/internal/models"
 	"backend/internal/services/interfaces"
 
 	"github.com/gin-gonic/gin"
@@ -71,14 +72,9 @@ func (c *UserController) HandleGetUserByUsername(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, user)
 }
 
-// HandleUpdateUser handles PUT /users/:id
+// HandleUpdateUser handles PUT /users/:i
 func (c *UserController) UpdateUserFields(ctx *gin.Context) {
-	var updateFields struct {
-		Username          string `json:"username,omitempty"`
-		Bio               string `json:"bio,omitempty"`
-		ProfilePicture    string `json:"profile_picture,omitempty"`
-		PreferredLanguage string `json:"preferred_language,omitempty"`
-	}
+	var updateFields models.UpdateFields
 
 	if err := ctx.ShouldBindJSON(&updateFields); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
@@ -114,7 +110,6 @@ func (c *UserController) UpdatePassword(ctx *gin.Context) {
 		return
 	}
 
-
 	idParam := ctx.Param("id")
 	id, err := strconv.Atoi(idParam)
 	if err != nil {
@@ -142,7 +137,6 @@ func (c *UserController) UpdateEmail(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
 		return
 	}
-
 
 	idParam := ctx.Param("id")
 	id, err := strconv.Atoi(idParam)
