@@ -79,3 +79,21 @@ func (r *UserRepository) GetUserByUsername(username string) (*models.User, error
 	}
 	return user, nil
 }
+
+func (r *UserRepository) UpdateUserEmail(userID uint, newEmail string, token string) error {
+	// Update user email and verification token
+	if err := r.db.Model(&models.User{}).Where("id = ?", userID).Update("email", newEmail).Update("verification_token", token).Update("email_verified", false).Error; err != nil {
+		log.Printf("Failed to update user email: %v", err)
+		return err
+	}
+	return nil
+}
+
+func (r *UserRepository) UpdateUserFields(userID uint, fields interface{}) error {
+	// Update user fields
+	if err := r.db.Model(&models.User{}).Where("id = ?", userID).Updates(fields).Error; err != nil {
+		log.Printf("Failed to update user fields: %v", err)
+		return err
+	}
+	return nil
+}

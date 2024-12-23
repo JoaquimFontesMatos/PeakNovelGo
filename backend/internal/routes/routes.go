@@ -20,7 +20,9 @@ func SetupRoutes(r *gin.Engine, authController *controllers.AuthController, user
 		user.GET("/users/:id", userController.HandleGetUser)
 		user.GET("/users/email/:email", userController.HandleGetUserByEmail)
 		user.GET("/users/username/:username", userController.HandleGetUserByUsername)
-		user.PUT("/users/:id", userController.HandleUpdateUser)
+		user.PUT("/users/:id/password", userController.UpdatePassword)
+		user.PUT("/users/:id/email", userController.UpdateEmail)
+		user.PUT("/users/:id/fields", userController.UpdateUserFields)
 		user.DELETE("/users/:id", userController.HandleDeleteUser)
 	}
 

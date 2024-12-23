@@ -4,7 +4,6 @@ import (
 	"net/http"
 	"strconv"
 
-	"backend/internal/models"
 	"backend/internal/services/interfaces"
 
 	"github.com/gin-gonic/gin"
@@ -73,22 +72,94 @@ func (c *UserController) HandleGetUserByUsername(ctx *gin.Context) {
 }
 
 // HandleUpdateUser handles PUT /users/:id
-func (c *UserController) HandleUpdateUser(ctx *gin.Context) {
-	var user models.User
-	// Bind JSON input to the user struct
-	if err := ctx.ShouldBindJSON(&user); err != nil {
+func (c *UserController) UpdateUserFields(ctx *gin.Context) {
+	var updateFields struct {
+		Username          string `json:"username,omitempty"`
+		Bio               string `json:"bio,omitempty"`
+		ProfilePicture    string `json:"profile_picture,omitempty"`
+		PreferredLanguage string `json:"preferred_language,omitempty"`
+	}
+
+	if err := ctx.ShouldBindJSON(&updateFields); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
 		return
 	}
 
-	// Call the service layer to update the user
-	if err := c.service.UpdateUser(&user); err != nil {
+	idParam := ctx.Param("id")
+	id, err := strconv.Atoi(idParam)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID"})
+		return
+	}
+
+	// Convert the id from int to uint (assuming id can be positive)
+	uid := uint(id)
+
+	if err := c.service.UpdateUserFields(uid, updateFields); err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update user"})
 		return
 	}
 
-	// Respond with the updated user
-	ctx.JSON(http.StatusOK, user)
+	ctx.JSON(http.StatusOK, gin.H{"message": "User updated successfully"})
+}
+
+func (c *UserController) UpdatePassword(ctx *gin.Context) {
+	var req struct {
+		CurrentPassword string `json:"current_password" binding:"required"`
+		NewPassword     string `json:"new_password" binding:"required"`
+	}
+
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
+		return
+	}
+
+
+	idParam := ctx.Param("id")
+	id, err := strconv.Atoi(idParam)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID"})
+		return
+	}
+
+	// Convert the id from int to uint (assuming id can be positive)
+	uid := uint(id)
+
+	if err := c.service.UpdatePassword(uid, req.CurrentPassword, req.NewPassword); err != nil {
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{"message": "Password updated successfully"})
+}
+
+func (c *UserController) UpdateEmail(ctx *gin.Context) {
+	var req struct {
+		NewEmail string `json:"new_email" binding:"required,email"`
+	}
+
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
+		return
+	}
+
+
+	idParam := ctx.Param("id")
+	id, err := strconv.Atoi(idParam)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID"})
+		return
+	}
+
+	// Convert the id from int to uint (assuming id can be positive)
+	uid := uint(id)
+
+	if err := c.service.UpdateEmail(uid, req.NewEmail); err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{"message": "Email update initiated. Please verify the new email."})
 }
 
 // HandleDeleteUser handles DELETE /users/:id

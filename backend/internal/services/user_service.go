@@ -49,7 +49,7 @@ func (s *UserService) RegisterUser(user *models.User) error {
 	sender := &models.SmtpEmailSender{}
 
 	if os.Getenv("TESTING") != "true" {
-		err := utils.SendVerificationEmail(models.User{}, sender)
+		err := utils.SendVerificationEmail(*user, sender)
 
 		if err != nil {
 			return err
@@ -81,9 +81,36 @@ func (s *UserService) VerifyEmail(token string) error {
 	return nil
 }
 
-func (s *UserService) UpdateUser(user *models.User) error {
-	// Business logic before saving
+func (s *UserService) UpdateUserFields(userID uint, fields interface{}) error {
+	// Update logic for general fields like bio, profile picture, etc.
+	return s.repo.UpdateUserFields(userID, fields)
+}
+
+func (s *UserService) UpdatePassword(userID uint, currentPassword string, newPassword string) error {
+	user, err := s.repo.GetUserByID(userID)
+	if err != nil {
+		return err
+	}
+
+	if !utils.ComparePassword(user.Password, currentPassword) {
+		return errors.New("current password is incorrect")
+	}
+
+	hashedPassword, err := utils.HashPassword(newPassword)
+	if err != nil {
+		return err
+	}
+
+	user.Password = hashedPassword
 	return s.repo.UpdateUser(user)
+}
+
+func (s *UserService) UpdateEmail(userID uint, newEmail string) error {
+	// Generate a new verification token
+	token := utils.GenerateVerificationToken()
+
+	// Update the user with the new email and token
+	return s.repo.UpdateUserEmail(userID, newEmail, token)
 }
 
 func (s *UserService) GetUserByEmail(email string) (*models.User, error) {

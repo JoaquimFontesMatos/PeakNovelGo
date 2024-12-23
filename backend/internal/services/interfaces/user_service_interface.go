@@ -7,7 +7,9 @@ type UserServiceInterface interface {
 	RegisterUser(user *models.User) error
 	GetUserByEmail(email string) (*models.User, error)
 	GetUserByUsername(username string) (*models.User, error)
-	UpdateUser(user *models.User) error
 	DeleteUser(id uint) error
 	VerifyEmail(token string) error
+	UpdateUserFields(userID uint, fields interface{}) error
+	UpdatePassword(userID uint, currentPassword string, newPassword string) error
+	UpdateEmail(userID uint, newEmail string) error
 }

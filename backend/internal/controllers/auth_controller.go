@@ -90,22 +90,3 @@ func (ac *AuthController) VerifyEmail(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"message": "Email verified successfully"})
 }
-
-/*
-// HandleVerifyEmail handles POST /users/verify-email
-func (c *UserController) HandleVerifyEmail(ctx *gin.Context) {
-	var verificationToken string
-	if err := ctx.ShouldBindJSON(&verificationToken); err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
-		return
-	}
-
-	// Call the service layer to verify the email
-	err := c.service.VerifyEmail(verificationToken)
-	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to verify email"})
-		return
-	}
-
-	ctx.JSON(http.StatusOK, gin.H{"message": "Email verified successfully"})
-}*/
