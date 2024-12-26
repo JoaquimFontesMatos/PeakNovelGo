@@ -40,7 +40,7 @@ func ConnectDB(isTest bool) *gorm.DB {
 		dbName := os.Getenv("DB_NAME")
 
 		// Build DSN (Data Source Name) for PostgreSQL
-		dsn = fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=require TimeZone=UTC",
+		dsn = fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable TimeZone=UTC",
 			dbHost, dbUser, dbPassword, dbName, dbPort)
 
 		// Open database connection using GORM for PostgreSQL
@@ -68,7 +68,7 @@ func ConnectDB(isTest bool) *gorm.DB {
 }
 
 func autoMigrate(db *gorm.DB) {
-	err := db.AutoMigrate(&models.User{})
+	err := db.AutoMigrate(&models.User{}, &models.RevokedToken{})
 	if err != nil {
 		log.Fatalf("Failed to migrate database schema: %v", err)
 	}

@@ -40,6 +40,7 @@ func (ac *AuthController) Register(c *gin.Context) {
 func (ac *AuthController) Login(c *gin.Context) {
 	var req models.LoginRequest // Define a login request struct
 
+	// Bind the incoming JSON to the LoginRequest model
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
 		return
@@ -52,32 +53,55 @@ func (ac *AuthController) Login(c *gin.Context) {
 		return
 	}
 
-	// Generate JWT token
-	token, err := ac.AuthService.GenerateToken(user)
+	// Generate JWT tokens (access token and refresh token)
+	accessToken, refreshToken, err := ac.AuthService.GenerateToken(user)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not generate token"})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"token": token})
+	// Respond with both tokens
+	c.JSON(http.StatusOK, gin.H{
+		"access_token":  accessToken,
+		"refresh_token": refreshToken,
+	})
 }
 
-func (ac *AuthController) RefreshToken(c *gin.Context) {
-	var req models.RefreshTokenRequest // Define a refresh token request struct
-
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
+func (c *AuthController) RefreshToken(ctx *gin.Context) {
+	// Extract the refresh token from the request header
+	refreshToken := ctx.GetHeader("Authorization")
+	if refreshToken == "" {
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Authorization token is required"})
 		return
 	}
 
-	// Validate and refresh token
-	token, err := ac.AuthService.RefreshToken(req.RefreshToken)
+	// Call the service to refresh the token
+	newAccessToken, newRefreshToken, err := c.AuthService.RefreshToken(refreshToken)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"token": token})
+	// Send the new tokens back to the client
+	ctx.JSON(http.StatusOK, gin.H{
+		"access_token":  newAccessToken,
+		"refresh_token": newRefreshToken,
+	})
+}
+
+func (ac *AuthController) Logout(ctx *gin.Context) {
+	refreshToken := ctx.GetHeader("Authorization")
+	if refreshToken == "" {
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Authorization token is required"})
+		return
+	}
+
+	if err := ac.AuthService.Logout(refreshToken); err != nil {
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{"message": "Logged out successfully"})
 }
 
 func (ac *AuthController) VerifyEmail(c *gin.Context) {

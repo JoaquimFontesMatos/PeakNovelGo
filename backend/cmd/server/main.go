@@ -22,10 +22,11 @@ func main() {
 
 	r := gin.Default()
 	userRepo := repositories.NewUserRepository(db)
+	authRepo := repositories.NewAuthRepository(db)
 	userService := services.NewUserService(userRepo)
 	userController := controllers.NewUserController(userService)
 
-	authService := services.NewAuthService(*userRepo)
+	authService := services.NewAuthService(*userRepo, *authRepo)
 	authController := controllers.NewAuthController(*authService, *userService)
 
 	// Set up routes
