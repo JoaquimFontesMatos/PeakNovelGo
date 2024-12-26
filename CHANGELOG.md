@@ -1,3 +1,8 @@
+## v0.4.0 - 2024-12-26
+* fix: added some things
+* feat: added test design specification for user management
+* feat: Now update is more concise and only updates the needed fields
+* chore: update release notes and changelog for v0.3.0
 ## v0.3.0 - 2024-12-23
 * Merge branch 'main' of https://github.com/JoaquimFontesMatos/PeakNovelGo
 * feat: fixed some auth and user endpoints
