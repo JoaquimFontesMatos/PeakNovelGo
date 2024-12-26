@@ -1,3 +1,6 @@
+## v0.5.0 - 2024-12-26
+* feat: added a few test case outlines
+* chore: update release notes and changelog for v0.4.0
 ## v0.4.0 - 2024-12-26
 * fix: added some things
 * feat: added test design specification for user management
