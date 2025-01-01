@@ -3,6 +3,7 @@ package repositories
 import (
 	"backend/internal/models"
 	"fmt"
+	"os"
 	"time"
 
 	"github.com/golang-jwt/jwt"
@@ -38,7 +39,7 @@ func (r *AuthRepository) RevokeToken(refreshToken string) error {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
-		return []byte("your_secret_key"), nil // Replace with your actual secret key
+		return []byte(os.Getenv("SECRET_KEY")), nil
 	})
 	if err != nil {
 		return fmt.Errorf("invalid refresh token")
@@ -64,14 +65,4 @@ func (r *AuthRepository) RevokeToken(refreshToken string) error {
 	}
 
 	return nil
-}
-
-// GetUserByID fetches a user from the database by their ID.
-func (r *AuthRepository) GetUserByID(userID uint) (*models.User, error) {
-	var user models.User
-	err := r.db.First(&user, userID).Error
-	if err != nil {
-		return nil, fmt.Errorf("user not found: %v", err)
-	}
-	return &user, nil
 }

@@ -1,6 +1,7 @@
 package repositories
 
 import (
+	"errors"
 	"log"
 
 	"backend/internal/models"
@@ -82,12 +83,25 @@ func (r *UserRepository) GetUserByUsername(username string) (*models.User, error
 
 func (r *UserRepository) UpdateUserEmail(userID uint, newEmail string, token string) error {
 	// Update user email and verification token
-	if err := r.db.Model(&models.User{}).Where("id = ?", userID).Update("email", newEmail).Update("verification_token", token).Update("email_verified", false).Error; err != nil {
-		log.Printf("Failed to update user email: %v", err)
-		return err
+	result := r.db.Model(&models.User{}).Where("id = ? AND is_deleted = 0", userID).
+		Updates(map[string]interface{}{
+			"email":              newEmail,
+			"verification_token": token,
+			"email_verified":     false,
+		})
+
+	if result.RowsAffected == 0 {
+		return errors.New("user not found or already deleted")
 	}
+
+	if result.Error != nil {
+		log.Printf("Failed to update user email: %v", result.Error)
+		return result.Error
+	}
+
 	return nil
 }
+
 
 func (r *UserRepository) UpdateUserFields(userID uint, fields interface{}) error {
 	// Update user fields
