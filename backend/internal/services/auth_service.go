@@ -24,12 +24,21 @@ func init() {
 }
 
 type AuthService struct {
-	UserRepo interfaces.UserRepositoryInterface
-	AuthRepo interfaces.AuthRepositoryInterface
+	UserRepo  interfaces.UserRepositoryInterface
+	AuthRepo  interfaces.AuthRepositoryInterface
+	SecretKey []byte
 }
 
 func NewAuthService(userRepo interfaces.UserRepositoryInterface, authRepo interfaces.AuthRepositoryInterface) *AuthService {
-	return &AuthService{UserRepo: userRepo, AuthRepo: authRepo}
+	secretKey := os.Getenv("SECRET_KEY")
+	if secretKey == "" {
+		log.Fatal("SECRET_KEY environment variable not set")
+	}
+	return &AuthService{
+		UserRepo:  userRepo,
+		AuthRepo:  authRepo,
+		SecretKey: []byte(secretKey),
+	}
 }
 
 func (s *AuthService) ValidateCredentials(email string, password string) (*models.User, error) {
@@ -40,29 +49,36 @@ func (s *AuthService) ValidateCredentials(email string, password string) (*model
 		return nil, err
 	}
 
-	user, err := s.UserRepo.GetUserByEmail(email)
-	if err != nil {
-		return nil, validators.ErrUserNotFound
-	}
+	userChan := make(chan *models.User)
+	errChan := make(chan error)
+	defer close(userChan)
+	defer close(errChan)
 
-	if !utils.ComparePassword(user.Password, password) {
-		return nil, errors.New("invalid credentials")
-	}
+	go func() {
+		user, err := s.UserRepo.GetUserByEmail(email)
+		if err != nil {
+			errChan <- validators.ErrUserNotFound
+			return
+		}
+		userChan <- user
+	}()
 
-	user.LastLogin = time.Now()
-	if err := s.UserRepo.UpdateUser(user); err != nil {
+	select {
+	case user := <-userChan:
+		if !utils.ComparePassword(user.Password, password) {
+			return nil, errors.New("invalid credentials")
+		}
+		user.LastLogin = time.Now()
+		if err := s.UserRepo.UpdateUser(user); err != nil {
+			return nil, err
+		}
+		return user, nil
+	case err := <-errChan:
 		return nil, err
 	}
-
-	return user, nil
 }
 
 func (s *AuthService) RefreshToken(refreshToken string) (string, string, error) {
-	secretKey := os.Getenv("SECRET_KEY")
-	if secretKey == "" {
-		return "", "", fmt.Errorf("SECRET_KEY is not set")
-	}
-
 	// Check if the refresh token is in the revoked tokens table
 	isRevoked, err := s.AuthRepo.CheckIfTokenRevoked(refreshToken)
 	if err != nil {
@@ -77,7 +93,7 @@ func (s *AuthService) RefreshToken(refreshToken string) (string, string, error) 
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
-		return []byte(secretKey), nil
+		return s.SecretKey, nil
 	})
 	if err != nil {
 		return "", "", fmt.Errorf("invalid or expired refresh token")
@@ -106,20 +122,36 @@ func (s *AuthService) RefreshToken(refreshToken string) (string, string, error) 
 		return "", "", validators.ErrUserDeleted
 	}
 
-	// Generate new tokens
-	newAccessToken, newRefreshToken, err := s.GenerateToken(fetchedUser)
-	if err != nil {
-		return "", "", fmt.Errorf("failed to generate new tokens: %v", err)
+	revokeErrChan := make(chan error)
+	tokenChan := make(chan [2]string)
+	defer close(revokeErrChan)
+	defer close(tokenChan)
+
+	go func() {
+		revokeErrChan <- s.AuthRepo.RevokeToken(refreshToken)
+	}()
+
+	go func() {
+		accessToken, refreshToken, err := s.GenerateToken(fetchedUser)
+		if err != nil {
+			tokenChan <- [2]string{"", ""}
+			revokeErrChan <- err
+			return
+		}
+		tokenChan <- [2]string{accessToken, refreshToken}
+	}()
+
+	revokeErr := <-revokeErrChan
+	if revokeErr != nil {
+		return "", "", fmt.Errorf("failed to revoke token: %v", revokeErr)
 	}
 
-	// Optionally, revoke the old refresh token
-	// You can choose to revoke the refresh token every time a new refresh happens
-	err = s.AuthRepo.RevokeToken(refreshToken)
-	if err != nil {
-		return "", "", fmt.Errorf("failed to revoke old refresh token: %v", err)
+	tokens := <-tokenChan
+	if tokens[0] == "" && tokens[1] == "" {
+		return "", "", fmt.Errorf("failed to generate tokens")
 	}
 
-	return newAccessToken, newRefreshToken, nil
+	return tokens[0], tokens[1], nil
 }
 
 func (s *AuthService) GenerateToken(user *models.User) (string, string, error) {

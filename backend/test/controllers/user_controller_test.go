@@ -36,6 +36,8 @@ var userController controllers.UserController
 var authController controllers.AuthController
 
 func cleanDB() {
+	os.Setenv("SECRET_KEY", "your_secret_key")
+
 	// Reset all tables by deleting rows (works for both SQLite and PostgreSQL)
 	if err := db.Exec("DELETE FROM users").Error; err != nil {
 		log.Fatalf("Failed to clean up the database: %v", err)
@@ -2002,21 +2004,21 @@ func TestHandleUpdatePassword(t *testing.T) {
 
 			// Mock user data
 			user := models.User{
-				Username:           "example",
-				Email:              "test@example.com",
-				Password:           "12345678",
-				Bio:                "I am a software engineer",
-				LastLogin:          time.Time{},
-				DateOfBirth:        time.Date(1990, 1, 1, 0, 0, 0, 0, time.UTC),
+				Username:    "example",
+				Email:       "test@example.com",
+				Password:    "12345678",
+				Bio:         "I am a software engineer",
+				LastLogin:   time.Time{},
+				DateOfBirth: time.Date(1990, 1, 1, 0, 0, 0, 0, time.UTC),
 			}
 
 			userFields := models.RegisterRequest{
-				Username:           user.Username,
-				Email:              user.Email,
-				Password:           user.Password,
-				Bio:                user.Bio,
-				ProfilePicture:     user.ProfilePicture,
-				DateOfBirth:        user.DateOfBirth.Format("2006-01-02"),
+				Username:       user.Username,
+				Email:          user.Email,
+				Password:       user.Password,
+				Bio:            user.Bio,
+				ProfilePicture: user.ProfilePicture,
+				DateOfBirth:    user.DateOfBirth.Format("2006-01-02"),
 			}
 
 			if tt.createUser {
