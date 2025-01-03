@@ -2,6 +2,7 @@ package utils
 
 import (
 	"fmt"
+	"html/template"
 	"log"
 	"net/smtp"
 	"os"
@@ -31,12 +32,14 @@ func SendVerificationEmail(user models.User, sender EmailSender) error {
 
 	// Compose the email content
 	subject := "Email Verification"
+	escapedUsername := template.HTMLEscapeString(user.Username)
+	escapedVerificationURL := template.HTMLEscapeString(verificationURL)
 	body := fmt.Sprintf(`
 		<p>Hello %s,</p>
 		<p>Thank you for registering with us. Please verify your email address by clicking the link below:</p>
 		<a href="%s">%s</a>
 		<p>If you did not request this, please ignore this email.</p>
-	`, user.Username, verificationURL, verificationURL)
+	`, escapedUsername, escapedVerificationURL, escapedVerificationURL)
 
 	// Set up the email message
 	from := os.Getenv("SMTP_USERNAME")
