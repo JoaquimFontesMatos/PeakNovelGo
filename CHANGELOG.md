@@ -1,3 +1,5 @@
+## v0.8.0 - 2025-01-03
+* feat: Create tests.yml
 ## v0.6.0 - 2024-12-28
 * feat: added more tests
 * chore: update release notes and changelog for v0.5.0
