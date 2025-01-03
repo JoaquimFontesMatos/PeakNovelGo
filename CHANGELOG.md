@@ -1,3 +1,6 @@
+## v0.8.8 - 2025-01-03
+* Update tests.yml
+* chore: update release notes and changelog for v0.8.7
 ## v0.8.7 - 2025-01-03
 * Update tests.yml
 * chore: update release notes and changelog for v0.8.6
