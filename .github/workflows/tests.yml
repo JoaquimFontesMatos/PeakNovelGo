@@ -27,6 +27,15 @@ jobs:
         go mod tidy
         go mod download
 
+    - name: Install JUnit reporter
+      run: |
+        go install github.com/jstemmer/go-junit-report@latest
+      env:
+        GOBIN: $HOME/go/bin
+
+    - name: Add Go Bin to PATH
+      run: echo "$HOME/go/bin" >> $GITHUB_PAT
+
     - name: Create build directory
       run: mkdir -p backend/build
 
