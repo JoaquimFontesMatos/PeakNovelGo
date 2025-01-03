@@ -4,6 +4,8 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+const MaxPasswordLength = 72
+
 // HashPassword generates a bcrypt hash of the password.
 func HashPassword(password string) (string, error) {
 	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)

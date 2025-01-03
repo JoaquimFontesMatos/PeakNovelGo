@@ -2,7 +2,6 @@ package validators
 
 import (
 	"backend/internal/models"
-	"errors"
 	"regexp"
 	"time"
 )
@@ -35,44 +34,44 @@ func ValidateUser(user *models.User) error {
 
 func ValidatePassword(password string) error {
 	if password == "" {
-		return errors.New("password is required")
+		return &ValidationError{Message: "password is required"}
 	}
 	if len(password) < 8 {
-		return errors.New("password must be at least 8 characters long")
+		return &ValidationError{Message: "password must be at least 8 characters long"}
 	}
-	if len(password) > 255 {
-		return errors.New("password cannot be longer than 255 characters")
+	if len(password) > 72 {
+		return &ValidationError{Message: "password cannot be longer than 72 characters"}
 	}
 	return nil
 }
 
 func ValidateEmail(email string) error {
 	if email == "" {
-		return errors.New("email is required")
+		return &ValidationError{Message: "email is required"}
 	}
 
 	if len(email) > 255 {
-		return errors.New("email cannot be longer than 255 characters")
+		return &ValidationError{Message: "email cannot be longer than 255 characters"}
 	}
 
 	// Optional: Validate email format using regex
 	emailRegex := `^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$`
 	matched, err := regexp.MatchString(emailRegex, email)
 	if err != nil {
-		return errors.New("failed to validate email format")
+		return &ValidationError{Message: "failed to validate email format"}
 	}
 	if !matched {
-		return errors.New("invalid email format")
+		return &ValidationError{Message: "invalid email format"}
 	}
 	return nil
 }
 
 func ValidateUsername(username string) error {
 	if username == "" {
-		return errors.New("username is required")
+		return &ValidationError{Message: "username is required"}
 	}
 	if len(username) > 255 {
-		return errors.New("username cannot be longer than 255 characters")
+		return &ValidationError{Message: "username cannot be longer than 255 characters"}
 	}
 	return nil
 }
@@ -82,44 +81,59 @@ func ValidateUsername(username string) error {
 func ValidateUserFields(fields models.UpdateFields) error {
 	// Check the username length
 	if len(fields.Username) > 255 {
-		return errors.New("username cannot be longer than 255 characters")
+		return &ValidationError{Message: "username cannot be longer than 255 characters"}
 	}
 
 	// Check the bio length
 	if len(fields.Bio) > 500 {
-		return errors.New("bio cannot be longer than 500 characters")
+		return &ValidationError{Message: "bio cannot be longer than 500 characters"}
 	}
 
 	// Check the profile picture URL length
 	if len(fields.ProfilePicture) > 255 {
-		return errors.New("profile picture URL cannot be longer than 255 characters")
+		return &ValidationError{Message: "profile picture URL cannot be longer than 255 characters"}
 	}
 
 	// Check the preferred language length
 	if len(fields.PreferredLanguage) > 100 {
-		return errors.New("preferred language cannot be longer than 100 characters")
+		return &ValidationError{Message: "preferred language cannot be longer than 100 characters"}
 	}
 
 	// Check the reading preferences length
 	if len(fields.ReadingPreferences) > 255 {
-		return errors.New("reading preferences cannot be longer than 255 characters")
+		return &ValidationError{Message: "reading preferences cannot be longer than 255 characters"}
 	}
 
 	// Check the roles length
 	if len(fields.Roles) > 255 {
-		return errors.New("roles cannot be longer than 255 characters")
+		return &ValidationError{Message: "roles cannot be longer than 255 characters"}
 	}
 
 	// Validate the date of birth
 	if fields.DateOfBirth != "" { // Skip validation if the field is empty
 		dob, err := time.Parse("2006-01-02", fields.DateOfBirth)
 		if err != nil {
-			return errors.New("date of birth must be a valid date in YYYY-MM-DD format")
+			return &ValidationError{Message: "date of birth must be a valid date in YYYY-MM-DD format"}
 		}
 		if dob.After(time.Now().AddDate(-18, 0, 0)) {
-			return errors.New("you must be at least 18 years old")
+			return &ValidationError{Message: "you must be at least 18 years old"}
 		}
 	}
 
+	return nil
+}
+
+func ValidateIsDeleted(user models.User) error {
+	if user.IsDeleted {
+		return &ValidationError{Message: "user is already soft deleted"}
+	}
+
+	return nil
+}
+
+func ValidateIsNewPasswordTheSame(currentPassword string, newPassword string) error {
+	if currentPassword == newPassword {
+		return ErrPasswordDiff
+	}
 	return nil
 }

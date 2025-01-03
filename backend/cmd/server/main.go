@@ -26,8 +26,8 @@ func main() {
 	userService := services.NewUserService(userRepo)
 	userController := controllers.NewUserController(userService)
 
-	authService := services.NewAuthService(*userRepo, *authRepo)
-	authController := controllers.NewAuthController(*authService, *userService)
+	authService := services.NewAuthService(userRepo, authRepo)
+	authController := controllers.NewAuthController(authService, userService)
 
 	// Set up routes
 	routes.SetupRoutes(r, authController, userController)

@@ -7,6 +7,7 @@ import (
 	"backend/internal/validators"
 	"errors"
 	"os"
+	"time"
 )
 
 type UserService struct {
@@ -22,9 +23,28 @@ func (s *UserService) GetUser(id uint) (*models.User, error) {
 }
 
 // User registration (simplified)
-func (s *UserService) RegisterUser(user *models.User) error {
+func (s *UserService) RegisterUser(userFields *models.RegisterRequest) error {
+	_, err := s.repo.GetUserByEmail(userFields.Email)
+	if err == nil {
+		return &validators.ValidationError{Message: "user already registered"}
+	}
+
+	birthDate, err := time.Parse("2006-01-02", userFields.DateOfBirth)
+	if err != nil {
+		return err
+	}
+
+	user := models.User{
+		Username:       userFields.Username,
+		Email:          userFields.Email,
+		Password:       userFields.Password,
+		Bio:            userFields.Bio,
+		ProfilePicture: userFields.ProfilePicture,
+		DateOfBirth:    birthDate,
+	}
+
 	// Validate the user input
-	if err := validators.ValidateUser(user); err != nil {
+	if err := validators.ValidateUser(&user); err != nil {
 		return err
 	}
 
@@ -41,7 +61,7 @@ func (s *UserService) RegisterUser(user *models.User) error {
 	user.EmailVerified = false
 
 	// Save user to DB
-	if err := s.repo.CreateUser(user); err != nil {
+	if err := s.repo.CreateUser(&user); err != nil {
 		return err
 	}
 
@@ -49,7 +69,7 @@ func (s *UserService) RegisterUser(user *models.User) error {
 	sender := &models.SmtpEmailSender{}
 
 	if os.Getenv("TESTING") != "true" {
-		err := utils.SendVerificationEmail(*user, sender)
+		err := utils.SendVerificationEmail(user, sender)
 
 		if err != nil {
 			return err
@@ -61,17 +81,25 @@ func (s *UserService) RegisterUser(user *models.User) error {
 
 // Email verification
 func (s *UserService) VerifyEmail(token string) error {
-	user, err := s.repo.GetUserByVerificationToken(token)
-	if err != nil {
+	if err := validators.ValidateToken(token); err != nil {
 		return err
 	}
 
+	user, err := s.repo.GetUserByVerificationToken(token)
+	if err != nil {
+		return validators.ErrUserNotFound
+	}
+
+	if user.IsDeleted {
+		return validators.ErrUserDeleted
+	}
+
 	if validators.IsVerificationTokenExpired(user.CreatedAt, user.EmailVerified) {
-		return errors.New("invalid token or token expired")
+		return validators.ErrTokenExpired
 	}
 
 	user.EmailVerified = true
-	user.VerificationToken = "" // Clear the token after verification
+	user.VerificationToken = ""
 
 	// Save changes
 	if err := s.repo.UpdateUser(user); err != nil {
@@ -86,21 +114,40 @@ func (s *UserService) UpdateUserFields(userID uint, fields models.UpdateFields) 
 		return err
 	}
 
+	// Check if user exists
+	user, err := s.repo.GetUserByID(userID)
+	if err != nil {
+		return validators.ErrUserNotFound
+	}
+
+	if user.IsDeleted {
+		return validators.ErrUserDeleted
+	}
+
 	return s.repo.UpdateUserFields(userID, fields)
 }
 
 func (s *UserService) UpdatePassword(userID uint, currentPassword string, newPassword string) error {
-	if err := validators.ValidatePassword(currentPassword); err != nil {
+	if err := validators.ValidatePassword(newPassword); err != nil {
 		return err
 	}
 
+	// Check if user exists
 	user, err := s.repo.GetUserByID(userID)
 	if err != nil {
-		return err
+		return validators.ErrUserNotFound
+	}
+
+	if user.IsDeleted {
+		return validators.ErrUserDeleted
 	}
 
 	if !utils.ComparePassword(user.Password, currentPassword) {
-		return errors.New("current password is incorrect")
+		return validators.ErrInvalidPassword
+	}
+
+	if err := validators.ValidateIsNewPasswordTheSame(currentPassword, newPassword); err != nil {
+		return err
 	}
 
 	hashedPassword, err := utils.HashPassword(newPassword)
@@ -117,6 +164,16 @@ func (s *UserService) UpdateEmail(userID uint, newEmail string) error {
 		return err
 	}
 
+	// Check if user exists
+	user, err := s.repo.GetUserByID(userID)
+	if err != nil {
+		return validators.ErrUserNotFound
+	}
+
+	if user.IsDeleted {
+		return validators.ErrUserDeleted
+	}
+
 	// Generate a new verification token
 	token := utils.GenerateVerificationToken()
 
@@ -125,10 +182,18 @@ func (s *UserService) UpdateEmail(userID uint, newEmail string) error {
 }
 
 func (s *UserService) GetUserByEmail(email string) (*models.User, error) {
+	if err := validators.ValidateEmail(email); err != nil {
+		return nil, err
+	}
+
 	return s.repo.GetUserByEmail(email)
 }
 
 func (s *UserService) GetUserByUsername(username string) (*models.User, error) {
+	if err := validators.ValidateUsername(username); err != nil {
+		return nil, err
+	}
+
 	return s.repo.GetUserByUsername(username)
 }
 
@@ -136,6 +201,10 @@ func (s *UserService) GetUserByUsername(username string) (*models.User, error) {
 func (s *UserService) DeleteUser(id uint) error {
 	user, err := s.repo.GetUserByID(id)
 	if err != nil {
+		return errors.New("user not found")
+	}
+
+	if err := validators.ValidateIsDeleted(*user); err != nil {
 		return err
 	}
 

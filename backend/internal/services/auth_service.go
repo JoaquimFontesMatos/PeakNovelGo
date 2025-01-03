@@ -2,8 +2,9 @@ package services
 
 import (
 	"backend/internal/models"
-	"backend/internal/repositories"
+	"backend/internal/repositories/interfaces"
 	"backend/internal/utils"
+	"backend/internal/validators"
 	"errors"
 	"fmt"
 	"log"
@@ -22,29 +23,59 @@ func init() {
 	}
 }
 
-var secret = os.Getenv("SECRET_KEY")
-
 type AuthService struct {
-	UserRepo repositories.UserRepository
-	AuthRepo repositories.AuthRepository
+	UserRepo  interfaces.UserRepositoryInterface
+	AuthRepo  interfaces.AuthRepositoryInterface
+	SecretKey []byte
 }
 
-func NewAuthService(userRepo repositories.UserRepository, authRepo repositories.AuthRepository) *AuthService {
-	return &AuthService{UserRepo: userRepo, AuthRepo: authRepo}
-}
-
-func (s *AuthService) ValidateCredentials(email, password string) (*models.User, error) {
-	user, err := s.UserRepo.GetUserByEmail(email)
-	if err != nil || !utils.ComparePassword(user.Password, password) {
-		return nil, errors.New("invalid credentials")
+func NewAuthService(userRepo interfaces.UserRepositoryInterface, authRepo interfaces.AuthRepositoryInterface) *AuthService {
+	secretKey := os.Getenv("SECRET_KEY")
+	if secretKey == "" {
+		log.Fatal("SECRET_KEY environment variable not set")
 	}
+	return &AuthService{
+		UserRepo:  userRepo,
+		AuthRepo:  authRepo,
+		SecretKey: []byte(secretKey),
+	}
+}
 
-	user.LastLogin = time.Now()
-	if err := s.UserRepo.UpdateUser(user); err != nil {
+func (s *AuthService) ValidateCredentials(email string, password string) (*models.User, error) {
+	if err := validators.ValidateEmail(email); err != nil {
+		return nil, err
+	}
+	if err := validators.ValidatePassword(password); err != nil {
 		return nil, err
 	}
 
-	return user, nil
+	userChan := make(chan *models.User)
+	errChan := make(chan error)
+	defer close(userChan)
+	defer close(errChan)
+
+	go func() {
+		user, err := s.UserRepo.GetUserByEmail(email)
+		if err != nil {
+			errChan <- validators.ErrUserNotFound
+			return
+		}
+		userChan <- user
+	}()
+
+	select {
+	case user := <-userChan:
+		if !utils.ComparePassword(user.Password, password) {
+			return nil, errors.New("invalid credentials")
+		}
+		user.LastLogin = time.Now()
+		if err := s.UserRepo.UpdateUser(user); err != nil {
+			return nil, err
+		}
+		return user, nil
+	case err := <-errChan:
+		return nil, err
+	}
 }
 
 func (s *AuthService) RefreshToken(refreshToken string) (string, string, error) {
@@ -62,7 +93,7 @@ func (s *AuthService) RefreshToken(refreshToken string) (string, string, error) 
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
-		return []byte("your_secret_key"), nil // Replace with your actual secret key
+		return s.SecretKey, nil
 	})
 	if err != nil {
 		return "", "", fmt.Errorf("invalid or expired refresh token")
@@ -75,102 +106,130 @@ func (s *AuthService) RefreshToken(refreshToken string) (string, string, error) 
 	}
 
 	// Extract user ID from the claims
-	userID, ok := claims["user_id"].(float64) // JWT stores numbers as float64
+	userID, ok := claims["user_id"].(float64)
 	if !ok {
 		return "", "", fmt.Errorf("invalid token structure")
 	}
 
 	// Retrieve the user from the repository
-	fetchedUser, err := s.AuthRepo.GetUserByID(uint(userID))
+	fetchedUser, err := s.UserRepo.GetUserByID(uint(userID))
 	if err != nil {
-		return "", "", fmt.Errorf("user not found: %v", err)
+		return "", "", validators.ErrUserNotFound
 	}
 
 	// Check if the user is active
 	if fetchedUser.IsDeleted {
-		return "", "", fmt.Errorf("user is deactivated")
+		return "", "", validators.ErrUserDeleted
 	}
 
-	// Generate new tokens
-	newAccessToken, newRefreshToken, err := s.GenerateToken(fetchedUser)
-	if err != nil {
-		return "", "", fmt.Errorf("failed to generate new tokens: %v", err)
+	revokeErrChan := make(chan error)
+	tokenChan := make(chan [2]string)
+	defer close(revokeErrChan)
+	defer close(tokenChan)
+
+	go func() {
+		revokeErrChan <- s.AuthRepo.RevokeToken(refreshToken)
+	}()
+
+	go func() {
+		accessToken, refreshToken, err := s.GenerateToken(fetchedUser)
+		if err != nil {
+			tokenChan <- [2]string{"", ""}
+			revokeErrChan <- err
+			return
+		}
+		tokenChan <- [2]string{accessToken, refreshToken}
+	}()
+
+	revokeErr := <-revokeErrChan
+	if revokeErr != nil {
+		return "", "", fmt.Errorf("failed to revoke token: %v", revokeErr)
 	}
 
-	// Optionally, revoke the old refresh token
-	// You can choose to revoke the refresh token every time a new refresh happens
-	err = s.AuthRepo.RevokeToken(refreshToken)
-	if err != nil {
-		return "", "", fmt.Errorf("failed to revoke old refresh token: %v", err)
+	tokens := <-tokenChan
+	if tokens[0] == "" && tokens[1] == "" {
+		return "", "", fmt.Errorf("failed to generate tokens")
 	}
 
-	return newAccessToken, newRefreshToken, nil
+	return tokens[0], tokens[1], nil
 }
 
 func (s *AuthService) GenerateToken(user *models.User) (string, string, error) {
-	// Generate new tokens
-	// Access Token (expires in 15 minutes)
+	secretKey := os.Getenv("SECRET_KEY")
+	if secretKey == "" {
+		return "", "", fmt.Errorf("SECRET_KEY is not set")
+	}
+
+	// Access Token
 	accessClaims := jwt.MapClaims{
 		"user_id": user.ID,
 		"email":   user.Email,
 		"roles":   user.Roles,
-		"exp":     time.Now().Add(15 * time.Minute).Unix(), // Access token valid for 15 minutes
+		"exp":     time.Now().Add(15 * time.Minute).Unix(),
 	}
 	accessToken := jwt.NewWithClaims(jwt.SigningMethodHS256, accessClaims)
-	accessTokenString, err := accessToken.SignedString([]byte("your_secret_key"))
+	accessTokenString, err := accessToken.SignedString([]byte(secretKey))
 	if err != nil {
-		return "", "", fmt.Errorf("failed to generate access token: %v", err)
+		return "", "", fmt.Errorf("failed to sign access token: %w", err)
 	}
 
-	// Refresh Token (expires in 24 hours)
+	// Refresh Token
 	refreshClaims := jwt.MapClaims{
 		"user_id": user.ID,
 		"email":   user.Email,
 		"roles":   user.Roles,
-		"exp":     time.Now().Add(24 * time.Hour).Unix(), // Refresh token valid for 24 hours
+		"exp":     time.Now().Add(24 * time.Hour).Unix(),
 	}
 	refreshToken := jwt.NewWithClaims(jwt.SigningMethodHS256, refreshClaims)
-	refreshTokenString, err := refreshToken.SignedString([]byte("your_secret_key"))
+	refreshTokenString, err := refreshToken.SignedString([]byte(secretKey))
 	if err != nil {
-		return "", "", fmt.Errorf("failed to generate refresh token: %v", err)
+		return "", "", fmt.Errorf("failed to sign refresh token: %w", err)
 	}
 
 	return accessTokenString, refreshTokenString, nil
 }
 
 func (s *AuthService) RevokeRefreshToken(refreshToken string) error {
-	// Validate and parse the refresh token
+	secretKey := os.Getenv("SECRET_KEY")
+	if secretKey == "" {
+		return fmt.Errorf("SECRET_KEY is not set")
+	}
+
+	// Parse token
 	token, err := jwt.Parse(refreshToken, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
-		return []byte("your_secret_key"), nil // Replace with your actual secret key
+		return []byte(secretKey), nil
 	})
 	if err != nil {
-		return fmt.Errorf("invalid refresh token")
+		return fmt.Errorf("invalid refresh token: %w", err)
 	}
 
-	// Extract claims and validate the token
+	// Validate claims
 	claims, ok := token.Claims.(jwt.MapClaims)
 	if !ok || !token.Valid {
 		return fmt.Errorf("invalid token claims")
 	}
 
-	// Extract user ID from the claims (optional, depending on your requirements)
-	userID, ok := claims["user_id"].(float64) // JWT stores numbers as float64
+	userID, ok := claims["user_id"].(float64)
 	if !ok {
-		return fmt.Errorf("invalid token structure")
+		return fmt.Errorf("invalid user_id in token claims")
 	}
 
-	fetchedUser, err := s.AuthRepo.GetUserByID(uint(userID))
-	if err != nil || fetchedUser.IsDeleted {
-		return fmt.Errorf("user is deactivated or not found")
+	// Verify user existence
+	user, err := s.UserRepo.GetUserByID(uint(userID))
+	if err != nil {
+		return validators.ErrUserNotFound
+	}
+	if user.IsDeleted {
+		return validators.ErrUserDeleted
 	}
 
-	// Delegate the revocation logic to the repository
+	// Revoke token
 	err = s.AuthRepo.RevokeToken(refreshToken)
 	if err != nil {
-		return fmt.Errorf("failed to revoke token: %v", err)
+		return fmt.Errorf("failed to revoke token: %w", err)
 	}
 
 	return nil
