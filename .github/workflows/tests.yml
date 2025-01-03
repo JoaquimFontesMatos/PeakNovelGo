@@ -19,7 +19,7 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@v4
       with:
-        go-version: 1.23.4 # Use the version you're working with
+        go-version: 1.23.4
 
     - name: Install dependencies
       run: |
@@ -27,28 +27,16 @@ jobs:
         go mod tidy
         go mod download
 
-    - name: Run Tests
-      run: |
-        cd backend
-        make test
-
-    - name: Install JUnit reporter
-      run:  |
-        cd backend
-        go install github.com/jstemmer/go-junit-report@latest
-  
     - name: Create build directory
       run: mkdir -p backend/build
 
-    - name: Convert Test Results to JUnit
-      run:  |
+    - name: Run Tests
+      run: |
         cd backend
-        make test | go-junit-report > backend/build/test-results.xml
+        make test | go-junit-report > build/test-results.xml
     
     - name: Upload Test Results
       uses: actions/upload-artifact@v3
       with:
         name: test-results
         path: backend/build/test-results.xml
-
-
