@@ -74,20 +74,6 @@ jobs:
           git push origin ${{ env.new_version }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      # Step 6: Commit and push the updated CHANGELOG.md file
-      - name: Configure Git identity
-        run: |
-          git config --local user.email "actions@github.com"
-          git config --local user.name "GitHub Actions"
-
-      - name: Authenticate as GitHub App
-        id: auth
-        uses: tibdex/github-app-token@v1
-        with:
-          app_id: ${{ secrets.APP_ID }}
-          private_key: ${{ secrets.APP_PRIVATE_KEY }}
-
           
        # Step 7: Update RELEASE_NOTES.md
       - name: Update RELEASE_NOTES.md and CHANGELOG.md
@@ -141,6 +127,19 @@ jobs:
             echo "No changes to commit in CHANGELOG.md."
             exit 0
           fi
+
+      # Step 6: Commit and push the updated CHANGELOG.md file
+      - name: Configure Git identity
+        run: |
+          git config --local user.email "actions@github.com"
+          git config --local user.name "GitHub Actions"
+
+      - name: Authenticate as GitHub App
+        id: auth
+        uses: tibdex/github-app-token@v1
+        with:
+          app_id: ${{ secrets.APP_ID }}
+          private_key: ${{ secrets.APP_PRIVATE_KEY }}
 
       - name: Configure Git for App
         run: |
