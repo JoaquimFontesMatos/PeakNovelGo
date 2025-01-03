@@ -80,6 +80,14 @@ jobs:
         run: |
           git config --local user.email "actions@github.com"
           git config --local user.name "GitHub Actions"
+
+      - name: Authenticate as GitHub App
+        id: auth
+        uses: tibdex/github-app-token@v1
+        with:
+          app_id: ${{ secrets.APP_ID }}
+          private_key: ${{ secrets.APP_PRIVATE_KEY }}
+
           
        # Step 7: Update RELEASE_NOTES.md
       - name: Update RELEASE_NOTES.md and CHANGELOG.md
@@ -133,6 +141,17 @@ jobs:
             echo "No changes to commit in CHANGELOG.md."
             exit 0
           fi
+
+      - name: Configure Git for App
+        run: |
+          git config user.name "GitHub App Bot"
+          git config user.email "app-bot@github.com"
       
-          git commit -m "chore: update release notes and changelog for ${{ env.new_version }}"
+      - name: Push changes
+        env:
+          GITHUB_TOKEN: ${{ steps.auth.outputs.token }}
+        run: |
+          git add .
+          git commit -m "chore: update release notes and changelog for v0.8.13"
           git push origin main
+
