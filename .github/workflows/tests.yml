@@ -28,18 +28,24 @@ jobs:
         go mod download
 
     - name: Run Tests
-      run: make test
+      run: |
+        cd backend
+        make test
 
     - name: Install JUnit reporter
-      run: go install github.com/jstemmer/go-junit-report@latest
+      run:  |
+        cd backend
+        go install github.com/jstemmer/go-junit-report@latest
     
     - name: Convert Test Results to JUnit
-      run: make test | go-junit-report > build/test-results.xml
+      run:  |
+        cd backend
+        make test | go-junit-report > build/test-results.xml
     
     - name: Upload Test Results
       uses: actions/upload-artifact@v3
       with:
         name: test-results
-        path: build/test-results.xml
+        path: backend/build/test-results.xml
 
 
