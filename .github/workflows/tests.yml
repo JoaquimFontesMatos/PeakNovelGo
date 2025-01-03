@@ -36,7 +36,10 @@ jobs:
       run:  |
         cd backend
         go install github.com/jstemmer/go-junit-report@latest
-    
+  
+    - name: Create build directory
+      run: mkdir -p backend/build
+
     - name: Convert Test Results to JUnit
       run:  |
         cd backend
