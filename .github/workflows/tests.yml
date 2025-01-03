@@ -40,7 +40,7 @@ jobs:
     - name: Convert Test Results to JUnit
       run:  |
         cd backend
-        make test | go-junit-report > build/test-results.xml
+        make test | go-junit-report > backend/build/test-results.xml
     
     - name: Upload Test Results
       uses: actions/upload-artifact@v3
