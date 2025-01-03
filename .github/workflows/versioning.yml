@@ -7,6 +7,7 @@ on:
 
 jobs:
   versioning:
+    environment: actions
     permissions:
       contents: write
       issues: write
