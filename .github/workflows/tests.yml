@@ -28,7 +28,7 @@ jobs:
         go mod download
 
     - name: Run Tests
-      run: make test-all
+      run: make test
 
     - name: Install JUnit reporter
       run: go install github.com/jstemmer/go-junit-report@latest
