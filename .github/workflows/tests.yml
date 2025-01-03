@@ -19,10 +19,11 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@v4
       with:
-        go-version: 1.20 # Use the version you're working with
+        go-version: 1.23.4 # Use the version you're working with
 
     - name: Install dependencies
       run: |
+        cd backend
         go mod tidy
         go mod download
 
