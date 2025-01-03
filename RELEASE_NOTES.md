@@ -1,3 +1,9 @@
+## v0.8.2 - 2025-01-03
+* Merge branch 'main' of https://github.com/JoaquimFontesMatos/PeakNovelGo
+* chore: update release notes and changelog for v0.8.1
+* fix: Update tests.yml
+* fix: fixed the test pipeline
+* chore: update release notes and changelog for v0.8.0
 ## v0.8.1 - 2025-01-03
 * fix: Update tests.yml
 * chore: update release notes and changelog for v0.8.0
