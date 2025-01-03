@@ -1,5 +1,11 @@
 # PeakNovelGo
 
+> [!IMPORTANT] 
+> **BETA**: This is very early into development, has basically no features. 
+
+> [!CAUTION]
+> **LEARNING PROJECT**: This is only a project to help me learn go, don't expect it to be perfect, nor for it to be in active development.
+
 ## Description
 
 PeakNovelGo is a backend and frontend application built using Go and the Gin web framework. It is designed to provide a platform for users to create and manage their own novels, with features such as chapter creation, reading, and sharing. The application is built using the MVC (Model-View-Controller) architectural pattern and uses the GORM ORM for database interactions.
@@ -59,13 +65,15 @@ To install the application, follow these steps:
     go run cmd/server/main.go
     ```
 
-5. Access the application at `http://localhost:8080`.
+    or
 
-6. Follow the instructions to register an account and start using the application.
+   in backend directory
+   ```bash
+   make run
+   ```
 
-## Contributing
 
-Contributions are welcome! If you find a bug or have a suggestion, please open an issue or submit a pull request.
+6. Access the application at `http://localhost:8080`.
 
 ## Technologies
 
