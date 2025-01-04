@@ -149,6 +149,10 @@ jobs:
         run: |
           git ls-remote https://x-access-token:${{ steps.generate_token.outputs.token }}@github.com/JoaquimFontesMatos/PeakNovelGo.git
 
+      - name: Test GitHub App Token Permissions
+        run: |
+          curl -H "Authorization: Bearer ${{ steps.generate_token.outputs.token }}" https://api.github.com/repos/JoaquimFontesMatos/PeakNovelGo/branches/main
+
       # Step 8: Commit and push changes using the GitHub App token
       - name: Push changes
         run: |
