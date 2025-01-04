@@ -144,22 +144,27 @@ jobs:
           git config user.email "bot@app.com"
           echo "${{ steps.generate_token.outputs.token }}" > ~/.github_token
 
-      # Step 7: Test Authentication (Optional)
-      - name: Test Authentication
+      - name: Create new branch for version update
         run: |
-          git ls-remote https://x-access-token:${{ steps.generate_token.outputs.token }}@github.com/JoaquimFontesMatos/PeakNovelGo.git
+          git checkout -b update-release-${{ env.new_version }}
+      
+      - name: Make changes (Release Notes, Changelog)
+        run: |
+          git add RELEASE_NOTES.md CHANGELOG.md
+          git commit -m "chore: update release notes and changelog for ${{ env.new_version }}"
+      
+      - name: Push new branch
+        run: |
+          git push origin update-release-${{ env.new_version }}
+      
+      - name: Create a Pull Request to main
+        uses: peter-evans/create-pull-request@v4
+        with:
+          title: "chore: update release notes and changelog for ${{ env.new_version }}"
+          body: "Automated release notes and changelog update"
+          base: main
+          head: update-release-${{ env.new_version }}
+          token: ${{ steps.generate_token.outputs.token }}
 
-      - name: Test GitHub App Token Permissions
-        run: |
-          curl -H "Authorization: Bearer ${{ steps.generate_token.outputs.token }}" https://api.github.com/repos/JoaquimFontesMatos/PeakNovelGo/branches/main
-
-      # Step 8: Commit and push changes using the GitHub App token
-      - name: Push changes
-        run: |
-          git add .
-          git commit -m "chore: update release notes and changelog for v0.8.13"
-          git push origin main
-        env:
-          GITHUB_TOKEN: ${{ steps.generate_token.outputs.token }}  # Using the generated app token here
 
 
