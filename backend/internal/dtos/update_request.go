@@ -1,6 +1,6 @@
-package models
+package dtos
 
-type UpdateFields struct {
+type UpdateRequest struct {
     Username          string `json:"username,omitempty"`
     Bio               string `json:"bio,omitempty"`
     ProfilePicture    string `json:"profile_picture,omitempty"`

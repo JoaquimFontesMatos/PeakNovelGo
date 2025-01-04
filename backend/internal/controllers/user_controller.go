@@ -5,9 +5,10 @@ import (
 	"net/http"
 	"strconv"
 
-	"backend/internal/models"
+	"backend/internal/dtos"
 	"backend/internal/services/interfaces"
 	"backend/internal/validators"
+	"backend/internal/types"
 
 	"github.com/gin-gonic/gin"
 )
@@ -68,7 +69,7 @@ func (c *UserController) HandleGetUserByEmail(ctx *gin.Context) {
 	// Call the service layer to fetch the user
 	user, err := c.service.GetUserByEmail(email)
 	if err != nil {
-		if _, ok := err.(*validators.ValidationError); ok {
+		if _, ok := err.(*types.ValidationError); ok {
 			ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
@@ -93,7 +94,7 @@ func (c *UserController) HandleGetUserByUsername(ctx *gin.Context) {
 	// Call the service layer to fetch the user
 	user, err := c.service.GetUserByUsername(username)
 	if err != nil {
-		if _, ok := err.(*validators.ValidationError); ok {
+		if _, ok := err.(*types.ValidationError); ok {
 			ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
@@ -108,7 +109,7 @@ func (c *UserController) HandleGetUserByUsername(ctx *gin.Context) {
 
 // HandleUpdateUser handles PUT /users/:i
 func (c *UserController) UpdateUserFields(ctx *gin.Context) {
-	var updateFields models.UpdateFields
+	var updateFields dtos.UpdateRequest
 
 	if err := validators.ValidateBody(ctx, &updateFields); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -126,12 +127,12 @@ func (c *UserController) UpdateUserFields(ctx *gin.Context) {
 	uid := uint(id)
 
 	if err := c.service.UpdateUserFields(uid, updateFields); err != nil {
-		if _, ok := err.(*validators.ValidationError); ok {
+		if _, ok := err.(*types.ValidationError); ok {
 			ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
 
-		var userErr *validators.UserError
+		var userErr *types.UserError
 		if errors.As(err, &userErr) {
 			switch userErr.Code {
 			case "USER_NOT_FOUND":
@@ -171,12 +172,12 @@ func (c *UserController) UpdatePassword(ctx *gin.Context) {
 	uid := uint(id)
 
 	if err := c.service.UpdatePassword(uid, req.CurrentPassword, req.NewPassword); err != nil {
-		if _, ok := err.(*validators.ValidationError); ok {
+		if _, ok := err.(*types.ValidationError); ok {
 			ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
 
-		var userErr *validators.UserError
+		var userErr *types.UserError
 		if errors.As(err, &userErr) {
 			switch userErr.Code {
 			case "USER_NOT_FOUND":
@@ -220,12 +221,12 @@ func (c *UserController) UpdateEmail(ctx *gin.Context) {
 	uid := uint(id)
 
 	if err := c.service.UpdateEmail(uid, req.NewEmail); err != nil {
-		if _, ok := err.(*validators.ValidationError); ok {
+		if _, ok := err.(*types.ValidationError); ok {
 			ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
 
-		var userErr *validators.UserError
+		var userErr *types.UserError
 		if errors.As(err, &userErr) {
 			switch userErr.Code {
 			case "USER_NOT_FOUND":
@@ -263,7 +264,7 @@ func (c *UserController) HandleDeleteUser(ctx *gin.Context) {
 	// Call the service layer to delete the user
 	err = c.service.DeleteUser(uid)
 	if err != nil {
-		if _, ok := err.(*validators.ValidationError); ok {
+		if _, ok := err.(*types.ValidationError); ok {
 			ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}

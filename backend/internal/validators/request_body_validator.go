@@ -1,6 +1,8 @@
 package validators
 
 import (
+	"backend/internal/types"
+
 	"bytes"
 	"encoding/json"
 	"io"
@@ -13,12 +15,12 @@ func ValidateBody(ctx *gin.Context, body interface{}) error {
 	// Read the raw body
 	rawBody, err := ctx.GetRawData()
 	if err != nil {
-		return &ValidationError{Message: "Invalid Input"}
+		return &types.ValidationError{Message: "Invalid Input"}
 	}
 
 	// Check if it's valid JSON
 	if !json.Valid(rawBody) {
-		return &ValidationError{Message: "Invalid Input"}
+		return &types.ValidationError{Message: "Invalid Input"}
 	}
 
 	// Reassign the raw body so ShouldBindJSON can read it
@@ -26,12 +28,12 @@ func ValidateBody(ctx *gin.Context, body interface{}) error {
 
 	// Bind the JSON
 	if err := ctx.ShouldBindJSON(body); err != nil {
-		return &ValidationError{Message: "Invalid Input"}
+		return &types.ValidationError{Message: "Invalid Input"}
 	}
 
 	// Custom validation: ensure at least one field is non-empty
 	if !hasAtLeastOneNonEmptyField(body) {
-		return &ValidationError{Message: "At least one field must be provided"}
+		return &types.ValidationError{Message: "At least one field must be provided"}
 	}
 
 	return nil

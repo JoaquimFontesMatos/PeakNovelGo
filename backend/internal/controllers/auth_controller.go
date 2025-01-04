@@ -4,9 +4,10 @@ import (
 	"errors"
 	"net/http"
 
-	"backend/internal/models"
+	"backend/internal/dtos"
 	"backend/internal/services/interfaces"
 	"backend/internal/utils"
+	"backend/internal/types"
 	"backend/internal/validators"
 
 	"github.com/gin-gonic/gin" // Assuming you're using Gin framework
@@ -25,16 +26,16 @@ func NewAuthController(authService interfaces.AuthServiceInterface, userService 
 }
 
 func (ac *AuthController) Register(c *gin.Context) {
-	var updateFields models.RegisterRequest
+	var registerRequest dtos.RegisterRequest
 
-	if err := validators.ValidateBody(c, &updateFields); err != nil {
+	if err := validators.ValidateBody(c, &registerRequest); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
 	// Call the user service to create a new user
-	if err := ac.UserService.RegisterUser(&updateFields); err != nil {
-		if _, ok := err.(*validators.ValidationError); ok {
+	if err := ac.UserService.RegisterUser(&registerRequest); err != nil {
+		if _, ok := err.(*types.ValidationError); ok {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
@@ -47,7 +48,7 @@ func (ac *AuthController) Register(c *gin.Context) {
 }
 
 func (ac *AuthController) Login(c *gin.Context) {
-	var req models.LoginRequest // Define a login request struct
+	var req dtos.LoginRequest // Define a login request struct
 
 	// Bind the incoming JSON to the LoginRequest model
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -58,12 +59,12 @@ func (ac *AuthController) Login(c *gin.Context) {
 	// Validate credentials
 	user, err := ac.AuthService.ValidateCredentials(req.Email, req.Password)
 	if err != nil {
-		if _, ok := err.(*validators.ValidationError); ok {
+		if _, ok := err.(*types.ValidationError); ok {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
 
-		var userErr *validators.UserError
+		var userErr *types.UserError
 		if errors.As(err, &userErr) {
 			switch userErr.Code {
 			case "USER_NOT_FOUND":
@@ -107,12 +108,12 @@ func (c *AuthController) RefreshToken(ctx *gin.Context) {
 	// Call the service to refresh the token
 	newAccessToken, newRefreshToken, err := c.AuthService.RefreshToken(refreshToken)
 	if err != nil {
-		if _, ok := err.(*validators.ValidationError); ok {
+		if _, ok := err.(*types.ValidationError); ok {
 			ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
 
-		var userErr *validators.UserError
+		var userErr *types.UserError
 		if errors.As(err, &userErr) {
 			switch userErr.Code {
 			case "USER_NOT_FOUND":
@@ -160,12 +161,12 @@ func (ac *AuthController) VerifyEmail(c *gin.Context) {
 	token := c.Query("token") // Extract the token from query parameters
 
 	if err := ac.UserService.VerifyEmail(token); err != nil {
-		if _, ok := err.(*validators.ValidationError); ok {
+		if _, ok := err.(*types.ValidationError); ok {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
 
-		var userErr *validators.UserError
+		var userErr *types.UserError
 		if errors.As(err, &userErr) {
 			switch userErr.Code {
 			case "USER_NOT_FOUND":

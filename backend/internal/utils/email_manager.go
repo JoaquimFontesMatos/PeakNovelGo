@@ -8,6 +8,7 @@ import (
 	"os"
 
 	"backend/internal/models"
+	"backend/internal/types"
 
 	"github.com/joho/godotenv"
 )
@@ -56,7 +57,7 @@ func SendVerificationEmail(user models.User, sender EmailSender) error {
 	// Check if sender is provided, if not, fall back to default sender
 	if sender == nil {
 		// Fall back to a default sender, like an SMTP sender
-		sender = &models.SmtpEmailSender{}
+		sender = &types.SmtpEmailSender{}
 	}
 
 	// Send the email using the provided EmailSender

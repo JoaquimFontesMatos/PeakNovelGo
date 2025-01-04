@@ -5,6 +5,7 @@ import (
 	"backend/internal/controllers"
 	"backend/internal/middleware"
 	"backend/internal/models"
+	"backend/internal/dtos"
 	"backend/internal/repositories"
 	repositoryInterfaces "backend/internal/repositories/interfaces"
 	"backend/internal/services"
@@ -2012,7 +2013,7 @@ func TestHandleUpdatePassword(t *testing.T) {
 				DateOfBirth: time.Date(1990, 1, 1, 0, 0, 0, 0, time.UTC),
 			}
 
-			userFields := models.RegisterRequest{
+			userFields := dtos.RegisterRequest{
 				Username:       user.Username,
 				Email:          user.Email,
 				Password:       user.Password,

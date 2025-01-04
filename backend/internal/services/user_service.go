@@ -2,6 +2,8 @@ package services
 
 import (
 	"backend/internal/models"
+	"backend/internal/dtos"
+	"backend/internal/types"
 	"backend/internal/repositories/interfaces"
 	"backend/internal/utils"
 	"backend/internal/validators"
@@ -23,10 +25,10 @@ func (s *UserService) GetUser(id uint) (*models.User, error) {
 }
 
 // User registration (simplified)
-func (s *UserService) RegisterUser(userFields *models.RegisterRequest) error {
+func (s *UserService) RegisterUser(userFields *dtos.RegisterRequest) error {
 	_, err := s.repo.GetUserByEmail(userFields.Email)
 	if err == nil {
-		return &validators.ValidationError{Message: "user already registered"}
+		return &types.ValidationError{Message: "user already registered"}
 	}
 
 	birthDate, err := time.Parse("2006-01-02", userFields.DateOfBirth)
@@ -66,7 +68,7 @@ func (s *UserService) RegisterUser(userFields *models.RegisterRequest) error {
 	}
 
 	// Create an email sender
-	sender := &models.SmtpEmailSender{}
+	sender := &types.SmtpEmailSender{}
 
 	if os.Getenv("TESTING") != "true" {
 		err := utils.SendVerificationEmail(user, sender)
@@ -87,15 +89,15 @@ func (s *UserService) VerifyEmail(token string) error {
 
 	user, err := s.repo.GetUserByVerificationToken(token)
 	if err != nil {
-		return validators.ErrUserNotFound
+		return types.ErrUserNotFound
 	}
 
 	if user.IsDeleted {
-		return validators.ErrUserDeleted
+		return types.ErrUserDeleted
 	}
 
 	if validators.IsVerificationTokenExpired(user.CreatedAt, user.EmailVerified) {
-		return validators.ErrTokenExpired
+		return types.ErrTokenExpired
 	}
 
 	user.EmailVerified = true
@@ -109,7 +111,7 @@ func (s *UserService) VerifyEmail(token string) error {
 	return nil
 }
 
-func (s *UserService) UpdateUserFields(userID uint, fields models.UpdateFields) error {
+func (s *UserService) UpdateUserFields(userID uint, fields dtos.UpdateRequest) error {
 	if err := validators.ValidateUserFields(fields); err != nil {
 		return err
 	}
@@ -117,11 +119,11 @@ func (s *UserService) UpdateUserFields(userID uint, fields models.UpdateFields) 
 	// Check if user exists
 	user, err := s.repo.GetUserByID(userID)
 	if err != nil {
-		return validators.ErrUserNotFound
+		return types.ErrUserNotFound
 	}
 
 	if user.IsDeleted {
-		return validators.ErrUserDeleted
+		return types.ErrUserDeleted
 	}
 
 	return s.repo.UpdateUserFields(userID, fields)
@@ -135,15 +137,15 @@ func (s *UserService) UpdatePassword(userID uint, currentPassword string, newPas
 	// Check if user exists
 	user, err := s.repo.GetUserByID(userID)
 	if err != nil {
-		return validators.ErrUserNotFound
+		return types.ErrUserNotFound
 	}
 
 	if user.IsDeleted {
-		return validators.ErrUserDeleted
+		return types.ErrUserDeleted
 	}
 
 	if !utils.ComparePassword(user.Password, currentPassword) {
-		return validators.ErrInvalidPassword
+		return types.ErrInvalidPassword
 	}
 
 	if err := validators.ValidateIsNewPasswordTheSame(currentPassword, newPassword); err != nil {
@@ -167,11 +169,11 @@ func (s *UserService) UpdateEmail(userID uint, newEmail string) error {
 	// Check if user exists
 	user, err := s.repo.GetUserByID(userID)
 	if err != nil {
-		return validators.ErrUserNotFound
+		return types.ErrUserNotFound
 	}
 
 	if user.IsDeleted {
-		return validators.ErrUserDeleted
+		return types.ErrUserDeleted
 	}
 
 	// Generate a new verification token

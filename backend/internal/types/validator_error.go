@@ -1,4 +1,4 @@
-package validators
+package types
 
 type ValidationError struct {
 	Message string

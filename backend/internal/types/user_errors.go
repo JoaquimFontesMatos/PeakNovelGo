@@ -1,4 +1,4 @@
-package validators
+package types
 
 type UserError struct {
     Code    string

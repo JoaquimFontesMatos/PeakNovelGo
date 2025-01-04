@@ -4,6 +4,8 @@ import (
 	"backend/internal/models"
 	"backend/internal/repositories/interfaces"
 	"backend/internal/utils"
+	"backend/internal/types"
+
 	"backend/internal/validators"
 	"errors"
 	"fmt"
@@ -57,7 +59,7 @@ func (s *AuthService) ValidateCredentials(email string, password string) (*model
 	go func() {
 		user, err := s.UserRepo.GetUserByEmail(email)
 		if err != nil {
-			errChan <- validators.ErrUserNotFound
+			errChan <- types.ErrUserNotFound
 			return
 		}
 		userChan <- user
@@ -114,12 +116,12 @@ func (s *AuthService) RefreshToken(refreshToken string) (string, string, error) 
 	// Retrieve the user from the repository
 	fetchedUser, err := s.UserRepo.GetUserByID(uint(userID))
 	if err != nil {
-		return "", "", validators.ErrUserNotFound
+		return "", "", types.ErrUserNotFound
 	}
 
 	// Check if the user is active
 	if fetchedUser.IsDeleted {
-		return "", "", validators.ErrUserDeleted
+		return "", "", types.ErrUserDeleted
 	}
 
 	revokeErrChan := make(chan error)
@@ -220,10 +222,10 @@ func (s *AuthService) RevokeRefreshToken(refreshToken string) error {
 	// Verify user existence
 	user, err := s.UserRepo.GetUserByID(uint(userID))
 	if err != nil {
-		return validators.ErrUserNotFound
+		return types.ErrUserNotFound
 	}
 	if user.IsDeleted {
-		return validators.ErrUserDeleted
+		return types.ErrUserDeleted
 	}
 
 	// Revoke token

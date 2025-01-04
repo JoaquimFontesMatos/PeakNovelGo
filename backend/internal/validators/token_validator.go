@@ -1,6 +1,8 @@
 package validators
 
 import (
+	"backend/internal/types"
+
 	"time"
 )
 
@@ -16,10 +18,10 @@ func IsVerificationTokenExpired(createdAt time.Time, emailVerified bool) bool {
 
 func ValidateToken(token string) error {
 	if token == "" {
-		return &ValidationError{Message: "token is required"}
+		return &types.ValidationError{Message: "token is required"}
 	}
 	if len(token) > 255 {
-		return &ValidationError{Message: "token cannot be longer than 255 characters"}
+		return &types.ValidationError{Message: "token cannot be longer than 255 characters"}
 	}
 	return nil
 }
