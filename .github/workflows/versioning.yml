@@ -1,4 +1,4 @@
-         name: Automated Versioning with Tags Based on Commit Messages
+name: Automated Versioning with Tags Based on Commit Messages
 
 on:
   push:
