@@ -1,3 +1,9 @@
+## v0.8.11 - 2025-01-04
+* Merge pull request #9 from JoaquimFontesMatos/JoaquimFontesMatos-patch-1
+* Update tests.yml
+* Merge pull request #8 from JoaquimFontesMatos/alert-autofix-2
+* Fix code scanning alert no. 2: Email content injection
+* chore: update release notes and changelog for v0.8.10
 ## v0.8.10 - 2025-01-03
 * Update README.md
 * chore: update release notes and changelog for v0.8.9
