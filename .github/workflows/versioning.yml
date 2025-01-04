@@ -119,47 +119,36 @@ jobs:
 
           # Replace the old CHANGELOG.md with the new one
           mv temp_CHANGELOG.md CHANGELOG.md
-      
-          git add RELEASE_NOTES.md
-          git add CHANGELOG.md
-          
-          if git diff --cached --quiet; then
+
+      # Step 6: Create a new branch and commit changes
+      - name: Create a feature branch
+        run: |
+          git checkout -b version-bump/${{ env.new_version }}
+          git add RELEASE_NOTES.md CHANGELOG.md
+            if git diff --cached --quiet; then
             echo "No changes to commit in RELEASE_NOTES.md."
             echo "No changes to commit in CHANGELOG.md."
             exit 0
           fi
+          git commit -m "chore: update release notes and changelog for ${{ env.new_version }}"
 
-      # Step 5: Authenticate with GitHub App
-      - name: Authenticate with GitHub App
-        uses: tibdex/github-app-token@v1
-        id: generate_token
-        with:
-          app_id: ${{ secrets.APP_ID }}
-          private_key: ${{ secrets.APP_PRIVATE_KEY }}
-      
-      # Step 6: Configure Git with the GitHub App Token
-      - name: Configure Git with App Token
+      # Step 7: Push the branch
+      - name: Push feature branch
         run: |
-          git config user.name "Auto Versioning App"
-          git config user.email "bot@app.com"
-          echo "${{ steps.generate_token.outputs.token }}" > ~/.github_token
-
-      # Step 7: Test Authentication (Optional)
-      - name: Test Authentication
-        run: |
-          git ls-remote https://x-access-token:${{ steps.generate_token.outputs.token }}@github.com/JoaquimFontesMatos/PeakNovelGo.git
-
-      - name: Test GitHub App Token Permissions
-        run: |
-          curl -H "Authorization: Bearer ${{ steps.generate_token.outputs.token }}" https://api.github.com/repos/JoaquimFontesMatos/PeakNovelGo/branches/main
-
-      # Step 8: Commit and push changes using the GitHub App token
-      - name: Push changes
-        run: |
-          git add .
-          git commit -m "chore: update release notes and changelog for v0.8.13"
-          git push origin main
+          git push origin version-bump/${{ env.new_version }}
         env:
-          GITHUB_TOKEN: ${{ steps.generate_token.outputs.token }}  # Using the generated app token here
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # Step 8: Create a pull request
+      - name: Create pull request
+        uses: peter-evans/create-pull-request@v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: version-bump/${{ env.new_version }}
+          base: main
+          title: "chore: Version bump to ${{ env.new_version }}"
+          body: |
+            ### Summary
+            This PR updates the release notes and changelog for version ${{ env.new_version }}.
 
 
