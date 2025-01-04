@@ -1,3 +1,6 @@
+## v0.12.0 - 2025-01-04
+* Merge pull request #10 from JoaquimFontesMatos/JoaquimFontesMatos-patch-3
+* feat: Update versioning.yml
 ## v0.8.10 - 2025-01-03
 * Update README.md
 * chore: update release notes and changelog for v0.8.9
