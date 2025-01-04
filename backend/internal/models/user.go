@@ -8,17 +8,17 @@ import (
 
 type User struct {
 	gorm.Model
-	Username           string    `gorm:"size:255;unique;not null" json:"username"`
-	Email              string    `gorm:"size:255;unique;not null" json:"email"`
-	Password           string    `gorm:"size:255;not null" json:"password"`
-	EmailVerified      bool      `json:"email_verified"`
-	VerificationToken  string    `json:"verification_token"`
-	ProfilePicture     string    `gorm:"size:255" json:"profile_picture"`
-	Bio                string    `gorm:"size:500" json:"bio"`
-	Roles              string    `gorm:"size:255" json:"roles"`
+	Username           string    `gorm:"size:255;uniqueIndex;not null" json:"username"`
+	Email              string    `gorm:"size:255;uniqueIndex;not null" json:"email"`
+	Password           string    `gorm:"size:255;not null" json:"-"`
+	EmailVerified      bool      `gorm:"default:false" json:"email_verified"`
+	VerificationToken  string    `json:"-"`
+	ProfilePicture     string    `gorm:"size:255" json:"profile_picture,omitempty"`
+	Bio                string    `gorm:"size:500" json:"bio,omitempty"`
+	Roles              string    `gorm:"size:255" json:"roles,omitempty"`
 	LastLogin          time.Time `json:"last_login"`
 	DateOfBirth        time.Time `json:"date_of_birth"`
-	PreferredLanguage  string    `gorm:"size:100" json:"preferred_language"`
-	ReadingPreferences string    `gorm:"size:255" json:"reading_preferences"`
+	PreferredLanguage  string    `gorm:"size:100" json:"preferred_language,omitempty"`
+	ReadingPreferences string    `gorm:"size:255" json:"reading_preferences,omitempty"`
 	IsDeleted          bool      `gorm:"default:false" json:"is_deleted"`
 }
