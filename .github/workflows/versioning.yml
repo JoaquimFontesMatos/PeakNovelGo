@@ -120,6 +120,12 @@ jobs:
           # Replace the old CHANGELOG.md with the new one
           mv temp_CHANGELOG.md CHANGELOG.md
 
+      # Step 6: Configure Git User Identity
+      - name: Configure Git User
+        run: |
+          git config user.name "GitHub Action Bot"
+          git config user.email "bot@github.com"
+
       # Step 6: Create a new branch and commit changes
       - name: Create a feature branch
         run: |
