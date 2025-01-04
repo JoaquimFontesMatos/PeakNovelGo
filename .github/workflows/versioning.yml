@@ -129,7 +129,6 @@ jobs:
             exit 0
           fi
 
-      # Step 6: Commit and push the updated CHANGELOG.md file
       - name: Configure Git identity
         run: |
           git config --local user.email "actions@github.com"
