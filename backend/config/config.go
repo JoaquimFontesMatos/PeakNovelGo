@@ -68,7 +68,9 @@ func ConnectDB(isTest bool) *gorm.DB {
 }
 
 func autoMigrate(db *gorm.DB) {
-	err := db.AutoMigrate(&models.User{}, &models.RevokedToken{})
+	err := db.AutoMigrate(&models.User{}, &models.RevokedToken{}, &models.Novel{}, &models.Volume{},
+		&models.Chapter{}, &models.Tag{}, &models.NovelTag{}, &models.NovelAuthor{}, &models.Author{},
+		&models.BookmarkedNovel{}, &models.NovelGenre{}, &models.Genre{})
 	if err != nil {
 		log.Fatalf("Failed to migrate database schema: %v", err)
 	}

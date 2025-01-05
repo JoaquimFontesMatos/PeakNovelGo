@@ -7,47 +7,47 @@ import (
 )
 
 type Chapter struct {
-	ID          int    `json:"id"`
-	URL         string `json:"url"`
-	Title       string `json:"title"`
-	Volume      int    `json:"volume"`
-	VolumeTitle string `json:"volume_title"`
+	ID          int    `json:"id,omitempty"`
+	URL         string `json:"url,omitempty"`
+	Title       string `json:"title,omitempty"`
+	Volume      int    `json:"volume,omitempty"`
+	VolumeTitle string `json:"volume_title,omitempty"`
 }
 
 type Volume struct {
-	ID            int    `json:"id"`
-	Title         string `json:"title"`
-	StartChapter  int    `json:"start_chapter"`
-	FinalChapter  int    `json:"final_chapter"`
-	ChapterCount  int    `json:"chapter_count"`
+	ID           int    `json:"id,omitempty"`
+	Title        string `json:"title,omitempty"`
+	StartChapter int    `json:"start_chapter,omitempty"`
+	FinalChapter int    `json:"final_chapter,omitempty"`
+	ChapterCount int    `json:"chapter_count,omitempty"`
 }
 
 type Novel struct {
-	URL           string     `json:"url"`
-	Title         string     `json:"title"`
-	Authors       []string   `json:"authors"`
-	CoverURL      string     `json:"cover_url"`
-	Chapters      []Chapter  `json:"chapters"`
-	Volumes       []Volume   `json:"volumes"`
-	IsRTL         bool       `json:"is_rtl"`
-	Synopsis      string     `json:"synopsis"`
-	Language      string     `json:"language"`
-	Tags          []string   `json:"novel_tags"`
-	Status        string     `json:"status"`
-	Genres        []string   `json:"genres"`
-	NovelUpdatesURL string   `json:"novelupdates_url"`
+	URL             string    `json:"url,omitempty"`
+	Title           string    `json:"title,omitempty"`
+	Authors         []string  `json:"authors,omitempty"`
+	CoverURL        string    `json:"cover_url,omitempty"`
+	Chapters        []Chapter `json:"chapters,omitempty"`
+	Volumes         []Volume  `json:"volumes,omitempty"`
+	IsRTL           bool      `json:"is_rtl,omitempty"`
+	Synopsis        string    `json:"synopsis,omitempty"`
+	Language        string    `json:"language,omitempty"`
+	Tags            []string  `json:"novel_tags,omitempty"`
+	Status          string    `json:"status,omitempty"`
+	Genres          []string  `json:"genres,omitempty"`
+	NovelUpdatesURL string    `json:"novelupdates_url,omitempty"`
 }
 
 type Session struct {
-	UserInput   string   `json:"user_input"`
-	OutputPath  string   `json:"output_path"`
-	Completed   bool     `json:"completed"`
-	DownloadChapters []int `json:"download_chapters"`
+	UserInput        string `json:"user_input,omitempty"`
+	OutputPath       string `json:"output_path,omitempty"`
+	Completed        bool   `json:"completed,omitempty"`
+	DownloadChapters []int  `json:"download_chapters,omitempty"`
 }
 
 type Metadata struct {
-	Novel   Novel   `json:"novel"`
-	Session Session `json:"session"`
+	Novel   Novel   `json:"novel,omitempty"`
+	Session Session `json:"session,omitempty"`
 }
 
 func main() {
@@ -119,6 +119,11 @@ func main() {
 	fmt.Println("Author(s):", metadata.Novel.Authors)
 	fmt.Println("Cover URL:", metadata.Novel.CoverURL)
 	fmt.Println("Synopsis:", metadata.Novel.Synopsis)
+	fmt.Println("Language:", metadata.Novel.Language)
+	fmt.Println("Status:", metadata.Novel.Status)
+	fmt.Println("Genres:", metadata.Novel.Genres)
+	fmt.Println("NovelUpdatesURL:", metadata.Novel.NovelUpdatesURL)
+	fmt.Println("Tags:", metadata.Novel.Tags)
 
 	// Print chapters and volumes
 	for _, volume := range metadata.Novel.Volumes {
