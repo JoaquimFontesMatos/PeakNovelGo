@@ -23,14 +23,17 @@ func main() {
 	r := gin.Default()
 	userRepo := repositories.NewUserRepository(db)
 	authRepo := repositories.NewAuthRepository(db)
+	novelRepo := repositories.NewNovelRepository(db)
 	userService := services.NewUserService(userRepo)
 	userController := controllers.NewUserController(userService)
 
 	authService := services.NewAuthService(userRepo, authRepo)
 	authController := controllers.NewAuthController(authService, userService)
 
+	novelController := controllers.NewNovelController(novelRepo)
+
 	// Set up routes
-	routes.SetupRoutes(r, authController, userController)
+	routes.SetupRoutes(r, authController, userController, novelController)
 
 	fmt.Printf("Server running on port %s\n", port)
 	r.Run(":8080") // Start server on port 8080

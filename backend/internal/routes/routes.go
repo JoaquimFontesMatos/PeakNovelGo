@@ -8,7 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func SetupRoutes(r *gin.Engine, authController *controllers.AuthController, userController *controllers.UserController) {
+func SetupRoutes(r *gin.Engine, authController *controllers.AuthController, userController *controllers.UserController, novelController *controllers.NovelController) {
 	r.StaticFile("/", "./static/index.html")
 
 	auth := r.Group("/auth")
@@ -27,6 +27,12 @@ func SetupRoutes(r *gin.Engine, authController *controllers.AuthController, user
 		user.PUT("/users/:id/email", middleware.AuthMiddleware(), userController.UpdateEmail)
 		user.PUT("/users/:id/fields", middleware.AuthMiddleware(), userController.UpdateUserFields)
 		user.DELETE("/users/:id", middleware.AuthMiddleware(), userController.HandleDeleteUser)
+	}
+
+	novel := r.Group("/novels")
+	{
+		novel.POST("/novel", novelController.HandleImportNovel)
+		novel.POST("/chapters/:novel_id", novelController.HandleImportChaptersZip)
 	}
 
 	// Health check route
