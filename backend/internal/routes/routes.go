@@ -33,6 +33,7 @@ func SetupRoutes(r *gin.Engine, authController *controllers.AuthController, user
 	{
 		novel.POST("/novel", novelController.HandleImportNovel)
 		novel.POST("/chapters/:novel_id", novelController.HandleImportChaptersZip)
+		novel.GET("/chapters/:novel_id", novelController.GetChaptersByNovelID)
 	}
 
 	// Health check route

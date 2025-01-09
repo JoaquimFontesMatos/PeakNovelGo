@@ -15,7 +15,6 @@ type Novel struct {
 	NovelUpdatesUrl string   `gorm:"size:255" json:"novel_updates_url"`
 	Tags            []Tag    `gorm:"many2many:novel_tags;" json:"tags"`
 	Authors         []Author `gorm:"many2many:novel_authors;" json:"authors"`
-	Volumes         []Volume `gorm:"many2many:novel_volumes;" json:"volumes"`
 	Genres          []Genre  `gorm:"many2many:novel_genres;" json:"genres"`
 }
 
@@ -29,42 +28,5 @@ type ImportedNovel struct {
 	NovelUpdatesUrl string   `json:"novel_updates_url"`
 	Tags            []string `json:"novel_tags"`
 	Authors         []string `json:"authors"`
-	Volumes         []Volume `json:"volumes"`
 	Genres          []string `json:"genres"`
 }
-
-func ConvertToNovel(imported ImportedNovel) Novel {
-	// Convert Tags from []string to []Tag
-	tags := make([]Tag, len(imported.Tags))
-	for i, tagName := range imported.Tags {
-		tags[i] = Tag{Name: tagName}
-	}
-
-	// Convert Authors from []string to []Author
-	authors := make([]Author, len(imported.Authors))
-	for i, authorName := range imported.Authors {
-		authors[i] = Author{Name: authorName}
-	}
-
-	// Convert Genres from []string to []Genre
-	genres := make([]Genre, len(imported.Genres))
-	for i, genreName := range imported.Genres {
-		genres[i] = Genre{Name: genreName}
-	}
-
-	// Return the Novel struct
-	return Novel{
-		Url:             imported.Url,
-		Title:           imported.Title,
-		Synopsis:        imported.Synopsis,
-		CoverUrl:        imported.CoverUrl,
-		Language:        imported.Language,
-		Status:          imported.Status,
-		NovelUpdatesUrl: imported.NovelUpdatesUrl,
-		Tags:            tags,
-		Authors:         authors,
-		Volumes:         imported.Volumes,
-		Genres:          genres,
-	}
-}
-
