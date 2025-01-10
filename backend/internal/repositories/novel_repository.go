@@ -307,41 +307,26 @@ func (n *NovelRepository) GetChaptersByNovelID(novelID uint, page, limit int) ([
 	return chapters, total, nil
 }
 
-func (n *NovelRepository) GetNovelsByAuthorID(authorID uint, page, limit int) ([]models.Novel, int64, error) {
-	var novels []models.Novel
-	var total int64
-
-	// Count total novels for the author
-	if err := n.db.Model(&models.Novel{}).Where("author_id = ?", authorID).Count(&total).Error; err != nil {
-		return nil, 0, err
-	}
-
-	// Apply pagination and ordering
-	offset := (page - 1) * limit
-	if err := n.db.Where("author_id = ?", authorID).
-		Order("NULLIF(CAST(regexp_replace(url, '[^0-9]', '', 'g') AS INTEGER), 0) ASC NULLS LAST").
-		Limit(limit).
-		Offset(offset).
-		Find(&novels).Error; err != nil {
-		return nil, 0, err
-	}
-
-	return novels, total, nil
-}
-
 func (n *NovelRepository) GetNovelsByGenreID(genreID uint, page, limit int) ([]models.Novel, int64, error) {
 	var novels []models.Novel
 	var total int64
 
 	// Count total novels for the genre
-	if err := n.db.Model(&models.Novel{}).Where("genre_id = ?", genreID).Count(&total).Error; err != nil {
+	if err := n.db.Model(&models.Novel{}).
+		Joins("JOIN novel_genres ON novel_genres.novel_id = novels.id").
+		Where("novel_genres.genre_id = ?", genreID).
+		Count(&total).Error; err != nil {
 		return nil, 0, err
 	}
 
 	// Apply pagination and ordering
 	offset := (page - 1) * limit
-	if err := n.db.Where("genre_id = ?", genreID).
-		Order("NULLIF(CAST(regexp_replace(url, '[^0-9]', '', 'g') AS INTEGER), 0) ASC NULLS LAST").
+	if err := n.db.Model(&models.Novel{}).
+		Joins("JOIN novel_genres ON novel_genres.novel_id = novels.id").
+		Where("novel_genres.genre_id = ?", genreID).
+		Preload("Authors").
+		Preload("Genres").
+		Preload("Tags").
 		Limit(limit).
 		Offset(offset).
 		Find(&novels).Error; err != nil {
@@ -356,14 +341,21 @@ func (n *NovelRepository) GetNovelsByTagID(tagID uint, page, limit int) ([]model
 	var total int64
 
 	// Count total novels for the tag
-	if err := n.db.Model(&models.Novel{}).Where("tag_id = ?", tagID).Count(&total).Error; err != nil {
+	if err := n.db.Model(&models.Novel{}).
+		Joins("JOIN novel_tags ON novel_tags.novel_id = novels.id").
+		Where("novel_tags.tag_id = ?", tagID).
+		Count(&total).Error; err != nil {
 		return nil, 0, err
 	}
 
 	// Apply pagination and ordering
 	offset := (page - 1) * limit
-	if err := n.db.Where("tag_id = ?", tagID).
-		Order("NULLIF(CAST(regexp_replace(url, '[^0-9]', '', 'g') AS INTEGER), 0) ASC NULLS LAST").
+	if err := n.db.Model(&models.Novel{}).
+		Joins("JOIN novel_tags ON novel_tags.novel_id = novels.id").
+		Where("novel_tags.tag_id = ?", tagID).
+		Preload("Authors").
+		Preload("Genres").
+		Preload("Tags").
 		Limit(limit).
 		Offset(offset).
 		Find(&novels).Error; err != nil {
@@ -373,9 +365,41 @@ func (n *NovelRepository) GetNovelsByTagID(tagID uint, page, limit int) ([]model
 	return novels, total, nil
 }
 
+func (n *NovelRepository) GetNovelsByAuthorID(authorID uint, page, limit int) ([]models.Novel, int64, error) {
+	var novels []models.Novel
+	var total int64
+
+	// Count total novels for the author
+	if err := n.db.Model(&models.Novel{}).
+		Joins("JOIN novel_authors ON novel_authors.novel_id = novels.id").
+		Where("novel_authors.author_id = ?", authorID).
+		Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	// Apply pagination and ordering
+	offset := (page - 1) * limit
+	if err := n.db.Model(&models.Novel{}).
+		Joins("JOIN novel_authors ON novel_authors.novel_id = novels.id").
+		Where("novel_authors.author_id = ?", authorID).
+		Preload("Authors").
+		Preload("Genres").
+		Preload("Tags").
+		Limit(limit).Offset(offset).
+		Find(&novels).Error; err != nil {
+		return nil, 0, err
+	}
+	return novels, total, nil
+}
+
 func (n *NovelRepository) GetNovelByID(id uint) (*models.Novel, error) {
 	var novel models.Novel
-	if err := n.db.Where("id = ?", id).First(&novel).Error; err != nil {
+	if err := n.db.Where("id = ?", id).
+		Preload("Authors").
+		Preload("Genres").
+		Preload("Tags").
+		First(&novel).
+		Error; err != nil {
 		return nil, err
 	}
 	return &novel, nil

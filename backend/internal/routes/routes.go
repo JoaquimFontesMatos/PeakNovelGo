@@ -20,20 +20,29 @@ func SetupRoutes(r *gin.Engine, authController *controllers.AuthController, user
 	}
 	user := r.Group("/user")
 	{
-		user.GET("/users/:id", userController.HandleGetUser)
-		user.GET("/users/email/:email", middleware.AuthMiddleware(), userController.HandleGetUserByEmail)
-		user.GET("/users/username/:username", middleware.AuthMiddleware(), userController.HandleGetUserByUsername)
-		user.PUT("/users/:id/password", middleware.AuthMiddleware(), userController.UpdatePassword)
-		user.PUT("/users/:id/email", middleware.AuthMiddleware(), userController.UpdateEmail)
-		user.PUT("/users/:id/fields", middleware.AuthMiddleware(), userController.UpdateUserFields)
-		user.DELETE("/users/:id", middleware.AuthMiddleware(), userController.HandleDeleteUser)
+		user.GET("/:id", userController.HandleGetUser)
+		user.GET("/email/:email", middleware.AuthMiddleware(), userController.HandleGetUserByEmail)
+		user.GET("/username/:username", middleware.AuthMiddleware(), userController.HandleGetUserByUsername)
+		user.PUT("/:id/password", middleware.AuthMiddleware(), userController.UpdatePassword)
+		user.PUT("/:id/email", middleware.AuthMiddleware(), userController.UpdateEmail)
+		user.PUT("/:id/fields", middleware.AuthMiddleware(), userController.UpdateUserFields)
+		user.DELETE("/:id", middleware.AuthMiddleware(), userController.HandleDeleteUser)
 	}
 
 	novel := r.Group("/novels")
 	{
-		novel.POST("/novel", novelController.HandleImportNovel)
-		novel.POST("/chapters/:novel_id", novelController.HandleImportChaptersZip)
-		novel.GET("/chapters/:novel_id", novelController.GetChaptersByNovelID)
+		novel.POST("/", novelController.HandleImportNovel)
+		novel.GET("/authors/:author_id", novelController.GetNovelsByAuthorID)
+		novel.GET("/genres/:genre_id", novelController.GetNovelsByGenreID)
+		novel.GET("/tags/:tag_id", novelController.GetNovelsByTagID)
+		novel.GET("/:novel_id", novelController.GetNovelByID)
+
+		novel := r.Group("/novels/chapters")
+		{
+			novel.POST("/:novel_id", novelController.HandleImportChaptersZip)
+			novel.GET("/:novel_id", novelController.GetChaptersByNovelID)
+			novel.GET("/chapter/:chapter_id", novelController.GetChapterByID)
+		}
 	}
 
 	// Health check route

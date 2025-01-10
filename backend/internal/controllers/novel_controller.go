@@ -3,13 +3,14 @@ package controllers
 import (
 	"archive/zip"
 	"backend/internal/models"
-	"backend/internal/repositories/interfaces"
+	"backend/internal/services/interfaces"
 	"backend/internal/utils"
 	"backend/internal/validators"
 	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"strconv"
 	"sync"
 
@@ -17,11 +18,11 @@ import (
 )
 
 type NovelController struct {
-	novelRepository interfaces.NovelRepositoryInterface
+	novelService interfaces.NovelServiceInterface
 }
 
-func NewNovelController(novelRepository interfaces.NovelRepositoryInterface) *NovelController {
-	return &NovelController{novelRepository: novelRepository}
+func NewNovelController(novelService interfaces.NovelServiceInterface) *NovelController {
+	return &NovelController{novelService: novelService}
 }
 
 type Session struct {
@@ -53,7 +54,7 @@ func (n *NovelController) HandleImportNovel(ctx *gin.Context) {
 	metadata.Novel.Synopsis = utils.StripHTML(metadata.Novel.Synopsis)
 
 	// Convert the imported novel to a Novel struct
-	novel, err := n.novelRepository.ConvertToNovel(metadata.Novel)
+	novel, err := n.novelService.ConvertToNovel(metadata.Novel)
 
 	if err != nil {
 		log.Println(err)
@@ -62,7 +63,7 @@ func (n *NovelController) HandleImportNovel(ctx *gin.Context) {
 	}
 
 	// Save the novel to the database
-	createdNovel, err := n.novelRepository.CreateNovel(*novel)
+	createdNovel, err := n.novelService.CreateNovel(*novel)
 
 	if err != nil {
 		log.Println(err)
@@ -97,6 +98,14 @@ func (n *NovelController) HandleImportChaptersZip(ctx *gin.Context) {
 		return
 	}
 
+	// Ensure the temp file is deleted after processing, even if an error occurs
+	defer func() {
+		if err := os.Remove(tempFile); err != nil {
+			// Log the error if the file cannot be deleted
+			log.Printf("Failed to delete temp file: %v\n", err)
+		}
+	}()
+
 	// Process the ZIP file
 	chapterCount, err := n.processChaptersZip(tempFile, id)
 	if err != nil {
@@ -114,6 +123,7 @@ func (n *NovelController) processChaptersZip(filePath string, uid uint) (int, er
 	if err != nil {
 		return 0, fmt.Errorf("failed to open zip file: %v", err)
 	}
+	defer reader.Close()
 
 	chapters := make([]models.Chapter, 0)
 	var mu sync.Mutex
@@ -131,10 +141,13 @@ func (n *NovelController) processChaptersZip(filePath string, uid uint) (int, er
 			defer wg.Done()
 
 			f, err := file.Open()
+
 			if err != nil {
 				errChan <- fmt.Errorf("failed to open file in zip: %v", err)
 				return
 			}
+
+			defer f.Close()
 
 			var chapterData struct {
 				Title      string `json:"title"`
@@ -145,8 +158,6 @@ func (n *NovelController) processChaptersZip(filePath string, uid uint) (int, er
 				errChan <- fmt.Errorf("failed to decode JSON file: %v", err)
 				return
 			}
-
-			f.Close()
 
 			// Clean up the chapter body
 			chapterData.Body = utils.StripHTML(chapterData.Body)
@@ -176,7 +187,7 @@ func (n *NovelController) processChaptersZip(filePath string, uid uint) (int, er
 	}
 
 	// Save the chapters to the database
-	return n.novelRepository.CreateChapters(chapters)
+	return n.novelService.CreateChapters(chapters)
 }
 
 func (n *NovelController) GetChaptersByNovelID(ctx *gin.Context) {
@@ -197,7 +208,7 @@ func (n *NovelController) GetChaptersByNovelID(ctx *gin.Context) {
 		limit = 10
 	}
 
-	chapters, total, err := n.novelRepository.GetChaptersByNovelID(id, page, limit)
+	chapters, total, err := n.novelService.GetChaptersByNovelID(id, page, limit)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -211,4 +222,137 @@ func (n *NovelController) GetChaptersByNovelID(ctx *gin.Context) {
 		"limit":      limit,
 		"totalPages": (total + int64(limit) - 1) / int64(limit), // Calculate total pages
 	})
+}
+
+func (n *NovelController) GetNovelsByAuthorID(ctx *gin.Context) {
+	idParam := ctx.Param("author_id")
+	id, err := validators.ValidateID(idParam)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	page, err := strconv.Atoi(ctx.DefaultQuery("page", "1")) // Default to page 1
+	if err != nil || page < 1 {
+		page = 1
+	}
+	limit, err := strconv.Atoi(ctx.DefaultQuery("limit", "10")) // Default to 10 items per page
+	if err != nil || limit < 1 {
+		limit = 10
+	}
+
+	novels, total, err := n.novelService.GetNovelsByAuthorID(id, page, limit)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Build response with pagination metadata
+	ctx.JSON(http.StatusOK, gin.H{
+		"data":       novels,
+		"total":      total,
+		"page":       page,
+		"limit":      limit,
+		"totalPages": (total + int64(limit) - 1) / int64(limit), // Calculate total pages
+	})
+}
+
+func (n *NovelController) GetNovelsByGenreID(ctx *gin.Context) {
+	idParam := ctx.Param("genre_id")
+	id, err := validators.ValidateID(idParam)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	page, err := strconv.Atoi(ctx.DefaultQuery("page", "1")) // Default to page 1
+	if err != nil || page < 1 {
+		page = 1
+	}
+	limit, err := strconv.Atoi(ctx.DefaultQuery("limit", "10")) // Default to 10 items per page
+	if err != nil || limit < 1 {
+		limit = 10
+	}
+
+	novels, total, err := n.novelService.GetNovelsByGenreID(id, page, limit)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Build response with pagination metadata
+	ctx.JSON(http.StatusOK, gin.H{
+		"data":       novels,
+		"total":      total,
+		"page":       page,
+		"limit":      limit,
+		"totalPages": (total + int64(limit) - 1) / int64(limit), // Calculate total pages
+	})
+}
+
+func (n *NovelController) GetNovelsByTagID(ctx *gin.Context) {
+	idParam := ctx.Param("tag_id")
+	id, err := validators.ValidateID(idParam)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	page, err := strconv.Atoi(ctx.DefaultQuery("page", "1")) // Default to page 1
+	if err != nil || page < 1 {
+		page = 1
+	}
+	limit, err := strconv.Atoi(ctx.DefaultQuery("limit", "10")) // Default to 10 items per page
+	if err != nil || limit < 1 {
+		limit = 10
+	}
+
+	novels, total, err := n.novelService.GetNovelsByTagID(id, page, limit)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Build response with pagination metadata
+	ctx.JSON(http.StatusOK, gin.H{
+		"data":       novels,
+		"total":      total,
+		"page":       page,
+		"limit":      limit,
+		"totalPages": (total + int64(limit) - 1) / int64(limit), // Calculate total pages
+	})
+}
+
+func (n *NovelController) GetNovelByID(ctx *gin.Context) {
+	idParam := ctx.Param("novel_id")
+	id, err := validators.ValidateID(idParam)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	novel, err := n.novelService.GetNovelByID(id)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, novel)
+}
+
+func (n *NovelController) GetChapterByID(ctx *gin.Context) {
+	idParam := ctx.Param("chapter_id")
+	id, err := validators.ValidateID(idParam)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	chapter, err := n.novelService.GetChapterByID(id)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, chapter)
 }

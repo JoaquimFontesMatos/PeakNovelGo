@@ -25,12 +25,12 @@ func main() {
 	authRepo := repositories.NewAuthRepository(db)
 	novelRepo := repositories.NewNovelRepository(db)
 	userService := services.NewUserService(userRepo)
-	userController := controllers.NewUserController(userService)
-
 	authService := services.NewAuthService(userRepo, authRepo)
-	authController := controllers.NewAuthController(authService, userService)
+	novelService := services.NewNovelService(novelRepo)
 
-	novelController := controllers.NewNovelController(novelRepo)
+	userController := controllers.NewUserController(userService)
+	authController := controllers.NewAuthController(authService, userService)
+	novelController := controllers.NewNovelController(novelService)
 
 	// Set up routes
 	routes.SetupRoutes(r, authController, userController, novelController)
