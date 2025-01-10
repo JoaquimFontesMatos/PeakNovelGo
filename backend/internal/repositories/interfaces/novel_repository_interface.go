@@ -16,7 +16,6 @@ type NovelRepositoryInterface interface {
 	IsTagCreated(tag models.Tag) bool
 	CreateNovel(novel models.Novel) (*models.Novel, error)
 	IsNovelCreated(novel models.Novel) bool
-	GetExistingChapterURLs(urls []string) (map[string]bool, error)
 	CreateChapters(chapters []models.Chapter) (int, error)
 	ConvertToNovel(imported models.ImportedNovel) (*models.Novel, error)
 	GetChaptersByNovelID(novelID uint, page, limit int) ([]models.Chapter, int64, error)
@@ -25,4 +24,11 @@ type NovelRepositoryInterface interface {
 	GetNovelsByTagID(tagID uint, page, limit int) ([]models.Novel, int64, error)
 	GetNovelByID(id uint) (*models.Novel, error)
 	GetChapterByID(id uint) (*models.Chapter, error)
+	IsChapterCreated(chapter models.Chapter) bool
+	CreateChapter(chapter models.Chapter) (*models.Chapter, error)
+	GetBookmarkedNovelsByUserID(userID uint, page, limit int) ([]models.BookmarkedNovel, int64, error)
+	GetBookmarkedNovelByUserIDAndNovelID(userID uint, novelID uint) (models.BookmarkedNovel, error)
+	UpdateBookmarkedNovel(novel models.BookmarkedNovel) (models.BookmarkedNovel, error)
+	CreateBookmarkedNovel(bookmarkedNovel models.BookmarkedNovel) (*models.BookmarkedNovel, error)
+	IsBookmarkedNovelCreated(bookmarkedNovel models.BookmarkedNovel) bool
 }

@@ -38,10 +38,11 @@ func ConnectDB(isTest bool) *gorm.DB {
 		dbUser := os.Getenv("DB_USER")
 		dbPassword := os.Getenv("DB_PASSWORD")
 		dbName := os.Getenv("DB_NAME")
+		sslMode := os.Getenv("DB_SSL_MODE")
 
 		// Build DSN (Data Source Name) for PostgreSQL
-		dsn = fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable TimeZone=UTC",
-			dbHost, dbUser, dbPassword, dbName, dbPort)
+		dsn = fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=%s TimeZone=UTC",
+			dbHost, dbUser, dbPassword, dbName, dbPort, sslMode)
 
 		// Open database connection using GORM for PostgreSQL
 		db, errConnect = gorm.Open(postgres.Open(dsn), &gorm.Config{})

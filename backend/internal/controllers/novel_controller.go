@@ -149,11 +149,7 @@ func (n *NovelController) processChaptersZip(filePath string, uid uint) (int, er
 
 			defer f.Close()
 
-			var chapterData struct {
-				Title      string `json:"title"`
-				Body       string `json:"body"`
-				ChapterUrl string `json:"url"`
-			}
+			var chapterData models.ImportedChapter
 			if err := json.NewDecoder(f).Decode(&chapterData); err != nil {
 				errChan <- fmt.Errorf("failed to decode JSON file: %v", err)
 				return
@@ -161,16 +157,12 @@ func (n *NovelController) processChaptersZip(filePath string, uid uint) (int, er
 
 			// Clean up the chapter body
 			chapterData.Body = utils.StripHTML(chapterData.Body)
+			chapterData.NovelID = &uid
 
-			chapter := models.Chapter{
-				NovelID:    &uid,
-				Title:      chapterData.Title,
-				Body:       chapterData.Body,
-				ChapterUrl: chapterData.ChapterUrl,
-			}
+			chapter := chapterData.ToChapter()
 
 			mu.Lock()
-			chapters = append(chapters, chapter)
+			chapters = append(chapters, *chapter)
 			mu.Unlock()
 		}(file)
 	}
@@ -214,13 +206,20 @@ func (n *NovelController) GetChaptersByNovelID(ctx *gin.Context) {
 		return
 	}
 
+	totalPages := (total + int64(limit) - 1) / int64(limit)
+
+	if int64(page) > totalPages {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Page out of range"})
+		return
+	}
+
 	// Build response with pagination metadata
 	ctx.JSON(http.StatusOK, gin.H{
 		"data":       chapters,
 		"total":      total,
 		"page":       page,
 		"limit":      limit,
-		"totalPages": (total + int64(limit) - 1) / int64(limit), // Calculate total pages
+		"totalPages": totalPages,
 	})
 }
 
@@ -247,13 +246,20 @@ func (n *NovelController) GetNovelsByAuthorID(ctx *gin.Context) {
 		return
 	}
 
+	totalPages := (total + int64(limit) - 1) / int64(limit)
+
+	if int64(page) > totalPages {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Page out of range"})
+		return
+	}
+
 	// Build response with pagination metadata
 	ctx.JSON(http.StatusOK, gin.H{
 		"data":       novels,
 		"total":      total,
 		"page":       page,
 		"limit":      limit,
-		"totalPages": (total + int64(limit) - 1) / int64(limit), // Calculate total pages
+		"totalPages": totalPages,
 	})
 }
 
@@ -280,13 +286,20 @@ func (n *NovelController) GetNovelsByGenreID(ctx *gin.Context) {
 		return
 	}
 
+	totalPages := (total + int64(limit) - 1) / int64(limit)
+
+	if int64(page) > totalPages {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Page out of range"})
+		return
+	}
+
 	// Build response with pagination metadata
 	ctx.JSON(http.StatusOK, gin.H{
 		"data":       novels,
 		"total":      total,
 		"page":       page,
 		"limit":      limit,
-		"totalPages": (total + int64(limit) - 1) / int64(limit), // Calculate total pages
+		"totalPages": totalPages,
 	})
 }
 
@@ -313,13 +326,20 @@ func (n *NovelController) GetNovelsByTagID(ctx *gin.Context) {
 		return
 	}
 
+	totalPages := (total + int64(limit) - 1) / int64(limit)
+
+	if int64(page) > totalPages {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Page out of range"})
+		return
+	}
+
 	// Build response with pagination metadata
 	ctx.JSON(http.StatusOK, gin.H{
 		"data":       novels,
 		"total":      total,
 		"page":       page,
 		"limit":      limit,
-		"totalPages": (total + int64(limit) - 1) / int64(limit), // Calculate total pages
+		"totalPages": totalPages,
 	})
 }
 
@@ -355,4 +375,121 @@ func (n *NovelController) GetChapterByID(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, chapter)
+}
+
+func (n *NovelController) CreateChapter(ctx *gin.Context) {
+	var chapter models.Chapter
+	if err := ctx.ShouldBindJSON(&chapter); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	createdChapter, err := n.novelService.CreateChapter(chapter)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, createdChapter)
+}
+
+func (n *NovelController) GetBookmarkedNovelsByUserID(ctx *gin.Context) {
+	idParam := ctx.Param("user_id")
+	id, err := validators.ValidateID(idParam)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	page, err := strconv.Atoi(ctx.DefaultQuery("page", "1")) // Default to page 1
+	if err != nil || page < 1 {
+		page = 1
+	}
+	limit, err := strconv.Atoi(ctx.DefaultQuery("limit", "10")) // Default to 10 items per page
+	if err != nil || limit < 1 {
+		limit = 10
+	}
+
+	novels, total, err := n.novelService.GetBookmarkedNovelsByUserID(id, page, limit)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	totalPages := (total + int64(limit) - 1) / int64(limit)
+
+	if int64(page) > totalPages {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Page out of range"})
+		return
+	}
+
+	// Build response with pagination metadata
+	ctx.JSON(http.StatusOK, gin.H{
+		"data":       novels,
+		"total":      total,
+		"page":       page,
+		"limit":      limit,
+		"totalPages": totalPages,
+	})
+}
+
+func (n *NovelController) CreateBookmarkedNovel(ctx *gin.Context) {
+	var bookmarkedNovel models.BookmarkedNovel
+	if err := ctx.ShouldBindJSON(&bookmarkedNovel); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	createdBookmarkedNovel, err := n.novelService.CreateBookmarkedNovel(bookmarkedNovel)
+
+	if err != nil {
+		log.Println(err)
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Failed to save bookmarked novel to database"})
+		return
+	}
+
+	log.Println("Bookmarked novel saved successfully")
+
+	ctx.JSON(http.StatusOK, createdBookmarkedNovel)
+}
+
+func (n *NovelController) UpdateBookmarkedNovel(ctx *gin.Context) {
+	var novel models.BookmarkedNovel
+	if err := ctx.ShouldBindJSON(&novel); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	updatedNovel, err := n.novelService.UpdateBookmarkedNovel(novel)
+
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, updatedNovel)
+}
+
+func (n *NovelController) GetBookmarkedNovelByUserIDAndNovelID(ctx *gin.Context) {
+	userIDParam := ctx.Param("user_id")
+	novelIDParam := ctx.Param("novel_id")
+
+	userID, err := validators.ValidateID(userIDParam)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	novelID, err := validators.ValidateID(novelIDParam)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	novel, err := n.novelService.GetBookmarkedNovelByUserIDAndNovelID(userID, novelID)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, novel)
 }

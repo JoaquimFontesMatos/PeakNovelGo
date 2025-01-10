@@ -48,3 +48,27 @@ func (s *NovelService) ConvertToNovel(imported models.ImportedNovel) (*models.No
 func (s *NovelService) GetChaptersByNovelID(novelID uint, page, limit int) ([]models.Chapter, int64, error) {
 	return s.repo.GetChaptersByNovelID(novelID, page, limit)
 }
+
+func (s *NovelService) CreateChapter(chapter models.Chapter) (*models.Chapter, error) {
+	return s.repo.CreateChapter(chapter)
+}
+
+func (s *NovelService) GetBookmarkedNovelsByUserID(userID uint, page, limit int) ([]models.BookmarkedNovel, int64, error) {
+	return s.repo.GetBookmarkedNovelsByUserID(userID, page, limit)
+}
+
+func (s *NovelService) GetBookmarkedNovelByUserIDAndNovelID(userID uint, novelID uint) (models.BookmarkedNovel, error) {
+	return s.repo.GetBookmarkedNovelByUserIDAndNovelID(userID, novelID)
+}
+
+func (s *NovelService) UpdateBookmarkedNovel(novel models.BookmarkedNovel) (models.BookmarkedNovel, error) {
+	return s.repo.UpdateBookmarkedNovel(novel)
+}
+
+func (s *NovelService) CreateBookmarkedNovel(bookmarkedNovel models.BookmarkedNovel) (*models.BookmarkedNovel, error) {
+	return s.repo.CreateBookmarkedNovel(bookmarkedNovel)
+}
+
+func (s *NovelService) IsBookmarkedNovelCreated(bookmarkedNovel models.BookmarkedNovel) bool {
+	return s.repo.IsBookmarkedNovelCreated(bookmarkedNovel)
+}

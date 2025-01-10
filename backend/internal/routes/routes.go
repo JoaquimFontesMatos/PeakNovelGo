@@ -37,11 +37,19 @@ func SetupRoutes(r *gin.Engine, authController *controllers.AuthController, user
 		novel.GET("/tags/:tag_id", novelController.GetNovelsByTagID)
 		novel.GET("/:novel_id", novelController.GetNovelByID)
 
-		novel := r.Group("/novels/chapters")
+		chapters := r.Group("/novels/chapters")
 		{
-			novel.POST("/:novel_id", novelController.HandleImportChaptersZip)
-			novel.GET("/:novel_id", novelController.GetChaptersByNovelID)
-			novel.GET("/chapter/:chapter_id", novelController.GetChapterByID)
+			chapters.POST("/:novel_id", novelController.HandleImportChaptersZip)
+			chapters.GET("/:novel_id", novelController.GetChaptersByNovelID)
+			chapters.GET("/chapter/:chapter_id", novelController.GetChapterByID)
+		}
+
+		bookmarked := r.Group("/novels/bookmarked")
+		{
+			bookmarked.POST("/", novelController.CreateBookmarkedNovel)
+			bookmarked.PUT("/", novelController.UpdateBookmarkedNovel)
+			bookmarked.GET("/:user_id", novelController.GetBookmarkedNovelsByUserID)
+			bookmarked.GET("/user/:user_id/novel/:novel_id", novelController.GetBookmarkedNovelByUserIDAndNovelID)
 		}
 	}
 

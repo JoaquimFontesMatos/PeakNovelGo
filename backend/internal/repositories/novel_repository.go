@@ -130,9 +130,9 @@ func (n *NovelRepository) IsNovelCreated(novel models.Novel) bool {
 	return existingNovel.ID != 0
 }
 
-func (n *NovelRepository) GetExistingChapterURLs(urls []string) (map[string]bool, error) {
+func (n *NovelRepository) getExistingChapterURLs(chapterNums []uint, novelID *uint) (map[string]bool, error) {
 	var chapters []models.Chapter
-	if err := n.db.Select("chapter_url").Where("chapter_url IN ?", urls).Find(&chapters).Error; err != nil {
+	if err := n.db.Select("chapter_no").Where("chapter_no IN ? AND novel_id = ?", chapterNums, novelID).Find(&chapters).Error; err != nil {
 		return nil, err
 	}
 
@@ -150,12 +150,17 @@ func (n *NovelRepository) CreateChapters(chapters []models.Chapter) (int, error)
 
 	return length, n.db.Transaction(func(tx *gorm.DB) error {
 		// Filter existing chapters
-		urls := make([]string, len(chapters))
+		chaptersNums := make([]uint, len(chapters))
 		for i, chapter := range chapters {
-			urls[i] = chapter.ChapterUrl
+			chaptersNums[i] = chapter.ChapterNo
 		}
 
-		existingURLs, err := n.GetExistingChapterURLs(urls)
+		if len(chapters) == 0 {
+			return errors.New("no chapters to save")
+		}
+		novelID := chapters[0].NovelID
+
+		existingURLs, err := n.getExistingChapterURLs(chaptersNums, novelID)
 		if err != nil {
 			log.Println(err)
 			return errors.New("failed to fetch existing chapters")
@@ -297,7 +302,7 @@ func (n *NovelRepository) GetChaptersByNovelID(novelID uint, page, limit int) ([
 	// Apply pagination and ordering
 	offset := (page - 1) * limit
 	if err := n.db.Where("novel_id = ?", novelID).
-		Order("NULLIF(CAST(regexp_replace(chapter_url, '[^0-9]', '', 'g') AS INTEGER), 0) ASC NULLS LAST").
+		Order("chapter_no ASC").
 		Limit(limit).
 		Offset(offset).
 		Find(&chapters).Error; err != nil {
@@ -411,4 +416,94 @@ func (n *NovelRepository) GetChapterByID(id uint) (*models.Chapter, error) {
 		return nil, err
 	}
 	return &chapter, nil
+}
+
+func (n *NovelRepository) IsChapterCreated(chapter models.Chapter) bool {
+	var existingChapter models.Chapter
+	if err := n.db.Where("chapter_no = ? AND novel_id = ?", chapter.ChapterNo, chapter.NovelID).First(&existingChapter).Error; err != nil {
+		return false
+	}
+	return existingChapter.ID != 0
+}
+
+func (n *NovelRepository) CreateChapter(chapter models.Chapter) (*models.Chapter, error) {
+	if IsChapterCreated := n.IsChapterCreated(chapter); IsChapterCreated {
+		return nil, errors.New("chapter already exists")
+	}
+
+	// Save the chapter
+	if err := n.db.Create(&chapter).Error; err != nil {
+		log.Println(err)
+		return nil, errors.New("failed to create chapter")
+	}
+
+	return &chapter, nil
+}
+
+func (n *NovelRepository) GetBookmarkedNovelsByUserID(userID uint, page, limit int) ([]models.BookmarkedNovel, int64, error) {
+	var novels []models.BookmarkedNovel
+	var total int64
+
+	// Count total novels for the user
+	if err := n.db.Model(&models.BookmarkedNovel{}).
+		Where("bookmarked_novels.user_id = ?", userID).
+		Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	// Apply pagination and ordering
+	offset := (page - 1) * limit
+	if err := n.db.Model(&models.BookmarkedNovel{}).
+		Where("bookmarked_novels.user_id = ?", userID).
+		Limit(limit).
+		Offset(offset).
+		Find(&novels).Error; err != nil {
+		return nil, 0, err
+	}
+
+	return novels, total, nil
+}
+
+func (n *NovelRepository) GetBookmarkedNovelByUserIDAndNovelID(userID uint, novelID uint) (models.BookmarkedNovel, error) {
+	var novel models.BookmarkedNovel
+	if err := n.db.Model(&models.BookmarkedNovel{}).
+		Where("bookmarked_novels.user_id = ? AND bookmarked_novels.novel_id = ?", userID, novelID).
+		First(&novel).Error; err != nil {
+		return novel, err
+	}
+	return novel, nil
+}
+
+func (n *NovelRepository) UpdateBookmarkedNovel(novel models.BookmarkedNovel) (models.BookmarkedNovel, error) {
+	if err := n.db.Model(&models.BookmarkedNovel{}).
+		Where("user_id = ? AND novel_id = ?", novel.UserID, novel.NovelID).
+		Update("status", novel.Status).
+		Update("score", novel.Score).
+		Update("current_chapter", novel.CurrentChapter).
+		Error; err != nil {
+		return novel, err
+	}
+	return novel, nil
+}
+
+func (n *NovelRepository) CreateBookmarkedNovel(bookmarkedNovel models.BookmarkedNovel) (*models.BookmarkedNovel, error) {
+	if IsBookmarkedNovelCreated := n.IsBookmarkedNovelCreated(bookmarkedNovel); IsBookmarkedNovelCreated {
+		return nil, errors.New("bookmarked novel already exists")
+	}
+
+	// Save the bookmarked novel
+	if err := n.db.Create(&bookmarkedNovel).Error; err != nil {
+		log.Println(err)
+		return nil, errors.New("failed to create bookmarked novel")
+	}
+
+	return &bookmarkedNovel, nil
+}
+
+func (n *NovelRepository) IsBookmarkedNovelCreated(bookmarkedNovel models.BookmarkedNovel) bool {
+	var existingBookmarkedNovel models.BookmarkedNovel
+	if err := n.db.Where("novel_id = ? AND user_id = ?", bookmarkedNovel.NovelID, bookmarkedNovel.UserID).First(&existingBookmarkedNovel).Error; err != nil {
+		return false
+	}
+	return existingBookmarkedNovel.ID != 0
 }
