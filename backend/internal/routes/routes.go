@@ -8,7 +8,15 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func SetupRoutes(r *gin.Engine, authController *controllers.AuthController, userController *controllers.UserController, novelController *controllers.NovelController) {
+func SetupRoutes(r *gin.Engine,
+	authController *controllers.AuthController,
+	userController *controllers.UserController,
+	novelController *controllers.NovelController,
+	ttsController *controllers.TTSController) {
+
+	// Serve TTS files
+	r.Static("/tts-files", "./tts-files")
+
 	r.StaticFile("/", "./static/index.html")
 
 	auth := r.Group("/auth")
@@ -50,6 +58,11 @@ func SetupRoutes(r *gin.Engine, authController *controllers.AuthController, user
 			bookmarked.PUT("/", novelController.UpdateBookmarkedNovel)
 			bookmarked.GET("/:user_id", novelController.GetBookmarkedNovelsByUserID)
 			bookmarked.GET("/user/:user_id/novel/:novel_id", novelController.GetBookmarkedNovelByUserIDAndNovelID)
+		}
+
+		tts := r.Group("/novels/tts")
+		{
+			tts.POST("/", ttsController.GenerateTTS)
 		}
 	}
 

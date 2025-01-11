@@ -69,6 +69,6 @@ func (s *NovelService) CreateBookmarkedNovel(bookmarkedNovel models.BookmarkedNo
 	return s.repo.CreateBookmarkedNovel(bookmarkedNovel)
 }
 
-func (s *NovelService) IsBookmarkedNovelCreated(bookmarkedNovel models.BookmarkedNovel) bool {
-	return s.repo.IsBookmarkedNovelCreated(bookmarkedNovel)
+func (s *NovelService) UnbookmarkNovel(userID uint, novelID uint) error {
+	return s.repo.DeleteBookmarkedNovel(userID, novelID)
 }

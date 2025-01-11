@@ -7,6 +7,9 @@
         "gorm",
         "Nums",
         "plantuml",
-        "sslmode"
+        "sslmode",
+        "surfaceyu",
+        "Unbookmark",
+        "unbookmarked"
     ]
 }

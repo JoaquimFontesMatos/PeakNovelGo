@@ -4,6 +4,7 @@ import (
 	"archive/zip"
 	"backend/internal/models"
 	"backend/internal/services/interfaces"
+	"backend/internal/types"
 	"backend/internal/utils"
 	"backend/internal/validators"
 	"encoding/json"
@@ -492,4 +493,32 @@ func (n *NovelController) GetBookmarkedNovelByUserIDAndNovelID(ctx *gin.Context)
 	}
 
 	ctx.JSON(http.StatusOK, novel)
+}
+
+func (n *NovelController) UnbookmarkNovel(ctx *gin.Context) {
+	userID, err := strconv.ParseUint(ctx.Param("userID"), 10, 64)
+	if err != nil {
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		return
+	}
+
+	novelID, err := strconv.ParseUint(ctx.Param("novelID"), 10, 64)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	err = n.novelService.UnbookmarkNovel(uint(userID), uint(novelID))
+	if err != nil {
+		error := err.(*types.MyError)
+		if error.Code == types.NOVEL_NOT_FOUND_ERROR {
+			ctx.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+			return
+		}
+
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{"message": "Novel successfully unbookmarked"})
 }

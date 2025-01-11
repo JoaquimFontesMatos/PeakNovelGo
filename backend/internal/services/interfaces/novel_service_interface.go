@@ -19,5 +19,5 @@ type NovelServiceInterface interface {
 	GetBookmarkedNovelByUserIDAndNovelID(userID uint, novelID uint) (models.BookmarkedNovel, error)
 	UpdateBookmarkedNovel( novel models.BookmarkedNovel) (models.BookmarkedNovel, error)
 	CreateBookmarkedNovel(bookmarkedNovel models.BookmarkedNovel) (*models.BookmarkedNovel, error)
-	IsBookmarkedNovelCreated(bookmarkedNovel models.BookmarkedNovel) bool
+	UnbookmarkNovel(userID uint, novelID uint) error
 }
