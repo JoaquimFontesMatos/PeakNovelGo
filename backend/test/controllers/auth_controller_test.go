@@ -50,7 +50,7 @@ func TestHandleRegister(t *testing.T) {
 			name:                "#R_02",
 			description:         "The user format is not accepted",
 			expectedCode:        http.StatusBadRequest,
-			expectedBody:        `{"error":"Invalid Input"}`,
+			expectedBody:        `{"error":"Invalid JSON"}`,
 			requestBody:         `asdad`,
 			username:            "joao",
 			email:               "joao@gmail.com",
@@ -64,7 +64,7 @@ func TestHandleRegister(t *testing.T) {
 			name:                "#R_03",
 			description:         "The user is already registered",
 			expectedCode:        http.StatusBadRequest,
-			expectedBody:        `{"error":"user already registered"}`,
+			expectedBody:        `{"error":"User already registered"}`,
 			requestBody:         `{"username": "joao", "bio": "bio", "profile_picture": "profile_pic", "date_of_birth": "2004-12-23", "email": "joao@gmail.com", "password": "12345678"}`,
 			username:            "joao",
 			email:               "joao@gmail.com",
@@ -78,7 +78,7 @@ func TestHandleRegister(t *testing.T) {
 			name:                "#R_04",
 			description:         "There are more than one input",
 			expectedCode:        http.StatusBadRequest,
-			expectedBody:        `{"error":"Invalid Input"}`,
+			expectedBody:        `{"error":"Invalid JSON"}`,
 			requestBody:         `{"username": "joao", "bio": "bio", "profile_picture": "profile_pic", "date_of_birth": "2004-12-23", "email": "joao@gmail.com", "password": "12345678"}, {"username": "joao", "bio": "bio", "profile_picture": "profile_pic", "date_of_birth": "2004-12-23", "email": "joao@gmail.com", "password": "12345678"}`,
 			username:            "joao",
 			email:               "joao@gmail.com",
@@ -92,7 +92,7 @@ func TestHandleRegister(t *testing.T) {
 			name:                "#R_05",
 			description:         "There are less than one input",
 			expectedCode:        http.StatusBadRequest,
-			expectedBody:        `{"error":"Invalid Input"}`,
+			expectedBody:        `{"error":"Invalid JSON"}`,
 			requestBody:         ``,
 			username:            "joao",
 			email:               "joao@gmail.com",
@@ -106,7 +106,7 @@ func TestHandleRegister(t *testing.T) {
 			name:                "#R_06",
 			description:         "The input is not valid",
 			expectedCode:        http.StatusBadRequest,
-			expectedBody:        `{"error":"Invalid Input"}`,
+			expectedBody:        `{"error":"Invalid JSON"}`,
 			username:            "joao",
 			email:               "joao@gmail.com",
 			password:            "12345678",
@@ -119,7 +119,7 @@ func TestHandleRegister(t *testing.T) {
 			name:                "#R_07",
 			description:         "The username is more than 255 characters",
 			expectedCode:        http.StatusBadRequest,
-			expectedBody:        `{"error":"username cannot be longer than 255 characters"}`,
+			expectedBody:        `{"error":"Username cannot be longer than 255 characters"}`,
 			requestBody:         fmt.Sprintf(`{"username": "%s", "bio": "bio", "profile_picture": "profile_pic", "date_of_birth": "2004-12-23", "email": "joao@gmail.com", "password": "12345678"}`, strings.Repeat("a", 256)),
 			username:            strings.Repeat("a", 256),
 			email:               "joao@gmail.com",
@@ -147,7 +147,7 @@ func TestHandleRegister(t *testing.T) {
 			name:                "#R_09",
 			description:         "The username is empty",
 			expectedCode:        http.StatusBadRequest,
-			expectedBody:        `{"error":"Invalid Input"}`,
+			expectedBody:        `{"error":"Failed to bind JSON"}`,
 			requestBody:         `{"username": "", "bio": "bio", "profile_picture": "profile_pic", "date_of_birth": "2004-12-23", "email": "joao@gmail.com", "password": "12345678"}`,
 			username:            "",
 			email:               "joao@gmail.com",
@@ -175,7 +175,7 @@ func TestHandleRegister(t *testing.T) {
 			name:                "#R_11",
 			description:         "The bio is more than 500 characters",
 			expectedCode:        http.StatusBadRequest,
-			expectedBody:        `{"error":"bio cannot be longer than 500 characters"}`,
+			expectedBody:        `{"error":"Bio cannot be longer than 500 characters"}`,
 			requestBody:         fmt.Sprintf(`{"username": "%s", "bio": "%s", "profile_picture": "profile_pic", "date_of_birth": "2004-12-23", "email": "joao@gmail.com", "password": "12345678"}`, "joao", strings.Repeat("a", 501)),
 			username:            "joao",
 			email:               "joao@gmail.com",
@@ -203,7 +203,7 @@ func TestHandleRegister(t *testing.T) {
 			name:                "#R_13",
 			description:         "The bio is empty",
 			expectedCode:        http.StatusBadRequest,
-			expectedBody:        `{"error":"Invalid Input"}`,
+			expectedBody:        `{"error":"Failed to bind JSON"}`,
 			requestBody:         `{"username": "joao", "bio": "", "profile_picture": "profile_pic", "date_of_birth": "2004-12-23", "email": "joao@gmail.com", "password": "12345678"}`,
 			username:            "joao",
 			email:               "joao@gmail.com",
@@ -231,7 +231,7 @@ func TestHandleRegister(t *testing.T) {
 			name:                "#R_15",
 			description:         "The profile_picture is more than 255 characters",
 			expectedCode:        http.StatusBadRequest,
-			expectedBody:        `{"error":"profile picture URL cannot be longer than 255 characters"}`,
+			expectedBody:        `{"error":"Profile picture URL cannot be longer than 255 characters"}`,
 			requestBody:         fmt.Sprintf(`{"username": "%s", "bio": "bio", "profile_picture": "%s", "date_of_birth": "2004-12-23", "email": "joao@gmail.com", "password": "12345678"}`, "joao", strings.Repeat("a", 256)),
 			username:            "joao",
 			email:               "joao@gmail.com",
@@ -259,7 +259,7 @@ func TestHandleRegister(t *testing.T) {
 			name:                "#R_17",
 			description:         "The profile_picture is empty",
 			expectedCode:        http.StatusBadRequest,
-			expectedBody:        `{"error":"Invalid Input"}`,
+			expectedBody:        `{"error":"Failed to bind JSON"}`,
 			requestBody:         `{"username": "joao", "bio": "bio", "profile_picture": "", "date_of_birth": "2004-12-23", "email": "joao@gmail.com", "password": "12345678"}`,
 			username:            "joao",
 			email:               "joao@gmail.com",
@@ -287,7 +287,7 @@ func TestHandleRegister(t *testing.T) {
 			name:                "#R_19",
 			description:         "The date_of_birth is less than 18 years",
 			expectedCode:        http.StatusBadRequest,
-			expectedBody:        `{"error":"you must be at least 18 years old"}`,
+			expectedBody:        `{"error":"You must be at least 18 years old"}`,
 			requestBody:         `{"username": "joao", "bio": "bio", "profile_picture": "profile_pic", "date_of_birth": "2008-01-01", "email": "joao@gmail.com", "password": "12345678"}`,
 			username:            "joao",
 			email:               "joao@gmail.com",
@@ -329,7 +329,7 @@ func TestHandleRegister(t *testing.T) {
 			name:                "#R_22",
 			description:         "The date_of_birth is in the future",
 			expectedCode:        http.StatusBadRequest,
-			expectedBody:        `{"error":"you must be at least 18 years old"}`,
+			expectedBody:        `{"error":"You must be at least 18 years old"}`,
 			requestBody:         `{"username": "joao", "bio": "bio", "profile_picture": "profile_pic", "date_of_birth": "2027-01-01", "email": "joao@gmail.com", "password": "12345678"}`,
 			username:            "joao",
 			email:               "joao@gmail.com",
@@ -343,7 +343,7 @@ func TestHandleRegister(t *testing.T) {
 			name:                "#R_23",
 			description:         "The email is more than 255 characters",
 			expectedCode:        http.StatusBadRequest,
-			expectedBody:        `{"error":"email cannot be longer than 255 characters"}`,
+			expectedBody:        `{"error":"Email cannot be longer than 255 characters"}`,
 			requestBody:         fmt.Sprintf(`{"username": "%s", "bio": "bio", "profile_picture": "profile_pic", "date_of_birth": "2004-12-23", "email": "%s@a.a", "password": "12345678"}`, "joao", strings.Repeat("a", 252)),
 			username:            "joao",
 			email:               fmt.Sprintf("%s@a.a", strings.Repeat("a", 252)),
@@ -371,7 +371,7 @@ func TestHandleRegister(t *testing.T) {
 			name:                "#R_25",
 			description:         "The email is empty",
 			expectedCode:        http.StatusBadRequest,
-			expectedBody:        `{"error":"Invalid Input"}`,
+			expectedBody:        `{"error":"Failed to bind JSON"}`,
 			requestBody:         `{"username": "joao", "bio": "bio", "profile_picture": "profile_pic", "date_of_birth": "2004-12-23", "email": "", "password": "12345678"}`,
 			username:            "joao",
 			email:               "",
@@ -399,7 +399,7 @@ func TestHandleRegister(t *testing.T) {
 			name:                "#R_27",
 			description:         "The password is less than 8 characters",
 			expectedCode:        http.StatusBadRequest,
-			expectedBody:        `{"error":"password must be at least 8 characters long"}`,
+			expectedBody:        `{"error":"Password must be at least 8 characters long"}`,
 			requestBody:         `{"username": "joao", "bio": "bio", "profile_picture": "profile_pic", "date_of_birth": "2004-12-23", "email": "joao@gmail.com", "password": "1234567"}`,
 			username:            "joao",
 			email:               "joao@gmail.com",
@@ -427,7 +427,7 @@ func TestHandleRegister(t *testing.T) {
 			name:                "#R_29",
 			description:         "The password is more than 72 characters",
 			expectedCode:        http.StatusBadRequest,
-			expectedBody:        `{"error":"password cannot be longer than 72 characters"}`,
+			expectedBody:        `{"error":"Password cannot be longer than 72 characters"}`,
 			requestBody:         fmt.Sprintf(`{"username": "%s", "bio": "bio", "profile_picture": "profile_pic", "date_of_birth": "2004-12-23", "email": "joao@gmail.com", "password": "%s"}`, "joao", strings.Repeat("a", 73)),
 			username:            "joao",
 			email:               "joao@gmail.com",
@@ -582,7 +582,7 @@ func TestHandleVerifyEmail(t *testing.T) {
 		{
 			name:              "#V_06",
 			description:       "There are less than one input",
-			expectedCode:      http.StatusBadRequest,
+			expectedCode:      http.StatusUnauthorized,
 			expectedBody:      `{"error":"token is required"}`,
 			verificationToken: "",
 			queryParams:       ``,
@@ -592,7 +592,7 @@ func TestHandleVerifyEmail(t *testing.T) {
 		{
 			name:              "#V_07",
 			description:       "The input is not the right type",
-			expectedCode:      http.StatusBadRequest,
+			expectedCode:      http.StatusUnauthorized,
 			expectedBody:      `{"error":"token is required"}`,
 			queryParams:       `123`,
 			verificationToken: "",
@@ -602,7 +602,7 @@ func TestHandleVerifyEmail(t *testing.T) {
 		{
 			name:              "#V_08",
 			description:       "The token is empty",
-			expectedCode:      http.StatusBadRequest,
+			expectedCode:      http.StatusUnauthorized,
 			expectedBody:      `{"error":"token is required"}`,
 			verificationToken: "",
 			queryParams:       `token=`,
@@ -622,7 +622,7 @@ func TestHandleVerifyEmail(t *testing.T) {
 		{
 			name:              "#V_10",
 			description:       "The token is more than 255 characters",
-			expectedCode:      http.StatusBadRequest,
+			expectedCode:      http.StatusUnauthorized,
 			expectedBody:      `{"error":"token cannot be longer than 255 characters"}`,
 			queryParams:       fmt.Sprintf(`token=%s`, strings.Repeat("a", 256)),
 			verificationToken: strings.Repeat("a", 256),
@@ -918,7 +918,7 @@ func TestHandleLogin(t *testing.T) {
 			name:              "#L_09",
 			description:       "The email is more than 255 characters",
 			expectedCode:      http.StatusBadRequest,
-			expectedBody:      `{"error":"email cannot be longer than 255 characters"}`,
+			expectedBody:      `{"error":"Email cannot be longer than 255 characters"}`,
 			email:             fmt.Sprintf("%s@gmail.com", strings.Repeat("a", 246)),
 			password:          "12345678",
 			isAlreadyVerified: false,
@@ -940,7 +940,7 @@ func TestHandleLogin(t *testing.T) {
 			name:              "#L_11",
 			description:       "The email is one character",
 			expectedCode:      http.StatusBadRequest,
-			expectedBody:      `{"error":"invalid email format"}`,
+			expectedBody:      `{"error":"Invalid email format"}`,
 			email:             "a",
 			password:          "12345678",
 			isAlreadyVerified: false,
@@ -951,7 +951,7 @@ func TestHandleLogin(t *testing.T) {
 			name:              "#L_12",
 			description:       "The password is less than 8 characters",
 			expectedCode:      http.StatusBadRequest,
-			expectedBody:      `{"error":"password must be at least 8 characters long"}`,
+			expectedBody:      `{"error":"Password must be at least 8 characters long"}`,
 			email:             "joao@gmail.com",
 			password:          "1234567",
 			isAlreadyVerified: false,
@@ -973,7 +973,7 @@ func TestHandleLogin(t *testing.T) {
 			name:              "#L_14",
 			description:       "The password is more than 72 characters",
 			expectedCode:      http.StatusBadRequest,
-			expectedBody:      `{"error":"password cannot be longer than 72 characters"}`,
+			expectedBody:      `{"error":"Password cannot be longer than 72 characters"}`,
 			email:             "joao@gmail.com",
 			password:          strings.Repeat("a", 73),
 			isAlreadyVerified: false,
@@ -1083,6 +1083,7 @@ func TestHandleRefreshToken(t *testing.T) {
 		isAlreadyRevoked bool
 		isExpired        bool
 		isFound          bool
+		isLoggedIn       bool
 	}{
 		{
 			name:         "#R_01",
@@ -1118,7 +1119,7 @@ func TestHandleRefreshToken(t *testing.T) {
 			name:             "#R_04",
 			description:      "The refresh token is valid but is already revoked",
 			expectedCode:     http.StatusUnauthorized,
-			expectedBody:     `{"error":"refresh token has been revoked"}`,
+			expectedBody:     `{"error":"Refresh token has been revoked"}`,
 			refreshToken:     "valid_token",
 			isCreated:        true,
 			isAuthorized:     true,
@@ -1135,6 +1136,7 @@ func TestHandleRefreshToken(t *testing.T) {
 			isAuthorized: true,
 			isFound:      true,
 			isExpired:    false,
+			isLoggedIn:   true,
 		},
 	}
 
@@ -1186,6 +1188,20 @@ func TestHandleRefreshToken(t *testing.T) {
 
 			if tt.isAlreadyRevoked {
 				authRepo.RevokeToken(tt.refreshToken)
+			}
+
+			if tt.isLoggedIn {
+				req := httptest.NewRequest(http.MethodPost, "/auth/login", nil)
+				req.Header.Set("Content-Type", "application/json")
+				if tt.isAuthorized {
+					req.Header.Set("Authorization", "Bearer "+tt.refreshToken)
+				}
+
+				// Mock context and recorder
+				w := httptest.NewRecorder()
+				router := gin.Default()
+				router.POST("/auth/login", middleware.AuthMiddleware(), authController.Login)
+				router.ServeHTTP(w, req)
 			}
 
 			// Pass token in request header

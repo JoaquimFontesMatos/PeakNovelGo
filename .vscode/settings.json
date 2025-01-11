@@ -5,6 +5,7 @@
         "Gamification",
         "gonic",
         "gorm",
+        "Nums",
         "plantuml",
         "sslmode"
     ]

@@ -7,8 +7,8 @@ import (
 
 	"backend/internal/dtos"
 	"backend/internal/services/interfaces"
-	"backend/internal/validators"
 	"backend/internal/types"
+	"backend/internal/validators"
 
 	"github.com/gin-gonic/gin"
 )
@@ -46,7 +46,7 @@ func (c *UserController) HandleGetUser(ctx *gin.Context) {
 	// Call the service layer to fetch the user
 	user, err := c.service.GetUser(uid)
 	if err != nil {
-		ctx.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		ctx.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 		return
 	}
 
@@ -69,12 +69,19 @@ func (c *UserController) HandleGetUserByEmail(ctx *gin.Context) {
 	// Call the service layer to fetch the user
 	user, err := c.service.GetUserByEmail(email)
 	if err != nil {
-		if _, ok := err.(*types.ValidationError); ok {
-			ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		var error *types.MyError
+		if errors.As(err, &error) {
+			switch error.Code {
+			case "USER_NOT_FOUND_ERROR":
+				ctx.JSON(http.StatusNotFound, gin.H{"error": error.Message})
+			case "VALIDATION_ERROR":
+				ctx.JSON(http.StatusBadRequest, gin.H{"error": error.Message})
+			case "USER_DEACTIVATED_ERROR":
+				ctx.JSON(http.StatusForbidden, gin.H{"error": error.Message})
+			}
 			return
 		}
-
-		ctx.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
@@ -84,22 +91,24 @@ func (c *UserController) HandleGetUserByEmail(ctx *gin.Context) {
 
 // HandleGetUserByUsername handles GET /users/username/:username
 func (c *UserController) HandleGetUserByUsername(ctx *gin.Context) {
-	if err := validators.ValidateParams(ctx); err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
 	username := ctx.Param("username")
 
 	// Call the service layer to fetch the user
 	user, err := c.service.GetUserByUsername(username)
 	if err != nil {
-		if _, ok := err.(*types.ValidationError); ok {
-			ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		var error *types.MyError
+		if errors.As(err, &error) {
+			switch error.Code {
+			case "USER_NOT_FOUND_ERROR":
+				ctx.JSON(http.StatusNotFound, gin.H{"error": error.Message})
+			case "VALIDATION_ERROR":
+				ctx.JSON(http.StatusBadRequest, gin.H{"error": error.Message})
+			case "USER_DEACTIVATED_ERROR":
+				ctx.JSON(http.StatusForbidden, gin.H{"error": error.Message})
+			}
 			return
 		}
-
-		ctx.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
@@ -127,23 +136,20 @@ func (c *UserController) UpdateUserFields(ctx *gin.Context) {
 	uid := uint(id)
 
 	if err := c.service.UpdateUserFields(uid, updateFields); err != nil {
-		if _, ok := err.(*types.ValidationError); ok {
-			ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-			return
-		}
-
-		var userErr *types.UserError
+		var userErr *types.MyError
 		if errors.As(err, &userErr) {
 			switch userErr.Code {
-			case "USER_NOT_FOUND":
+			case "USER_NOT_FOUND_ERROR":
 				ctx.JSON(http.StatusNotFound, gin.H{"error": userErr.Message})
-			case "USER_DELETED":
+			case "USER_DEACTIVATED_ERROR":
 				ctx.JSON(http.StatusForbidden, gin.H{"error": userErr.Message})
+			case "VALIDATION_ERROR":
+				ctx.JSON(http.StatusBadRequest, gin.H{"error": userErr.Message})
 			}
 			return
 		}
 
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update user"})
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
@@ -172,22 +178,19 @@ func (c *UserController) UpdatePassword(ctx *gin.Context) {
 	uid := uint(id)
 
 	if err := c.service.UpdatePassword(uid, req.CurrentPassword, req.NewPassword); err != nil {
-		if _, ok := err.(*types.ValidationError); ok {
-			ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-			return
-		}
-
-		var userErr *types.UserError
-		if errors.As(err, &userErr) {
-			switch userErr.Code {
-			case "USER_NOT_FOUND":
-				ctx.JSON(http.StatusNotFound, gin.H{"error": userErr.Message})
-			case "USER_DELETED":
-				ctx.JSON(http.StatusForbidden, gin.H{"error": userErr.Message})
-			case "PASSWORD_DIFF":
-				ctx.JSON(http.StatusUnauthorized, gin.H{"error": userErr.Message})
-			case "INVALID_PASSWORD":
-				ctx.JSON(http.StatusUnauthorized, gin.H{"error": userErr.Message})
+		var error *types.MyError
+		if errors.As(err, &error) {
+			switch error.Code {
+			case "USER_NOT_FOUND_ERROR":
+				ctx.JSON(http.StatusNotFound, gin.H{"error": error.Message})
+			case "USER_DEACTIVATED_ERROR":
+				ctx.JSON(http.StatusForbidden, gin.H{"error": error.Message})
+			case "PASSWORD_DIFF_ERROR":
+				ctx.JSON(http.StatusUnauthorized, gin.H{"error": error.Message})
+			case "INVALID_PASSWORD_ERROR":
+				ctx.JSON(http.StatusUnauthorized, gin.H{"error": error.Message})
+			case "VALIDATION_ERROR":
+				ctx.JSON(http.StatusBadRequest, gin.H{"error": error.Message})
 			}
 			return
 		}
@@ -221,18 +224,15 @@ func (c *UserController) UpdateEmail(ctx *gin.Context) {
 	uid := uint(id)
 
 	if err := c.service.UpdateEmail(uid, req.NewEmail); err != nil {
-		if _, ok := err.(*types.ValidationError); ok {
-			ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-			return
-		}
-
-		var userErr *types.UserError
-		if errors.As(err, &userErr) {
-			switch userErr.Code {
-			case "USER_NOT_FOUND":
-				ctx.JSON(http.StatusNotFound, gin.H{"error": userErr.Message})
-			case "USER_DELETED":
-				ctx.JSON(http.StatusForbidden, gin.H{"error": userErr.Message})
+		var error *types.MyError
+		if errors.As(err, &error) {
+			switch error.Code {
+			case "USER_NOT_FOUND_ERROR":
+				ctx.JSON(http.StatusNotFound, gin.H{"error": error.Message})
+			case "USER_DEACTIVATED_ERROR":
+				ctx.JSON(http.StatusForbidden, gin.H{"error": error.Message})
+			case "VALIDATION_ERROR":
+				ctx.JSON(http.StatusBadRequest, gin.H{"error": error.Message})
 			}
 			return
 		}
@@ -246,11 +246,6 @@ func (c *UserController) UpdateEmail(ctx *gin.Context) {
 
 // HandleDeleteUser handles DELETE /users/:id
 func (c *UserController) HandleDeleteUser(ctx *gin.Context) {
-	if err := validators.ValidateParams(ctx); err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
 	idParam := ctx.Param("id")
 	id, err := strconv.Atoi(idParam)
 
@@ -264,12 +259,19 @@ func (c *UserController) HandleDeleteUser(ctx *gin.Context) {
 	// Call the service layer to delete the user
 	err = c.service.DeleteUser(uid)
 	if err != nil {
-		if _, ok := err.(*types.ValidationError); ok {
-			ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		var error *types.MyError
+		if errors.As(err, &error) {
+			switch error.Code {
+			case "USER_NOT_FOUND_ERROR":
+				ctx.JSON(http.StatusNotFound, gin.H{"error": error.Message})
+			case "VALIDATION_ERROR":
+				ctx.JSON(http.StatusBadRequest, gin.H{"error": error.Message})
+			case "USER_DEACTIVATED_ERROR":
+				ctx.JSON(http.StatusForbidden, gin.H{"error": error.Message})
+			}
 			return
 		}
-
-		ctx.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 

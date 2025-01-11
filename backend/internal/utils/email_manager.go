@@ -26,7 +26,14 @@ func init() {
 	}
 }
 
-// SendVerificationEmail sends a verification email to the user
+// SendVerificationEmail sends a verification email to the user.
+//
+// Parameters:
+//   - user models.User (User struct)
+//   - sender EmailSender (EmailSender interface)
+//
+// Returns:
+//   - INTERNAL_SERVER_ERROR if the email could not be sent
 func SendVerificationEmail(user models.User, sender EmailSender) error {
 	// Create the verification URL
 	verificationURL := fmt.Sprintf("http://your-app.com/verify-email?token=%s", user.VerificationToken)
@@ -64,7 +71,7 @@ func SendVerificationEmail(user models.User, sender EmailSender) error {
 	err := sender.SendMail(os.Getenv("SMTP_HOST")+":"+os.Getenv("SMTP_PORT"), auth, from, to, message)
 	if err != nil {
 		log.Printf("Failed to send verification email: %v", err)
-		return err
+		return types.WrapError("INTERNAL_SERVER_ERROR", "Failed to send verification email", err)
 	}
 
 	log.Println("Verification email sent successfully to", user.Email)

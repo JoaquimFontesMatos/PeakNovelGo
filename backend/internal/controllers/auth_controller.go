@@ -6,8 +6,8 @@ import (
 
 	"backend/internal/dtos"
 	"backend/internal/services/interfaces"
-	"backend/internal/utils"
 	"backend/internal/types"
+	"backend/internal/utils"
 	"backend/internal/validators"
 
 	"github.com/gin-gonic/gin" // Assuming you're using Gin framework
@@ -35,7 +35,7 @@ func (ac *AuthController) Register(c *gin.Context) {
 
 	// Call the user service to create a new user
 	if err := ac.UserService.RegisterUser(&registerRequest); err != nil {
-		if _, ok := err.(*types.ValidationError); ok {
+		if _, ok := err.(*types.MyError); ok {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
@@ -59,18 +59,15 @@ func (ac *AuthController) Login(c *gin.Context) {
 	// Validate credentials
 	user, err := ac.AuthService.ValidateCredentials(req.Email, req.Password)
 	if err != nil {
-		if _, ok := err.(*types.ValidationError); ok {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-			return
-		}
-
-		var userErr *types.UserError
-		if errors.As(err, &userErr) {
-			switch userErr.Code {
-			case "USER_NOT_FOUND":
-				c.JSON(http.StatusNotFound, gin.H{"error": userErr.Message})
-				return
+		var error *types.MyError
+		if errors.As(err, &error) {
+			switch error.Code {
+			case "USER_NOT_FOUND_ERROR":
+				c.JSON(http.StatusNotFound, gin.H{"error": error.Message})
+			case "VALIDATION_ERROR":
+				c.JSON(http.StatusBadRequest, gin.H{"error": error.Message})
 			}
+			return
 		}
 
 		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
@@ -108,19 +105,17 @@ func (c *AuthController) RefreshToken(ctx *gin.Context) {
 	// Call the service to refresh the token
 	newAccessToken, newRefreshToken, err := c.AuthService.RefreshToken(refreshToken)
 	if err != nil {
-		if _, ok := err.(*types.ValidationError); ok {
-			ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-			return
-		}
-
-		var userErr *types.UserError
+		var userErr *types.MyError
 		if errors.As(err, &userErr) {
 			switch userErr.Code {
-			case "USER_NOT_FOUND":
+			case "USER_NOT_FOUND_ERROR":
 				ctx.JSON(http.StatusNotFound, gin.H{"error": userErr.Message})
 				return
-			case "USER_DELETED":
+			case "USER_DEACTIVATED_ERROR":
 				ctx.JSON(http.StatusForbidden, gin.H{"error": userErr.Message})
+				return
+			case "VALIDATION_ERROR":
+				ctx.JSON(http.StatusBadRequest, gin.H{"error": userErr.Message})
 				return
 			}
 		}
@@ -161,22 +156,20 @@ func (ac *AuthController) VerifyEmail(c *gin.Context) {
 	token := c.Query("token") // Extract the token from query parameters
 
 	if err := ac.UserService.VerifyEmail(token); err != nil {
-		if _, ok := err.(*types.ValidationError); ok {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-			return
-		}
-
-		var userErr *types.UserError
+		var userErr *types.MyError
 		if errors.As(err, &userErr) {
 			switch userErr.Code {
-			case "USER_NOT_FOUND":
+			case "USER_NOT_FOUND_ERROR":
 				c.JSON(http.StatusNotFound, gin.H{"error": userErr.Message})
 				return
-			case "USER_DELETED":
+			case "USER_DEACTIVATED_ERROR":
 				c.JSON(http.StatusForbidden, gin.H{"error": userErr.Message})
 				return
-			case "INVALID_TOKEN":
+			case "INVALID_TOKEN_ERROR":
 				c.JSON(http.StatusUnauthorized, gin.H{"error": userErr.Message})
+				return
+			case "VALIDATION_ERROR":
+				c.JSON(http.StatusBadRequest, gin.H{"error": userErr.Message})
 				return
 			}
 		}

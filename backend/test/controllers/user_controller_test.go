@@ -104,7 +104,7 @@ func TestHandleSoftDeleteUser(t *testing.T) {
 
 		// Assertions
 		assert.Equal(t, http.StatusNotFound, w.Code)
-		assert.Contains(t, w.Body.String(), "user not found")
+		assert.Contains(t, w.Body.String(), "User not found")
 	})
 
 	t.Run("#GSDU_02->The user is created and the id is the correct one", func(t *testing.T) {
@@ -217,7 +217,7 @@ func TestHandleSoftDeleteUser(t *testing.T) {
 
 		// Assertions
 		assert.Equal(t, http.StatusNotFound, w.Code)
-		assert.Contains(t, w.Body.String(), "user not found")
+		assert.Contains(t, w.Body.String(), "User not found")
 	})
 
 	t.Run("#GSDU_05->The user is found and authorized", func(t *testing.T) {
@@ -265,18 +265,6 @@ func TestHandleSoftDeleteUser(t *testing.T) {
 		assert.Contains(t, w.Body.String(), "User deleted successfully")
 	})
 
-	t.Run("#GSDU_06->There are more than one input", func(t *testing.T) {
-		// Create a test request
-		w := httptest.NewRecorder()
-		c, _ := gin.CreateTestContext(w)
-		c.Params = gin.Params{{Key: "id", Value: "1"}, {Key: "id2", Value: "2"}}
-		// Call the function
-		userController.HandleDeleteUser(c)
-		// Assertions
-		assert.Equal(t, http.StatusBadRequest, w.Code)
-		assert.Contains(t, w.Body.String(), "Too many parameters")
-	})
-
 	t.Run("#GSDU_07->There are less than one input", func(t *testing.T) {
 		// Create a test request
 		w := httptest.NewRecorder()
@@ -285,7 +273,7 @@ func TestHandleSoftDeleteUser(t *testing.T) {
 		userController.HandleDeleteUser(c)
 		// Assertions
 		assert.Equal(t, http.StatusBadRequest, w.Code)
-		assert.Contains(t, w.Body.String(), "No parameters")
+		assert.Contains(t, w.Body.String(), "Invalid ID")
 	})
 
 	t.Run("#GSDU_08->user is already soft deleted", func(t *testing.T) {
@@ -316,8 +304,8 @@ func TestHandleSoftDeleteUser(t *testing.T) {
 		// Call the function
 		userController.HandleDeleteUser(c)
 		// Assertions
-		assert.Equal(t, http.StatusBadRequest, w.Code)
-		assert.Contains(t, w.Body.String(), "user is already soft deleted")
+		assert.Equal(t, http.StatusForbidden, w.Code)
+		assert.Contains(t, w.Body.String(), "User account is deactivated")
 	})
 
 	t.Run("#GSDU_09->Input is negative", func(t *testing.T) {
@@ -494,7 +482,7 @@ func TestHandleGetUser(t *testing.T) {
 
 		// Assertions
 		assert.Equal(t, http.StatusNotFound, w.Code)
-		assert.Contains(t, w.Body.String(), "User not found")
+		assert.Contains(t, w.Body.String(), "Failed to fetch user")
 	})
 	t.Run("#GUI_02->The user is created and the id is the correct one", func(t *testing.T) {
 		t.Cleanup(func() {
@@ -548,7 +536,7 @@ func TestHandleGetUser(t *testing.T) {
 
 		// Assertions
 		assert.Equal(t, http.StatusNotFound, w.Code)
-		assert.Contains(t, w.Body.String(), "User not found")
+		assert.Contains(t, w.Body.String(), "Failed to fetch user")
 	})
 
 	t.Run("#GUI_04->There are more than one input", func(t *testing.T) {
@@ -816,7 +804,7 @@ func TestGetUserByEmail(t *testing.T) {
 
 		// Assertions
 		assert.Equal(t, http.StatusNotFound, w.Code)
-		assert.Contains(t, w.Body.String(), "User not found")
+		assert.Contains(t, w.Body.String(), "Failed to fetch user")
 	})
 	t.Run("#GUI_02->The user is created and the email is the correct one", func(t *testing.T) {
 		t.Cleanup(func() {
@@ -958,7 +946,7 @@ func TestGetUserByEmail(t *testing.T) {
 
 		// Assertions
 		assert.Equal(t, http.StatusNotFound, w.Code)
-		assert.Contains(t, w.Body.String(), "User not found")
+		assert.Contains(t, w.Body.String(), "Failed to fetch user")
 	})
 
 	t.Run("#GUI_06->There are more than one input", func(t *testing.T) {
@@ -1059,7 +1047,7 @@ func TestGetUserByEmail(t *testing.T) {
 
 		// Assertions
 		assert.Equal(t, http.StatusBadRequest, w.Code)
-		assert.Contains(t, w.Body.String(), "invalid email format")
+		assert.Contains(t, w.Body.String(), "Invalid email format")
 	})
 
 	t.Run("#GUI_10->Email is empty", func(t *testing.T) {
@@ -1096,7 +1084,7 @@ func TestGetUserByEmail(t *testing.T) {
 
 		// Assertions
 		assert.Equal(t, http.StatusBadRequest, w.Code)
-		assert.Contains(t, w.Body.String(), "email is required")
+		assert.Contains(t, w.Body.String(), "Email is required")
 	})
 
 	t.Run("#GUI_11->Email is 255 characters", func(t *testing.T) {
@@ -1170,7 +1158,7 @@ func TestGetUserByEmail(t *testing.T) {
 
 		// Assertions
 		assert.Equal(t, http.StatusBadRequest, w.Code)
-		assert.Contains(t, w.Body.String(), "email cannot be longer than 255 characters")
+		assert.Contains(t, w.Body.String(), "Email cannot be longer than 255 characters")
 	})
 }
 
@@ -1186,7 +1174,7 @@ func TestGetUserByUsername(t *testing.T) {
 
 		// Assertions
 		assert.Equal(t, http.StatusNotFound, w.Code)
-		assert.Contains(t, w.Body.String(), "User not found")
+		assert.Contains(t, w.Body.String(), "Failed to fetch user")
 	})
 	t.Run("#GUI_02->The user is created and the username is the correct one", func(t *testing.T) {
 		t.Cleanup(func() {
@@ -1279,7 +1267,7 @@ func TestGetUserByUsername(t *testing.T) {
 
 		// Assertions
 		assert.Equal(t, http.StatusNotFound, w.Code)
-		assert.Contains(t, w.Body.String(), "User not found")
+		assert.Contains(t, w.Body.String(), "Failed to fetch user")
 	})
 
 	t.Run("#GUI_05->The user is found and authorized", func(t *testing.T) {
@@ -1331,20 +1319,6 @@ func TestGetUserByUsername(t *testing.T) {
 		assert.Contains(t, w.Body.String(), "John Doe")
 	})
 
-	t.Run("#GUI_06->There are more than one input", func(t *testing.T) {
-		// Create a test request
-		w := httptest.NewRecorder()
-		c, _ := gin.CreateTestContext(w)
-		c.Params = gin.Params{{Key: "username", Value: "John Doe"}, {Key: "username2", Value: "John Doe2"}}
-
-		// Call the function
-		userController.HandleGetUserByUsername(c)
-
-		// Assertions
-		assert.Equal(t, http.StatusBadRequest, w.Code)
-		assert.Contains(t, w.Body.String(), "Too many parameters")
-	})
-
 	t.Run("#GUI_07->There are less than one input", func(t *testing.T) {
 		// Create a test request
 		w := httptest.NewRecorder()
@@ -1355,7 +1329,7 @@ func TestGetUserByUsername(t *testing.T) {
 
 		// Assertions
 		assert.Equal(t, http.StatusBadRequest, w.Code)
-		assert.Contains(t, w.Body.String(), "No parameters")
+		assert.Contains(t, w.Body.String(), "Username is required")
 	})
 
 	t.Run("#GUI_08->User is soft deleted", func(t *testing.T) {
@@ -1429,7 +1403,7 @@ func TestGetUserByUsername(t *testing.T) {
 
 		// Assertions
 		assert.Equal(t, http.StatusBadRequest, w.Code)
-		assert.Contains(t, w.Body.String(), "username is required")
+		assert.Contains(t, w.Body.String(), "Username is required")
 	})
 
 	t.Run("#GUI_10->Username is one character", func(t *testing.T) {
@@ -1503,7 +1477,7 @@ func TestGetUserByUsername(t *testing.T) {
 
 		// Assertions
 		assert.Equal(t, http.StatusBadRequest, w.Code)
-		assert.Contains(t, w.Body.String(), "username cannot be longer than 255 characters")
+		assert.Contains(t, w.Body.String(), "Username cannot be longer than 255 characters")
 	})
 
 	t.Run("#GUI_12->Username is 255 characters", func(t *testing.T) {
@@ -1658,7 +1632,7 @@ func TestHandleEmailUpdate(t *testing.T) {
 			urlParam:     "1",
 			requestBody:  `{"new_email": "newxample.com"}`,
 			expectedCode: http.StatusBadRequest,
-			expectedBody: `{"error":"Invalid Input"}`,
+			expectedBody: `{"error":"Failed to bind JSON"}`,
 			createUser:   true,
 			isAuthorized: true,
 			IsDeleted:    false,
@@ -1670,7 +1644,7 @@ func TestHandleEmailUpdate(t *testing.T) {
 			urlParam:     "1",
 			requestBody:  `{"new_email": ""}`,
 			expectedCode: http.StatusBadRequest,
-			expectedBody: `{"error":"Invalid Input"}`,
+			expectedBody: `{"error":"Failed to bind JSON"}`,
 			createUser:   true,
 			isAuthorized: true,
 			IsDeleted:    false,
@@ -1694,7 +1668,7 @@ func TestHandleEmailUpdate(t *testing.T) {
 			urlParam:     "1",
 			requestBody:  `{"new_email": "dasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasddasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasda@gmail.com"}`,
 			expectedCode: http.StatusBadRequest,
-			expectedBody: `{"error":"email cannot be longer than 255 characters"}`,
+			expectedBody: `{"error":"Email cannot be longer than 255 characters"}`,
 			createUser:   true,
 			isAuthorized: true,
 			IsDeleted:    false,
@@ -1706,7 +1680,7 @@ func TestHandleEmailUpdate(t *testing.T) {
 			urlParam:     "1",
 			requestBody:  `{"new_email": 1}`,
 			expectedCode: http.StatusBadRequest,
-			expectedBody: `{"error":"Invalid Input"}`,
+			expectedBody: `{"error":"Failed to bind JSON"}`,
 			createUser:   true,
 			isAuthorized: true,
 			IsDeleted:    false,
@@ -1924,7 +1898,7 @@ func TestHandleUpdatePassword(t *testing.T) {
 			urlParam:     "1",
 			requestBody:  `{"current_password": "12345678", "new_password": "1234567"}`,
 			expectedCode: http.StatusBadRequest,
-			expectedBody: `{"error":"password must be at least 8 characters long"}`,
+			expectedBody: `{"error":"Password must be at least 8 characters long"}`,
 			createUser:   true,
 			isAuthorized: true,
 			newPassword:  "1234567",
@@ -1960,7 +1934,7 @@ func TestHandleUpdatePassword(t *testing.T) {
 			urlParam:     "1",
 			requestBody:  fmt.Sprintf(`{"current_password": "12345678", "new_password": "%s"}`, strings.Repeat("a", 73)),
 			expectedCode: http.StatusBadRequest,
-			expectedBody: `{"error":"password cannot be longer than 72 characters"}`,
+			expectedBody: `{"error":"Password cannot be longer than 72 characters"}`,
 			createUser:   true,
 			isAuthorized: true,
 			newPassword:  strings.Repeat("a", 73),
@@ -1972,7 +1946,7 @@ func TestHandleUpdatePassword(t *testing.T) {
 			urlParam:     "1",
 			requestBody:  `{"current_password": "12345678", "new_password": ""}`,
 			expectedCode: http.StatusBadRequest,
-			expectedBody: `{"error":"Invalid Input"}`,
+			expectedBody: `{"error":"Failed to bind JSON"}`,
 			createUser:   true,
 			isAuthorized: true,
 			newPassword:  "",
@@ -1984,7 +1958,7 @@ func TestHandleUpdatePassword(t *testing.T) {
 			urlParam:     "1",
 			requestBody:  `a`,
 			expectedCode: http.StatusBadRequest,
-			expectedBody: `{"error":"Invalid Input"}`,
+			expectedBody: `{"error":"Invalid JSON"}`,
 			createUser:   true,
 			isAuthorized: true,
 			newPassword:  "1",
@@ -2215,7 +2189,7 @@ func TestHandleUpdateFields(t *testing.T) {
 			urlParam:              "1",
 			requestBody:           `a`,
 			expectedCode:          http.StatusBadRequest,
-			expectedBody:          `{"error":"Invalid Input"}`,
+			expectedBody:          `{"error":"Invalid JSON"}`,
 			createUser:            true,
 			isAuthorized:          true,
 			newUsername:           "",
@@ -2233,7 +2207,7 @@ func TestHandleUpdateFields(t *testing.T) {
 			urlParam:              "1",
 			requestBody:           `{}`,
 			expectedCode:          http.StatusBadRequest,
-			expectedBody:          `{"error":"At least one field must be provided"}`,
+			expectedBody:          `{"error":"No fields provided"}`,
 			createUser:            true,
 			isAuthorized:          true,
 			newUsername:           "",
@@ -2269,7 +2243,7 @@ func TestHandleUpdateFields(t *testing.T) {
 			urlParam:              "1",
 			requestBody:           fmt.Sprintf(`{"username": "%s"}`, strings.Repeat("a", 256)),
 			expectedCode:          http.StatusBadRequest,
-			expectedBody:          `{"error":"username cannot be longer than 255 characters"}`,
+			expectedBody:          `{"error":"Username cannot be longer than 255 characters"}`,
 			createUser:            true,
 			isAuthorized:          true,
 			newUsername:           strings.Repeat("a", 256),
@@ -2323,7 +2297,7 @@ func TestHandleUpdateFields(t *testing.T) {
 			urlParam:              "1",
 			requestBody:           fmt.Sprintf(`{"bio": "%s"}`, strings.Repeat("a", 501)),
 			expectedCode:          http.StatusBadRequest,
-			expectedBody:          `{"error":"bio cannot be longer than 500 characters"}`,
+			expectedBody:          `{"error":"Bio cannot be longer than 500 characters"}`,
 			createUser:            true,
 			isAuthorized:          true,
 			newUsername:           "",
@@ -2377,7 +2351,7 @@ func TestHandleUpdateFields(t *testing.T) {
 			urlParam:              "1",
 			requestBody:           fmt.Sprintf(`{"profile_picture": "%s"}`, strings.Repeat("a", 256)),
 			expectedCode:          http.StatusBadRequest,
-			expectedBody:          `{"error":"profile picture URL cannot be longer than 255 characters"}`,
+			expectedBody:          `{"error":"Profile picture URL cannot be longer than 255 characters"}`,
 			createUser:            true,
 			isAuthorized:          true,
 			newUsername:           "",
@@ -2431,7 +2405,7 @@ func TestHandleUpdateFields(t *testing.T) {
 			urlParam:              "1",
 			requestBody:           fmt.Sprintf(`{"preferred_language": "%s"}`, strings.Repeat("a", 101)),
 			expectedCode:          http.StatusBadRequest,
-			expectedBody:          `{"error":"preferred language cannot be longer than 100 characters"}`,
+			expectedBody:          `{"error":"Preferred language cannot be longer than 100 characters"}`,
 			createUser:            true,
 			isAuthorized:          true,
 			newUsername:           "",
@@ -2485,7 +2459,7 @@ func TestHandleUpdateFields(t *testing.T) {
 			urlParam:              "1",
 			requestBody:           fmt.Sprintf(`{"reading_preferences": "%s"}`, strings.Repeat("a", 256)),
 			expectedCode:          http.StatusBadRequest,
-			expectedBody:          `{"error":"reading preferences cannot be longer than 255 characters"}`,
+			expectedBody:          `{"error":"Reading preferences cannot be longer than 255 characters"}`,
 			createUser:            true,
 			isAuthorized:          true,
 			newUsername:           "",
@@ -2539,7 +2513,7 @@ func TestHandleUpdateFields(t *testing.T) {
 			urlParam:              "1",
 			requestBody:           `{"date_of_birth": "2009-01-01"}`,
 			expectedCode:          http.StatusBadRequest,
-			expectedBody:          `{"error":"you must be at least 18 years old"}`,
+			expectedBody:          `{"error":"You must be at least 18 years old"}`,
 			createUser:            true,
 			isAuthorized:          true,
 			newUsername:           "",
@@ -2593,7 +2567,7 @@ func TestHandleUpdateFields(t *testing.T) {
 			urlParam:              "1",
 			requestBody:           `{"date_of_birth": "2027-01-01"}`,
 			expectedCode:          http.StatusBadRequest,
-			expectedBody:          `{"error":"you must be at least 18 years old"}`,
+			expectedBody:          `{"error":"You must be at least 18 years old"}`,
 			createUser:            true,
 			isAuthorized:          true,
 			newUsername:           "",
@@ -2611,7 +2585,7 @@ func TestHandleUpdateFields(t *testing.T) {
 			urlParam:              "1",
 			requestBody:           fmt.Sprintf(`{"roles": "%s"}`, strings.Repeat("a", 256)),
 			expectedCode:          http.StatusBadRequest,
-			expectedBody:          `{"error":"roles cannot be longer than 255 characters"}`,
+			expectedBody:          `{"error":"Roles cannot be longer than 255 characters"}`,
 			createUser:            true,
 			isAuthorized:          true,
 			newUsername:           "",

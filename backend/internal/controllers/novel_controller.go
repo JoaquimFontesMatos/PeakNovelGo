@@ -79,7 +79,7 @@ func (n *NovelController) HandleImportNovel(ctx *gin.Context) {
 // HandleUploadNovelZip handles POST /novel/upload
 func (n *NovelController) HandleImportChaptersZip(ctx *gin.Context) {
 	idParam := ctx.Param("novel_id")
-	id, err := validators.ValidateID(idParam)
+	id, err := utils.ParseID(idParam)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -184,7 +184,7 @@ func (n *NovelController) processChaptersZip(filePath string, uid uint) (int, er
 
 func (n *NovelController) GetChaptersByNovelID(ctx *gin.Context) {
 	idParam := ctx.Param("novel_id")
-	id, err := validators.ValidateID(idParam)
+	id, err := utils.ParseID(idParam)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -225,7 +225,7 @@ func (n *NovelController) GetChaptersByNovelID(ctx *gin.Context) {
 
 func (n *NovelController) GetNovelsByAuthorID(ctx *gin.Context) {
 	idParam := ctx.Param("author_id")
-	id, err := validators.ValidateID(idParam)
+	id, err := utils.ParseID(idParam)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -265,7 +265,7 @@ func (n *NovelController) GetNovelsByAuthorID(ctx *gin.Context) {
 
 func (n *NovelController) GetNovelsByGenreID(ctx *gin.Context) {
 	idParam := ctx.Param("genre_id")
-	id, err := validators.ValidateID(idParam)
+	id, err := utils.ParseID(idParam)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -305,7 +305,7 @@ func (n *NovelController) GetNovelsByGenreID(ctx *gin.Context) {
 
 func (n *NovelController) GetNovelsByTagID(ctx *gin.Context) {
 	idParam := ctx.Param("tag_id")
-	id, err := validators.ValidateID(idParam)
+	id, err := utils.ParseID(idParam)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -345,7 +345,7 @@ func (n *NovelController) GetNovelsByTagID(ctx *gin.Context) {
 
 func (n *NovelController) GetNovelByID(ctx *gin.Context) {
 	idParam := ctx.Param("novel_id")
-	id, err := validators.ValidateID(idParam)
+	id, err := utils.ParseID(idParam)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -362,7 +362,7 @@ func (n *NovelController) GetNovelByID(ctx *gin.Context) {
 
 func (n *NovelController) GetChapterByID(ctx *gin.Context) {
 	idParam := ctx.Param("chapter_id")
-	id, err := validators.ValidateID(idParam)
+	id, err := utils.ParseID(idParam)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -395,7 +395,7 @@ func (n *NovelController) CreateChapter(ctx *gin.Context) {
 
 func (n *NovelController) GetBookmarkedNovelsByUserID(ctx *gin.Context) {
 	idParam := ctx.Param("user_id")
-	id, err := validators.ValidateID(idParam)
+	id, err := utils.ParseID(idParam)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -474,12 +474,12 @@ func (n *NovelController) GetBookmarkedNovelByUserIDAndNovelID(ctx *gin.Context)
 	userIDParam := ctx.Param("user_id")
 	novelIDParam := ctx.Param("novel_id")
 
-	userID, err := validators.ValidateID(userIDParam)
+	userID, err := utils.ParseID(userIDParam)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	novelID, err := validators.ValidateID(novelIDParam)
+	novelID, err := utils.ParseID(novelIDParam)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
