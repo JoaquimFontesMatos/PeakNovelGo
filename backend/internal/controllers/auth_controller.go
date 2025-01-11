@@ -10,7 +10,7 @@ import (
 	"backend/internal/utils"
 	"backend/internal/validators"
 
-	"github.com/gin-gonic/gin" // Assuming you're using Gin framework
+	"github.com/gin-gonic/gin"
 )
 
 type AuthController struct {
@@ -35,8 +35,14 @@ func (ac *AuthController) Register(c *gin.Context) {
 
 	// Call the user service to create a new user
 	if err := ac.UserService.RegisterUser(&registerRequest); err != nil {
-		if _, ok := err.(*types.MyError); ok {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		var error *types.MyError
+		if errors.As(err, &error) {
+			switch error.Code {
+			case types.VALIDATION_ERROR:
+				c.JSON(http.StatusBadRequest, gin.H{"error": error.Message})
+			case types.CONFLICT_ERROR:
+				c.JSON(http.StatusConflict, gin.H{"error": error.Message})
+			}
 			return
 		}
 
@@ -62,9 +68,9 @@ func (ac *AuthController) Login(c *gin.Context) {
 		var error *types.MyError
 		if errors.As(err, &error) {
 			switch error.Code {
-			case "USER_NOT_FOUND_ERROR":
+			case types.USER_NOT_FOUND_ERROR:
 				c.JSON(http.StatusNotFound, gin.H{"error": error.Message})
-			case "VALIDATION_ERROR":
+			case types.VALIDATION_ERROR:
 				c.JSON(http.StatusBadRequest, gin.H{"error": error.Message})
 			}
 			return
@@ -108,13 +114,13 @@ func (c *AuthController) RefreshToken(ctx *gin.Context) {
 		var userErr *types.MyError
 		if errors.As(err, &userErr) {
 			switch userErr.Code {
-			case "USER_NOT_FOUND_ERROR":
+			case types.USER_NOT_FOUND_ERROR:
 				ctx.JSON(http.StatusNotFound, gin.H{"error": userErr.Message})
 				return
-			case "USER_DEACTIVATED_ERROR":
+			case types.USER_DEACTIVATED_ERROR:
 				ctx.JSON(http.StatusForbidden, gin.H{"error": userErr.Message})
 				return
-			case "VALIDATION_ERROR":
+			case types.VALIDATION_ERROR:
 				ctx.JSON(http.StatusBadRequest, gin.H{"error": userErr.Message})
 				return
 			}
@@ -159,16 +165,16 @@ func (ac *AuthController) VerifyEmail(c *gin.Context) {
 		var userErr *types.MyError
 		if errors.As(err, &userErr) {
 			switch userErr.Code {
-			case "USER_NOT_FOUND_ERROR":
+			case types.USER_NOT_FOUND_ERROR:
 				c.JSON(http.StatusNotFound, gin.H{"error": userErr.Message})
 				return
-			case "USER_DEACTIVATED_ERROR":
+			case types.USER_DEACTIVATED_ERROR:
 				c.JSON(http.StatusForbidden, gin.H{"error": userErr.Message})
 				return
-			case "INVALID_TOKEN_ERROR":
+			case types.INVALID_TOKEN_ERROR:
 				c.JSON(http.StatusUnauthorized, gin.H{"error": userErr.Message})
 				return
-			case "VALIDATION_ERROR":
+			case types.VALIDATION_ERROR:
 				c.JSON(http.StatusBadRequest, gin.H{"error": userErr.Message})
 				return
 			}

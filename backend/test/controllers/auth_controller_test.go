@@ -63,7 +63,7 @@ func TestHandleRegister(t *testing.T) {
 		{
 			name:                "#R_03",
 			description:         "The user is already registered",
-			expectedCode:        http.StatusBadRequest,
+			expectedCode:        http.StatusConflict,
 			expectedBody:        `{"error":"User already registered"}`,
 			requestBody:         `{"username": "joao", "bio": "bio", "profile_picture": "profile_pic", "date_of_birth": "2004-12-23", "email": "joao@gmail.com", "password": "12345678"}`,
 			username:            "joao",

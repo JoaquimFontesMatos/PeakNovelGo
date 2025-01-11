@@ -18,17 +18,17 @@ import (
 //   - body interface{} (body of the request)
 //
 // Returns:
-//   - INVALID_BODY if the request body is invalid JSON
+//   - INVALID_BODY_ERROR if the request body is invalid JSON
 func ValidateBody(ctx *gin.Context, body interface{}) error {
 	// Read the raw body
 	rawBody, err := ctx.GetRawData()
 	if err != nil {
-		return types.WrapError("INVALID_BODY", "Failed to read request body", err)
+		return types.WrapError(types.INVALID_BODY_ERROR, "Failed to read request body", err)
 	}
 
 	// Check if it's valid JSON
 	if !json.Valid(rawBody) {
-		return types.WrapError("INVALID_BODY", "Invalid JSON", nil)
+		return types.WrapError(types.INVALID_BODY_ERROR, "Invalid JSON", nil)
 	}
 
 	// Reassign the raw body so ShouldBindJSON can read it
@@ -36,12 +36,12 @@ func ValidateBody(ctx *gin.Context, body interface{}) error {
 
 	// Bind the JSON
 	if err := ctx.ShouldBindJSON(body); err != nil {
-		return types.WrapError("INVALID_BODY", "Failed to bind JSON", err)
+		return types.WrapError(types.INVALID_BODY_ERROR, "Failed to bind JSON", err)
 	}
 
 	// Custom validation: ensure at least one field is non-empty
 	if !hasAtLeastOneNonEmptyField(body) {
-		return types.WrapError("INVALID_BODY", "No fields provided", nil)
+		return types.WrapError(types.INVALID_BODY_ERROR, "No fields provided", nil)
 	}
 
 	return nil

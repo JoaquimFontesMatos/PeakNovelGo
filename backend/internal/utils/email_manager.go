@@ -71,7 +71,7 @@ func SendVerificationEmail(user models.User, sender EmailSender) error {
 	err := sender.SendMail(os.Getenv("SMTP_HOST")+":"+os.Getenv("SMTP_PORT"), auth, from, to, message)
 	if err != nil {
 		log.Printf("Failed to send verification email: %v", err)
-		return types.WrapError("INTERNAL_SERVER_ERROR", "Failed to send verification email", err)
+		return types.WrapError(types.INTERNAL_SERVER_ERROR, "Failed to send verification email", err)
 	}
 
 	log.Println("Verification email sent successfully to", user.Email)

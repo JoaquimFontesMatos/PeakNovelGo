@@ -77,7 +77,7 @@ func (s *AuthService) ValidateCredentials(email string, password string) (*model
 	go func() {
 		user, err := s.UserRepo.GetUserByEmail(email)
 		if err != nil {
-			errChan <- types.ErrUserNotFound
+			errChan <- err
 			return
 		}
 		userChan <- user
@@ -86,7 +86,7 @@ func (s *AuthService) ValidateCredentials(email string, password string) (*model
 	select {
 	case user := <-userChan:
 		if !utils.ComparePassword(user.Password, password) {
-			return nil, types.WrapError("INVALID_CREDENTIALS_ERROR", "Invalid credentials", nil)
+			return nil, types.WrapError(types.INVALID_CREDENTIALS_ERROR, "Invalid credentials", nil)
 		}
 		user.LastLogin = time.Now()
 		if err := s.UserRepo.UpdateUser(user); err != nil {
@@ -112,41 +112,41 @@ func (s *AuthService) RefreshToken(refreshToken string) (string, string, error) 
 	isRevoked := s.AuthRepo.CheckIfTokenRevoked(refreshToken)
 
 	if isRevoked {
-		return "", "", types.WrapError("REFRESH_TOKEN_REVOKED_ERROR", "Refresh token has been revoked", nil)
+		return "", "", types.WrapError(types.REFRESH_TOKEN_REVOKED_ERROR, "Refresh token has been revoked", nil)
 	}
 
 	// Validate and parse the refresh token (same as before)
 	token, err := jwt.Parse(refreshToken, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, types.WrapError("INTERNAL_SERVER_ERROR", "Unexpected signing method", fmt.Errorf("unexpected signing method: %v", token.Header["alg"]))
+			return nil, types.WrapError(types.INTERNAL_SERVER_ERROR, "Unexpected signing method", fmt.Errorf("unexpected signing method: %v", token.Header["alg"]))
 		}
 		return s.SecretKey, nil
 	})
 	if err != nil {
-		return "", "", types.WrapError("INTERNAL_SERVER_ERROR", "Invalid or expired refresh token", err)
+		return "", "", types.WrapError(types.INTERNAL_SERVER_ERROR, "Invalid or expired refresh token", err)
 	}
 
 	// Extract claims and validate the token
 	claims, ok := token.Claims.(jwt.MapClaims)
 	if !ok || !token.Valid {
-		return "", "", types.WrapError("INTERNAL_SERVER_ERROR", "Invalid token claims", err)
+		return "", "", types.WrapError(types.INTERNAL_SERVER_ERROR, "Invalid token claims", err)
 	}
 
 	// Extract user ID from the claims
 	userID, ok := claims["user_id"].(float64)
 	if !ok {
-		return "", "", types.WrapError("INTERNAL_SERVER_ERROR", "Invalid token structure", err)
+		return "", "", types.WrapError(types.INTERNAL_SERVER_ERROR, "Invalid token structure", err)
 	}
 
 	// Retrieve the user from the repository
 	fetchedUser, err := s.UserRepo.GetUserByID(uint(userID))
 	if err != nil {
-		return "", "", types.ErrUserNotFound
+		return "", "", err
 	}
 
 	// Check if the user is active
 	if fetchedUser.IsDeleted {
-		return "", "", types.ErrUserDeactivated
+		return "", "", err
 	}
 
 	revokeErrChan := make(chan error)
@@ -170,12 +170,12 @@ func (s *AuthService) RefreshToken(refreshToken string) (string, string, error) 
 
 	revokeErr := <-revokeErrChan
 	if revokeErr != nil {
-		return "", "", types.WrapError("INTERNAL_SERVER_ERROR", "Failed to revoke token", revokeErr)
+		return "", "", types.WrapError(types.INTERNAL_SERVER_ERROR, "Failed to revoke token", revokeErr)
 	}
 
 	tokens := <-tokenChan
 	if tokens[0] == "" && tokens[1] == "" {
-		return "", "", types.WrapError("INTERNAL_SERVER_ERROR", "Failed to generate tokens", err)
+		return "", "", types.WrapError(types.INTERNAL_SERVER_ERROR, "Failed to generate tokens", err)
 	}
 
 	return tokens[0], tokens[1], nil
@@ -200,7 +200,7 @@ func (s *AuthService) GenerateToken(user *models.User) (string, string, error) {
 	accessToken := jwt.NewWithClaims(jwt.SigningMethodHS256, accessClaims)
 	accessTokenString, err := accessToken.SignedString(s.SecretKey)
 	if err != nil {
-		return "", "", fmt.Errorf("failed to sign access token: %w", err)
+		return "", "", types.WrapError(types.INTERNAL_SERVER_ERROR, "Failed to sign access token", err)
 	}
 
 	// Refresh Token
@@ -213,7 +213,7 @@ func (s *AuthService) GenerateToken(user *models.User) (string, string, error) {
 	refreshToken := jwt.NewWithClaims(jwt.SigningMethodHS256, refreshClaims)
 	refreshTokenString, err := refreshToken.SignedString(s.SecretKey)
 	if err != nil {
-		return "", "", fmt.Errorf("failed to sign refresh token: %w", err)
+		return "", "", types.WrapError(types.INTERNAL_SERVER_ERROR, "Failed to sign refresh token", err)
 	}
 
 	return accessTokenString, refreshTokenString, nil
@@ -223,38 +223,38 @@ func (s *AuthService) RevokeRefreshToken(refreshToken string) error {
 	// Parse token
 	token, err := jwt.Parse(refreshToken, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, types.WrapError("INTERNAL_SERVER_ERROR", "Unexpected signing method", fmt.Errorf("unexpected signing method: %v", token.Header["alg"]))
+			return nil, types.WrapError(types.INTERNAL_SERVER_ERROR, "Unexpected signing method", fmt.Errorf("unexpected signing method: %v", token.Header["alg"]))
 		}
 		return s.SecretKey, nil
 	})
 	if err != nil {
-		return types.WrapError("INTERNAL_SERVER_ERROR", "Invalid refresh token", err)
+		return types.WrapError(types.INVALID_TOKEN_ERROR, "Invalid refresh token", err)
 	}
 
 	// Validate claims
 	claims, ok := token.Claims.(jwt.MapClaims)
 	if !ok || !token.Valid {
-		return types.WrapError("INTERNAL_SERVER_ERROR", "Invalid token claims", err)
+		return types.WrapError(types.INTERNAL_SERVER_ERROR, "Invalid token claims", err)
 	}
 
 	userID, ok := claims["user_id"].(float64)
 	if !ok {
-		return types.WrapError("INTERNAL_SERVER_ERROR", "Invalid user_id in token claims", err)
+		return types.WrapError(types.INTERNAL_SERVER_ERROR, "Invalid user_id in token claims", err)
 	}
 
 	// Verify user existence
 	user, err := s.UserRepo.GetUserByID(uint(userID))
 	if err != nil {
-		return types.ErrUserNotFound
+		return err
 	}
 	if user.IsDeleted {
-		return types.ErrUserDeactivated
+		return err
 	}
 
 	// Revoke token
 	err = s.AuthRepo.RevokeToken(refreshToken)
 	if err != nil {
-		return types.WrapError("INTERNAL_SERVER_ERROR", "Failed to revoke token", err)
+		return types.WrapError(types.INTERNAL_SERVER_ERROR, "Failed to revoke token", err)
 	}
 
 	return nil
@@ -271,7 +271,7 @@ func (s *AuthService) Logout(refreshToken string) error {
 	// Revoke the refresh token
 	err := s.RevokeRefreshToken(refreshToken)
 	if err != nil {
-		return types.WrapError("INTERNAL_SERVER_ERROR", "Failed to revoke token", err)
+		return types.WrapError(types.INTERNAL_SERVER_ERROR, "Failed to revoke token", err)
 	}
 	return nil
 }

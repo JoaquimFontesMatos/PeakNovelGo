@@ -33,11 +33,11 @@ func IsVerificationTokenExpired(createdAt time.Time, emailVerified bool) bool {
 //   - INVALID_TOKEN if the token is invalid
 func ValidateToken(token string) error {
 	if token == "" {
-		return types.WrapError("INVALID_TOKEN_ERROR", "token is required", nil)
+		return types.WrapError(types.INVALID_TOKEN_ERROR, "token is required", nil)
 	}
 
 	if len(token) > 255 {
-		return types.WrapError("INVALID_TOKEN_ERROR", "token cannot be longer than 255 characters", nil)
+		return types.WrapError(types.INVALID_TOKEN_ERROR, "token cannot be longer than 255 characters", nil)
 	}
 
 	return nil

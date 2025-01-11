@@ -51,13 +51,13 @@ func ValidateUser(user *models.User) error {
 //   - VALIDATION_ERROR if the password is invalid
 func ValidatePassword(password string) error {
 	if password == "" {
-		return types.WrapError("VALIDATION_ERROR", "Password is required", nil)
+		return types.WrapError(types.VALIDATION_ERROR, "Password is required", nil)
 	}
 	if len(password) < 8 {
-		return types.WrapError("VALIDATION_ERROR", "Password must be at least 8 characters long", nil)
+		return types.WrapError(types.VALIDATION_ERROR, "Password must be at least 8 characters long", nil)
 	}
 	if len(password) > 72 {
-		return types.WrapError("VALIDATION_ERROR", "Password cannot be longer than 72 characters", nil)
+		return types.WrapError(types.VALIDATION_ERROR, "Password cannot be longer than 72 characters", nil)
 	}
 	return nil
 }
@@ -71,20 +71,20 @@ func ValidatePassword(password string) error {
 //   - VALIDATION_ERROR if the email is invalid
 func ValidateEmail(email string) error {
 	if email == "" {
-		return types.WrapError("VALIDATION_ERROR", "Email is required", nil)
+		return types.WrapError(types.VALIDATION_ERROR, "Email is required", nil)
 	}
 
 	if len(email) > 255 {
-		return types.WrapError("VALIDATION_ERROR", "Email cannot be longer than 255 characters", nil)
+		return types.WrapError(types.VALIDATION_ERROR, "Email cannot be longer than 255 characters", nil)
 	}
 
 	emailRegex := `^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$`
 	matched, err := regexp.MatchString(emailRegex, email)
 	if err != nil {
-		return types.WrapError("VALIDATION_ERROR", "Failed to validate email format", err)
+		return types.WrapError(types.VALIDATION_ERROR, "Failed to validate email format", err)
 	}
 	if !matched {
-		return types.WrapError("VALIDATION_ERROR", "Invalid email format", nil)
+		return types.WrapError(types.VALIDATION_ERROR, "Invalid email format", nil)
 	}
 	return nil
 }
@@ -98,10 +98,10 @@ func ValidateEmail(email string) error {
 //   - VALIDATION_ERROR if the username is invalid
 func ValidateUsername(username string) error {
 	if username == "" {
-		return types.WrapError("VALIDATION_ERROR", "Username is required", nil)
+		return types.WrapError(types.VALIDATION_ERROR, "Username is required", nil)
 	}
 	if len(username) > 255 {
-		return types.WrapError("VALIDATION_ERROR", "Username cannot be longer than 255 characters", nil)
+		return types.WrapError(types.VALIDATION_ERROR, "Username cannot be longer than 255 characters", nil)
 	}
 	return nil
 }
@@ -117,42 +117,42 @@ func ValidateUsername(username string) error {
 func ValidateUserFields(fields dtos.UpdateRequest) error {
 	// Check the username length
 	if len(fields.Username) > 255 {
-		return types.WrapError("VALIDATION_ERROR", "Username cannot be longer than 255 characters", nil)
+		return types.WrapError(types.VALIDATION_ERROR, "Username cannot be longer than 255 characters", nil)
 	}
 
 	// Check the bio length
 	if len(fields.Bio) > 500 {
-		return types.WrapError("VALIDATION_ERROR", "Bio cannot be longer than 500 characters", nil)
+		return types.WrapError(types.VALIDATION_ERROR, "Bio cannot be longer than 500 characters", nil)
 	}
 
 	// Check the profile picture URL length
 	if len(fields.ProfilePicture) > 255 {
-		return types.WrapError("VALIDATION_ERROR", "Profile picture URL cannot be longer than 255 characters", nil)
+		return types.WrapError(types.VALIDATION_ERROR, "Profile picture URL cannot be longer than 255 characters", nil)
 	}
 
 	// Check the preferred language length
 	if len(fields.PreferredLanguage) > 100 {
-		return types.WrapError("VALIDATION_ERROR", "Preferred language cannot be longer than 100 characters", nil)
+		return types.WrapError(types.VALIDATION_ERROR, "Preferred language cannot be longer than 100 characters", nil)
 	}
 
 	// Check the reading preferences length
 	if len(fields.ReadingPreferences) > 255 {
-		return types.WrapError("VALIDATION_ERROR", "Reading preferences cannot be longer than 255 characters", nil)
+		return types.WrapError(types.VALIDATION_ERROR, "Reading preferences cannot be longer than 255 characters", nil)
 	}
 
 	// Check the roles length
 	if len(fields.Roles) > 255 {
-		return types.WrapError("VALIDATION_ERROR", "Roles cannot be longer than 255 characters", nil)
+		return types.WrapError(types.VALIDATION_ERROR, "Roles cannot be longer than 255 characters", nil)
 	}
 
 	// Validate the date of birth
 	if fields.DateOfBirth != "" {
 		dob, err := time.Parse("2006-01-02", fields.DateOfBirth)
 		if err != nil {
-			return types.WrapError("VALIDATION_ERROR", "Date of birth must be a valid date in YYYY-MM-DD format", err)
+			return types.WrapError(types.VALIDATION_ERROR, "Date of birth must be a valid date in YYYY-MM-DD format", err)
 		}
 		if dob.After(time.Now().AddDate(-18, 0, 0)) {
-			return types.WrapError("VALIDATION_ERROR", "You must be at least 18 years old", nil)
+			return types.WrapError(types.VALIDATION_ERROR, "You must be at least 18 years old", nil)
 		}
 	}
 
@@ -168,7 +168,7 @@ func ValidateUserFields(fields dtos.UpdateRequest) error {
 //   - ErrUserDeactivated if the user is deactivated
 func ValidateIsDeleted(user models.User) error {
 	if user.IsDeleted {
-		return types.ErrUserDeactivated
+		return types.WrapError(types.USER_DEACTIVATED_ERROR, "User account is deactivated", nil)
 	}
 
 	return nil
@@ -184,7 +184,7 @@ func ValidateIsDeleted(user models.User) error {
 //   - ErrPasswordDiff if the new password is the same as the current password
 func ValidateIsNewPasswordTheSame(currentPassword string, newPassword string) error {
 	if currentPassword == newPassword {
-		return types.ErrPasswordDiff
+		return types.WrapError(types.PASSWORD_DIFF_ERROR, "New password must be different from the current password", nil)
 	}
 	return nil
 }

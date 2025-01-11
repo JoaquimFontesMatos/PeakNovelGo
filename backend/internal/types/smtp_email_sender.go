@@ -22,7 +22,7 @@ func (sender *SmtpEmailSender) SendMail(addr string, auth smtp.Auth, from string
 	// Send the email using SMTP
 	err := smtp.SendMail(addr, auth, from, to, msg)
 	if err != nil {
-		return WrapError("EMAIL_SEND_ERROR", "Failed to send email", err)
+		return WrapError(EMAIL_SEND_ERROR, "Failed to send email", err)
 	}
 	return nil
 }

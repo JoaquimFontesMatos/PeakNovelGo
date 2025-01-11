@@ -2,7 +2,7 @@ package types
 
 // MyError struct represents a custom error with a code and message.
 type MyError struct {
-	Code    string
+	Code    ErrorType
 	Message string
 	Err     error
 }
@@ -24,7 +24,7 @@ func (e *MyError) Error() string {
 //
 // Returns:
 //   - *MyError (MyError struct)
-func WrapError(code string, message string, err error) *MyError {
+func WrapError(code ErrorType, message string, err error) *MyError {
 	return &MyError{
 		Code:    code,
 		Message: message,
@@ -32,11 +32,25 @@ func WrapError(code string, message string, err error) *MyError {
 	}
 }
 
-// static error codes
-var (
-	ErrUserNotFound    = &MyError{Code: "USER_NOT_FOUND_ERROR", Message: "User not found"}
-	ErrInvalidPassword = &MyError{Code: "INVALID_PASSWORD_ERROR", Message: "Invalid password"}
-	ErrPasswordDiff    = &MyError{Code: "PASSWORD_DIFF_ERROR", Message: "New password cannot be the same as the current password"}
-	ErrTokenExpired    = &MyError{Code: "INVALID_TOKEN_ERROR", Message: "Invalid token or token expired"}
-	ErrUserDeactivated = &MyError{Code: "USER_DEACTIVATED_ERROR", Message: "User account is deactivated"}
+type ErrorType string
+
+const (
+	VALIDATION_ERROR            ErrorType = "VALIDATION_ERROR"
+	REPOSITORY_ERROR            ErrorType = "REPOSITORY_ERROR"
+	SERVICE_ERROR               ErrorType = "SERVICE_ERROR"
+	AUTHENTICATION_ERROR        ErrorType = "AUTHENTICATION_ERROR"
+	AUTHORIZATION_ERROR         ErrorType = "AUTHORIZATION_ERROR"
+	INTERNAL_SERVER_ERROR       ErrorType = "INTERNAL_SERVER_ERROR"
+	USER_DEACTIVATED_ERROR      ErrorType = "USER_DEACTIVATED_ERROR"
+	INVALID_TOKEN_ERROR         ErrorType = "INVALID_TOKEN_ERROR"
+	INVALID_PASSWORD_ERROR      ErrorType = "INVALID_PASSWORD_ERROR"
+	PASSWORD_DIFF_ERROR         ErrorType = "PASSWORD_DIFF_ERROR"
+	USER_NOT_FOUND_ERROR        ErrorType = "USER_NOT_FOUND_ERROR"
+	EMAIL_SEND_ERROR            ErrorType = "EMAIL_SEND_ERROR"
+	INVALID_BODY_ERROR          ErrorType = "INVALID_BODY_ERROR"
+	INVALID_ID_ERROR            ErrorType = "INVALID_ID_ERROR"
+	CONFLICT_ERROR              ErrorType = "CONFLICT_ERROR"
+	REFRESH_TOKEN_REVOKED_ERROR ErrorType = "REFRESH_TOKEN_REVOKED_ERROR"
+	INVALID_CREDENTIALS_ERROR   ErrorType = "INVALID_CREDENTIALS_ERROR"
+	// Add more types as needed
 )

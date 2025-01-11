@@ -482,7 +482,7 @@ func TestHandleGetUser(t *testing.T) {
 
 		// Assertions
 		assert.Equal(t, http.StatusNotFound, w.Code)
-		assert.Contains(t, w.Body.String(), "Failed to fetch user")
+		assert.Contains(t, w.Body.String(), "User not found")
 	})
 	t.Run("#GUI_02->The user is created and the id is the correct one", func(t *testing.T) {
 		t.Cleanup(func() {
@@ -536,21 +536,7 @@ func TestHandleGetUser(t *testing.T) {
 
 		// Assertions
 		assert.Equal(t, http.StatusNotFound, w.Code)
-		assert.Contains(t, w.Body.String(), "Failed to fetch user")
-	})
-
-	t.Run("#GUI_04->There are more than one input", func(t *testing.T) {
-		// Create a test request
-		w := httptest.NewRecorder()
-		c, _ := gin.CreateTestContext(w)
-		c.Params = gin.Params{{Key: "id", Value: "1"}, {Key: "id2", Value: "2"}}
-
-		// Call the function
-		userController.HandleGetUser(c)
-
-		// Assertions
-		assert.Equal(t, http.StatusBadRequest, w.Code)
-		assert.Contains(t, w.Body.String(), "Too many parameters")
+		assert.Contains(t, w.Body.String(), "User not found")
 	})
 
 	t.Run("#GUI_05->There are less than one input", func(t *testing.T) {
@@ -563,7 +549,7 @@ func TestHandleGetUser(t *testing.T) {
 
 		// Assertions
 		assert.Equal(t, http.StatusBadRequest, w.Code)
-		assert.Contains(t, w.Body.String(), "No parameters")
+		assert.Contains(t, w.Body.String(), "Invalid ID")
 	})
 
 	t.Run("#GUI_06->User is soft deleted", func(t *testing.T) {
@@ -804,7 +790,7 @@ func TestGetUserByEmail(t *testing.T) {
 
 		// Assertions
 		assert.Equal(t, http.StatusNotFound, w.Code)
-		assert.Contains(t, w.Body.String(), "Failed to fetch user")
+		assert.Contains(t, w.Body.String(), "User not found")
 	})
 	t.Run("#GUI_02->The user is created and the email is the correct one", func(t *testing.T) {
 		t.Cleanup(func() {
@@ -946,21 +932,7 @@ func TestGetUserByEmail(t *testing.T) {
 
 		// Assertions
 		assert.Equal(t, http.StatusNotFound, w.Code)
-		assert.Contains(t, w.Body.String(), "Failed to fetch user")
-	})
-
-	t.Run("#GUI_06->There are more than one input", func(t *testing.T) {
-		// Create a test request
-		w := httptest.NewRecorder()
-		c, _ := gin.CreateTestContext(w)
-		c.Params = gin.Params{{Key: "email", Value: "example@mail.com"}, {Key: "email2", Value: "example2@mail.com"}}
-
-		// Call the function
-		userController.HandleGetUserByEmail(c)
-
-		// Assertions
-		assert.Equal(t, http.StatusBadRequest, w.Code)
-		assert.Contains(t, w.Body.String(), "Too many parameters")
+		assert.Contains(t, w.Body.String(), "User not found")
 	})
 
 	t.Run("#GUI_07->There are less than one input", func(t *testing.T) {
@@ -973,7 +945,7 @@ func TestGetUserByEmail(t *testing.T) {
 
 		// Assertions
 		assert.Equal(t, http.StatusBadRequest, w.Code)
-		assert.Contains(t, w.Body.String(), "No parameters")
+		assert.Contains(t, w.Body.String(), "Email is required")
 	})
 
 	t.Run("#GUI_08->User is soft deleted", func(t *testing.T) {
@@ -1174,7 +1146,7 @@ func TestGetUserByUsername(t *testing.T) {
 
 		// Assertions
 		assert.Equal(t, http.StatusNotFound, w.Code)
-		assert.Contains(t, w.Body.String(), "Failed to fetch user")
+		assert.Contains(t, w.Body.String(), "User not found")
 	})
 	t.Run("#GUI_02->The user is created and the username is the correct one", func(t *testing.T) {
 		t.Cleanup(func() {
@@ -1267,7 +1239,7 @@ func TestGetUserByUsername(t *testing.T) {
 
 		// Assertions
 		assert.Equal(t, http.StatusNotFound, w.Code)
-		assert.Contains(t, w.Body.String(), "Failed to fetch user")
+		assert.Contains(t, w.Body.String(), "User not found")
 	})
 
 	t.Run("#GUI_05->The user is found and authorized", func(t *testing.T) {
@@ -1886,7 +1858,7 @@ func TestHandleUpdatePassword(t *testing.T) {
 			urlParam:     "1",
 			requestBody:  `{"current_password": "12345678", "new_password": "12345678"}`,
 			expectedCode: http.StatusUnauthorized,
-			expectedBody: `{"error":"New password cannot be the same as the current password"}`,
+			expectedBody: `{"error":"New password must be different from the current password"}`,
 			createUser:   true,
 			isAuthorized: true,
 			newPassword:  "12345678",

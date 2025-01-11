@@ -52,18 +52,18 @@ func (r *AuthRepository) RevokeToken(refreshToken string) error {
 	// Parse the refresh token to get its expiration time
 	token, err := jwt.Parse(refreshToken, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, types.WrapError("VALIDATION_ERROR", "Invalid token", fmt.Errorf("unexpected signing method: %v", token.Header["alg"]))
+			return nil, types.WrapError(types.VALIDATION_ERROR, "Invalid token", fmt.Errorf("unexpected signing method: %v", token.Header["alg"]))
 		}
 		return []byte(os.Getenv("SECRET_KEY")), nil
 	})
 	if err != nil {
-		return types.WrapError("VALIDATION_ERROR", "Invalid token", err)
+		return types.WrapError(types.VALIDATION_ERROR, "Invalid token", err)
 	}
 
 	// Extract the claims to get the expiration time
 	claims, ok := token.Claims.(jwt.MapClaims)
 	if !ok || !token.Valid {
-		return types.WrapError("VALIDATION_ERROR", "Invalid token", err)
+		return types.WrapError(types.VALIDATION_ERROR, "Invalid token", err)
 	}
 
 	// Extract expiration time and create a RevokedToken record
@@ -76,7 +76,7 @@ func (r *AuthRepository) RevokeToken(refreshToken string) error {
 
 	// Store the revoked token in the database
 	if err := r.db.Create(&revokedToken).Error; err != nil {
-		return types.WrapError("INTERNAL_SERVER_ERROR", "Failed to revoke token", err)
+		return types.WrapError(types.INTERNAL_SERVER_ERROR, "Failed to revoke token", err)
 	}
 
 	return nil

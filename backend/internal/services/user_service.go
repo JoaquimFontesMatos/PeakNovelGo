@@ -19,6 +19,15 @@ func NewUserService(repo interfaces.UserRepositoryInterface) *UserService {
 	return &UserService{repo: repo}
 }
 
+// GetUser gets a user by ID.
+//
+// Parameters:
+//   - id uint (ID of the user)
+//
+// Returns:
+//   - *models.User (pointer to User struct)
+//   - USER_DEACTIVATED_ERROR if the user is deactivated
+//   - USER_NOT_FOUND_ERROR if the user is not found
 func (s *UserService) GetUser(id uint) (*models.User, error) {
 	return s.repo.GetUserByID(id)
 }
@@ -34,12 +43,12 @@ func (s *UserService) GetUser(id uint) (*models.User, error) {
 func (s *UserService) RegisterUser(userFields *dtos.RegisterRequest) error {
 	_, err := s.repo.GetUserByEmail(userFields.Email)
 	if err == nil {
-		return types.WrapError("CONFLICT_ERROR", "User already registered", nil)
+		return types.WrapError(types.CONFLICT_ERROR, "User already registered", nil)
 	}
 
 	birthDate, err := time.Parse("2006-01-02", userFields.DateOfBirth)
 	if err != nil {
-		return types.WrapError("INTERNAL_SERVER_ERROR", "Failed to parse date of birth", err)
+		return types.WrapError(types.INTERNAL_SERVER_ERROR, "Failed to parse date of birth", err)
 	}
 
 	user := models.User{
@@ -105,15 +114,11 @@ func (s *UserService) VerifyEmail(token string) error {
 
 	user, err := s.repo.GetUserByVerificationToken(token)
 	if err != nil {
-		return types.ErrUserNotFound
-	}
-
-	if user.IsDeleted {
-		return types.ErrUserDeactivated
+		return err
 	}
 
 	if validators.IsVerificationTokenExpired(user.CreatedAt, user.EmailVerified) {
-		return types.ErrTokenExpired
+		return types.WrapError(types.INVALID_TOKEN_ERROR, "Invalid token or token expired", nil)
 	}
 
 	user.EmailVerified = true
@@ -144,13 +149,9 @@ func (s *UserService) UpdateUserFields(userID uint, fields dtos.UpdateRequest) e
 	}
 
 	// Check if user exists
-	user, err := s.repo.GetUserByID(userID)
+	_, err := s.repo.GetUserByID(userID)
 	if err != nil {
-		return types.ErrUserNotFound
-	}
-
-	if user.IsDeleted {
-		return types.ErrUserDeactivated
+		return err
 	}
 
 	return s.repo.UpdateUserFields(userID, fields)
@@ -178,15 +179,11 @@ func (s *UserService) UpdatePassword(userID uint, currentPassword string, newPas
 	// Check if user exists
 	user, err := s.repo.GetUserByID(userID)
 	if err != nil {
-		return types.ErrUserNotFound
-	}
-
-	if user.IsDeleted {
-		return types.ErrUserDeactivated
+		return err
 	}
 
 	if !utils.ComparePassword(user.Password, currentPassword) {
-		return types.ErrInvalidPassword
+		return types.WrapError(types.INVALID_PASSWORD_ERROR, "Invalid password", nil)
 	}
 
 	if err := validators.ValidateIsNewPasswordTheSame(currentPassword, newPassword); err != nil {
@@ -219,13 +216,9 @@ func (s *UserService) UpdateEmail(userID uint, newEmail string) error {
 	}
 
 	// Check if user exists
-	user, err := s.repo.GetUserByID(userID)
+	_, err := s.repo.GetUserByID(userID)
 	if err != nil {
-		return types.ErrUserNotFound
-	}
-
-	if user.IsDeleted {
-		return types.ErrUserDeactivated
+		return err
 	}
 
 	// Generate a new verification token
@@ -242,7 +235,9 @@ func (s *UserService) UpdateEmail(userID uint, newEmail string) error {
 //
 // Returns:
 //   - *models.User (pointer to User struct)
-//   - INTERNAL_SERVER_ERROR if the user could not be fetched
+//   - USER_DEACTIVATED_ERROR if the user is deactivated
+//   - USER_NOT_FOUND_ERROR if the user is not found
+//   - VALIDATION_ERROR if the email is invalid
 func (s *UserService) GetUserByEmail(email string) (*models.User, error) {
 	if err := validators.ValidateEmail(email); err != nil {
 		return nil, err
@@ -258,7 +253,9 @@ func (s *UserService) GetUserByEmail(email string) (*models.User, error) {
 //
 // Returns:
 //   - *models.User (pointer to User struct)
-//   - INTERNAL_SERVER_ERROR if the user could not be fetched
+//   - USER_DEACTIVATED_ERROR if the user is deactivated
+//   - USER_NOT_FOUND_ERROR if the user is not found
+//   - VALIDATION_ERROR if the username is invalid
 func (s *UserService) GetUserByUsername(username string) (*models.User, error) {
 	if err := validators.ValidateUsername(username); err != nil {
 		return nil, err
@@ -279,10 +276,6 @@ func (s *UserService) GetUserByUsername(username string) (*models.User, error) {
 func (s *UserService) DeleteUser(id uint) error {
 	user, err := s.repo.GetUserByID(id)
 	if err != nil {
-		return types.ErrUserNotFound
-	}
-
-	if err := validators.ValidateIsDeleted(*user); err != nil {
 		return err
 	}
 

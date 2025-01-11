@@ -12,12 +12,12 @@ import (
 //
 // Returns:
 //   - uint (parsed ID)
-//   - INVALID_ID if the ID is invalid
+//   - INVALID_ID_ERROR if the ID is invalid
 func ParseID(idParam string) (uint, error) {
 	id, err := strconv.Atoi(idParam)
 
 	if err != nil || id <= 0 {
-		return 0, types.WrapError("INVALID_ID", "Invalid ID", err)
+		return 0, types.WrapError(types.INVALID_ID_ERROR, "Invalid ID", err)
 	}
 
 	// Convert the id from int to uint (assuming id can be positive)

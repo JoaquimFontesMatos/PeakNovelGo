@@ -5,6 +5,7 @@ import (
 
 	"backend/internal/models"
 	"backend/internal/types"
+	"backend/internal/validators"
 
 	"gorm.io/gorm"
 )
@@ -35,7 +36,7 @@ func NewUserRepository(db *gorm.DB) *UserRepository {
 func (r *UserRepository) CreateUser(user *models.User) error {
 	if err := r.db.Create(user).Error; err != nil {
 		log.Printf("Failed to insert user: %v", err)
-		return types.WrapError("INTERNAL_SERVER_ERROR", "Failed to insert user", err)
+		return types.WrapError(types.INTERNAL_SERVER_ERROR, "Failed to insert user", err)
 	}
 	return nil
 }
@@ -48,12 +49,17 @@ func (r *UserRepository) CreateUser(user *models.User) error {
 // Returns:
 //   - *models.User (pointer to User struct)
 //   - INTERNAL_SERVER_ERROR if the user could not be fetched
+//   - USER_DEACTIVATED_ERROR if the user is deactivated
 func (r *UserRepository) GetUserByID(id uint) (*models.User, error) {
 	user := &models.User{}
 
 	if err := r.db.First(user, id).Error; err != nil {
 		log.Printf("Failed to fetch user: %v", err)
-		return nil, types.WrapError("USER_NOT_FOUND_ERROR", "Failed to fetch user", err)
+		return nil, types.WrapError(types.USER_NOT_FOUND_ERROR, "User not found", err)
+	}
+
+	if err := validators.ValidateIsDeleted(*user); err != nil {
+		return nil, err
 	}
 
 	return user, nil
@@ -67,12 +73,17 @@ func (r *UserRepository) GetUserByID(id uint) (*models.User, error) {
 // Returns:
 //   - *models.User (pointer to User struct)
 //   - INTERNAL_SERVER_ERROR if the user could not be fetched
+//   - USER_DEACTIVATED_ERROR if the user is deactivated
 func (r *UserRepository) GetUserByVerificationToken(token string) (*models.User, error) {
 	user := &models.User{}
 
 	if err := r.db.Where("verification_token = ?", token).First(user).Error; err != nil {
 		log.Printf("Failed to fetch user: %v", err)
-		return nil, types.WrapError("INTERNAL_SERVER_ERROR", "Failed to fetch user", err)
+		return nil, types.WrapError(types.USER_NOT_FOUND_ERROR, "User not found", err)
+	}
+
+	if err := validators.ValidateIsDeleted(*user); err != nil {
+		return nil, err
 	}
 
 	return user, nil
@@ -88,7 +99,7 @@ func (r *UserRepository) GetUserByVerificationToken(token string) (*models.User,
 func (r *UserRepository) UpdateUser(user *models.User) error {
 	if err := r.db.Save(user).Error; err != nil {
 		log.Printf("Failed to update user: %v", err)
-		return types.WrapError("INTERNAL_SERVER_ERROR", "Failed to update user", err)
+		return types.WrapError(types.INTERNAL_SERVER_ERROR, "Failed to update user", err)
 	}
 
 	return nil
@@ -120,7 +131,11 @@ func (r *UserRepository) GetUserByEmail(email string) (*models.User, error) {
 
 	if err := r.db.Where("email = ?", email).First(user).Error; err != nil {
 		log.Printf("Failed to fetch user: %v", err)
-		return nil, types.WrapError("USER_NOT_FOUND_ERROR", "Failed to fetch user", err)
+		return nil, types.WrapError(types.USER_NOT_FOUND_ERROR, "User not found", err)
+	}
+
+	if err := validators.ValidateIsDeleted(*user); err != nil {
+		return nil, err
 	}
 
 	return user, nil
@@ -134,13 +149,18 @@ func (r *UserRepository) GetUserByEmail(email string) (*models.User, error) {
 // Returns:
 //   - *models.User (pointer to User struct)	º
 //   - INTERNAL_SERVER_ERROR if the user could not be fetched
+//   - USER_DEACTIVATED_ERROR if the user is deactivated
 func (r *UserRepository) GetUserByUsername(username string) (*models.User, error) {
 	user := &models.User{}
 
 	if err := r.db.Where("username = ?", username).First(user).Error; err != nil {
 		log.Printf("Failed to fetch user: %v", err)
 
-		return nil, types.WrapError("USER_NOT_FOUND_ERROR", "Failed to fetch user", err)
+		return nil, types.WrapError(types.USER_NOT_FOUND_ERROR, "User not found", err)
+	}
+
+	if err := validators.ValidateIsDeleted(*user); err != nil {
+		return nil, err
 	}
 
 	return user, nil
@@ -164,12 +184,12 @@ func (r *UserRepository) UpdateUserEmail(userID uint, newEmail string, token str
 		})
 
 	if result.RowsAffected == 0 {
-		return types.WrapError("INTERNAL_SERVER_ERROR", "User not found or already deleted", nil)
+		return types.WrapError(types.INTERNAL_SERVER_ERROR, "User not found or already deleted", nil)
 	}
 
 	if result.Error != nil {
 		log.Printf("Failed to update user email: %v", result.Error)
-		return types.WrapError("INTERNAL_SERVER_ERROR", "Failed to update user email", result.Error)
+		return types.WrapError(types.INTERNAL_SERVER_ERROR, "Failed to update user email", result.Error)
 	}
 
 	return nil
@@ -187,7 +207,7 @@ func (r *UserRepository) UpdateUserFields(userID uint, fields interface{}) error
 	// Update user fields
 	if err := r.db.Model(&models.User{}).Where("id = ?", userID).Updates(fields).Error; err != nil {
 		log.Printf("Failed to update user fields: %v", err)
-		return types.WrapError("INTERNAL_SERVER_ERROR", "Failed to update user fields", err)
+		return types.WrapError(types.INTERNAL_SERVER_ERROR, "Failed to update user fields", err)
 	}
 	return nil
 }
