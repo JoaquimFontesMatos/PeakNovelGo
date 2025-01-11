@@ -68,16 +68,17 @@ func (ac *AuthController) Login(c *gin.Context) {
 		var error *types.MyError
 		if errors.As(err, &error) {
 			switch error.Code {
-			case types.USER_NOT_FOUND_ERROR:
-				c.JSON(http.StatusNotFound, gin.H{"error": error.Message})
+			case types.INTERNAL_SERVER_ERROR:
+				c.JSON(http.StatusInternalServerError, gin.H{"error": error.Message})
 			case types.VALIDATION_ERROR:
 				c.JSON(http.StatusBadRequest, gin.H{"error": error.Message})
+			default:
+				c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid email or password"})
 			}
 			return
 		}
 
-		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
-		//"Invalid email or password"
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid email or password"})
 		return
 	}
 

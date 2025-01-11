@@ -585,8 +585,8 @@ func TestHandleGetUser(t *testing.T) {
 		userController.HandleGetUser(c)
 
 		// Assertions
-		assert.Equal(t, http.StatusOK, w.Code)
-		assert.Contains(t, w.Body.String(), "John Doe")
+		assert.Equal(t, http.StatusForbidden, w.Code)
+		assert.Contains(t, w.Body.String(), "User account is deactivated")
 	})
 
 	t.Run("#GUI_07->Input is negative", func(t *testing.T) {
@@ -981,8 +981,8 @@ func TestGetUserByEmail(t *testing.T) {
 		userController.HandleGetUserByEmail(c)
 
 		// Assertions
-		assert.Equal(t, http.StatusOK, w.Code)
-		assert.Contains(t, w.Body.String(), "John Doe")
+		assert.Equal(t, http.StatusForbidden, w.Code)
+		assert.Contains(t, w.Body.String(), "User account is deactivated")
 	})
 
 	t.Run("#GUI_09->Email is not valid", func(t *testing.T) {
@@ -1337,8 +1337,8 @@ func TestGetUserByUsername(t *testing.T) {
 		userController.HandleGetUserByUsername(c)
 
 		// Assertions
-		assert.Equal(t, http.StatusOK, w.Code)
-		assert.Contains(t, w.Body.String(), "John Doe")
+		assert.Equal(t, http.StatusForbidden, w.Code)
+		assert.Contains(t, w.Body.String(), "User account is deactivated")
 	})
 
 	t.Run("#GUI_09->Username is empty", func(t *testing.T) {

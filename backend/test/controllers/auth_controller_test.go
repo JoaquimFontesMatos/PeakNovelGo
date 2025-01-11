@@ -829,8 +829,8 @@ func TestHandleLogin(t *testing.T) {
 		{
 			name:              "#L_01",
 			description:       "The user is not found",
-			expectedCode:      http.StatusNotFound,
-			expectedBody:      `{"error":"User not found"}`,
+			expectedCode:      http.StatusUnauthorized,
+			expectedBody:      `{"error":"Invalid email or password"}`,
 			email:             "joao@gmail.com",
 			password:          "12345678",
 			isAlreadyVerified: false,
