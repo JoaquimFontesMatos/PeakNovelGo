@@ -63,6 +63,7 @@ func SetupRoutes(r *gin.Engine,
 		tts := r.Group("/novels/tts")
 		{
 			tts.POST("/", ttsController.GenerateTTS)
+			tts.GET("/voices", ttsController.GetVoices)
 		}
 	}
 
