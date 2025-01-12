@@ -65,6 +65,19 @@ type NovelRepositoryInterface interface {
 	//   - NO_NOVELS_ERROR if the novels could not be fetched
 	GetNovelsByAuthorID(authorID uint, page, limit int) ([]models.Novel, int64, error)
 
+	// GetNovels gets a list of novels.
+	//
+	// Parameters:
+	//   - page int (page number)
+	//   - limit int (limit of novels per page)
+	//
+	// Returns:
+	//   - []models.Novel (list of Novel structs)
+	//   - int64 (total number of novels)
+	//   - INTERNAL_SERVER_ERROR if the novels could not be fetched
+	//   - NO_NOVELS_ERROR if the novels could not be fetched
+	GetNovels(page, limit int) ([]models.Novel, int64, error)
+
 	// GetNovelsByGenreID gets a list of novels by genre ID.
 	//
 	// Parameters:

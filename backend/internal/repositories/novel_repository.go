@@ -418,6 +418,50 @@ func (n *NovelRepository) GetNovelsByTagID(tagID uint, page, limit int) ([]model
 	return novels, total, nil
 }
 
+// GetNovels gets a list of novels.
+//
+// Parameters:
+//   - page int (page number)
+//   - limit int (limit of novels per page)
+//
+// Returns:
+//   - []models.Novel (list of Novel structs)
+//   - int64 (total number of novels)
+//   - INTERNAL_SERVER_ERROR if the novels could not be fetched
+//   - NO_NOVELS_ERROR if the novels could not be fetched
+func (n *NovelRepository) GetNovels( page, limit int) ([]models.Novel, int64, error) {
+	var novels []models.Novel
+	var total int64
+
+	// Count total novels for the author
+	if err := n.db.Model(&models.Novel{}).
+		Count(&total).Error; err != nil {
+
+		if err.Error() == "record not found" {
+			return nil, 0, types.WrapError(types.NO_NOVELS_ERROR, "No novels found", nil)
+		}
+
+		return nil, 0, types.WrapError(types.INTERNAL_SERVER_ERROR, "Failed to get the total number of novels", err)
+	}
+
+	// Apply pagination and ordering
+	offset := (page - 1) * limit
+	if err := n.db.Model(&models.Novel{}).
+		Preload("Authors").
+		Preload("Genres").
+		Preload("Tags").
+		Limit(limit).Offset(offset).
+		Find(&novels).Error; err != nil {
+
+		if err.Error() == "record not found" {
+			return nil, 0, types.WrapError(types.NO_NOVELS_ERROR, "No novels found", nil)
+		}
+
+		return nil, 0, types.WrapError(types.INTERNAL_SERVER_ERROR, "Failed to fetch novels", err)
+	}
+	return novels, total, nil
+}
+
 // GetNovelsByAuthorID gets a list of novels by author ID.
 //
 // Parameters:

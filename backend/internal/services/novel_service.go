@@ -25,6 +25,10 @@ func (s *NovelService) GetNovelsByTagID(tagID uint, page, limit int) ([]models.N
 	return s.repo.GetNovelsByTagID(tagID, page, limit)
 }
 
+func (s *NovelService) GetNovels(page, limit int) ([]models.Novel, int64, error) {
+	return s.repo.GetNovels(page, limit)
+}	
+
 func (s *NovelService) GetNovelByID(id uint) (*models.Novel, error) {
 	return s.repo.GetNovelByID(id)
 }

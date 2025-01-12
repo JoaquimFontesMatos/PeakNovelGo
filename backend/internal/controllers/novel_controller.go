@@ -344,6 +344,39 @@ func (n *NovelController) GetNovelsByTagID(ctx *gin.Context) {
 	})
 }
 
+func (n *NovelController) GetNovels(ctx *gin.Context) {
+	page, err := strconv.Atoi(ctx.DefaultQuery("page", "1")) // Default to page 1
+	if err != nil || page < 1 {
+		page = 1
+	}
+	limit, err := strconv.Atoi(ctx.DefaultQuery("limit", "10")) // Default to 10 items per page
+	if err != nil || limit < 1 {
+		limit = 10
+	}
+
+	novels, total, err := n.novelService.GetNovels(page, limit)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	totalPages := (total + int64(limit) - 1) / int64(limit)
+
+	if int64(page) > totalPages {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Page out of range"})
+		return
+	}
+
+	// Build response with pagination metadata
+	ctx.JSON(http.StatusOK, gin.H{
+		"data":       novels,
+		"total":      total,
+		"page":       page,
+		"limit":      limit,
+		"totalPages": totalPages,
+	})
+}
+
 func (n *NovelController) GetNovelByID(ctx *gin.Context) {
 	idParam := ctx.Param("novel_id")
 	id, err := utils.ParseID(idParam)
