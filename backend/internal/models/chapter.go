@@ -4,10 +4,10 @@ import "gorm.io/gorm"
 
 type Chapter struct {
 	gorm.Model
-	ChapterNo  uint   `gorm:"index,default:0" json:"chapter_no"`
-	NovelID    *uint  `gorm:"constraint:OnDelete:SET NULL;index" json:"novel_id"`
+	ChapterNo  uint   `gorm:"index,default:0" json:"chapterNo"`
+	NovelID    *uint  `gorm:"constraint:OnDelete:SET NULL;index" json:"novelId"`
 	Title      string `gorm:"size:255;not null" json:"title"`
-	ChapterUrl string `gorm:"size:255;not null,uniqueIndex" json:"chapter_url"`
+	ChapterUrl string `gorm:"size:255;not null,uniqueIndex" json:"chapterUrl"`
 	Body       string `gorm:"not null" json:"body"`
 }
 

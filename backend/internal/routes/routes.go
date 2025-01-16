@@ -41,16 +41,19 @@ func SetupRoutes(r *gin.Engine,
 	{
 		novel.POST("/", novelController.HandleImportNovel)
 		novel.GET("/", novelController.GetNovels)
-		novel.GET("/authors/:author_id", novelController.GetNovelsByAuthorID)
-		novel.GET("/genres/:genre_id", novelController.GetNovelsByGenreID)
-		novel.GET("/tags/:tag_id", novelController.GetNovelsByTagID)
+		novel.GET("/authors/:author_name", novelController.GetNovelsByAuthorName)
+		novel.GET("/genres/:genre_name", novelController.GetNovelsByGenreName)
+		novel.GET("/tags/:tag_name", novelController.GetNovelsByTagName)
 		novel.GET("/:novel_id", novelController.GetNovelByID)
 
 		chapters := r.Group("/novels/chapters")
 		{
+			chapters.GET("/novel/title/:title", novelController.GetNovelByTitle)
 			chapters.POST("/:novel_id", novelController.HandleImportChaptersZip)
 			chapters.GET("/:novel_id", novelController.GetChaptersByNovelID)
 			chapters.GET("/chapter/:chapter_id", novelController.GetChapterByID)
+			chapters.GET("/novel/:novel_title/chapter/:chapter_no", novelController.GetChapterByNovelTitleAndChapterNo)
+			chapters.GET("/novel/:novel_title/chapters/:chapter_no", novelController.GetChaptersByNovelTitleAndChapterNo)
 		}
 
 		bookmarked := r.Group("/novels/bookmarked")

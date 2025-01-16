@@ -2,10 +2,8 @@
 const runtimeConfig = useRuntimeConfig();
 const { data, error } = await useAsyncData("novel", () => myGetFunction(2));
 
-var chapter = data;
-
 function myGetFunction(id: number): Promise<unknown> {
-  return fetch(`http://localhost:8080/novels/${id}`).then((res) => res.json());
+  return fetch(`http://localhost:8080/novels`).then((res) => res.json());
 }
 </script>
 
@@ -18,9 +16,9 @@ function myGetFunction(id: number): Promise<unknown> {
       <Button>About Us</Button>
     </NuxtLink>
 
-    <NuxtLink to="/novels/chapters/2">
-      <Button>About Us</Button>
+    <NuxtLink to="/novels/Reverend Insanity/2">
+      <Button>Go to Reverend Insanity Chapter 2</Button>
     </NuxtLink>
-    <p>{{ chapter }}</p>
+    <p>{{ data }}</p>
   </div>
 </template>

@@ -316,10 +316,10 @@ func (n *NovelRepository) GetChaptersByNovelID(novelID uint, page, limit int) ([
 	return chapters, total, nil
 }
 
-// GetNovelsByGenreID gets a list of novels by genre ID.
+// GetNovelsByGenreName gets a list of novels by genre name.
 //
 // Parameters:
-//   - genreID uint (ID of the genre)
+//   - genreName string (name of the genre)
 //   - page int (page number)
 //   - limit int (limit of novels per page)
 //
@@ -328,14 +328,15 @@ func (n *NovelRepository) GetChaptersByNovelID(novelID uint, page, limit int) ([
 //   - int64 (total number of novels)
 //   - INTERNAL_SERVER_ERROR if the novels could not be fetched
 //   - NO_NOVELS_ERROR if the novels could not be fetched
-func (n *NovelRepository) GetNovelsByGenreID(genreID uint, page, limit int) ([]models.Novel, int64, error) {
+func (n *NovelRepository) GetNovelsByGenreName(genreName string, page, limit int) ([]models.Novel, int64, error) {
 	var novels []models.Novel
 	var total int64
 
 	// Count total novels for the genre
 	if err := n.db.Model(&models.Novel{}).
 		Joins("JOIN novel_genres ON novel_genres.novel_id = novels.id").
-		Where("novel_genres.genre_id = ?", genreID).
+		Joins("JOIN genres ON genres.id = novel_genres.genre_id").
+		Where("genres.name = ?", genreName).
 		Count(&total).Error; err != nil {
 
 		if err.Error() == "record not found" {
@@ -349,7 +350,8 @@ func (n *NovelRepository) GetNovelsByGenreID(genreID uint, page, limit int) ([]m
 	offset := (page - 1) * limit
 	if err := n.db.Model(&models.Novel{}).
 		Joins("JOIN novel_genres ON novel_genres.novel_id = novels.id").
-		Where("novel_genres.genre_id = ?", genreID).
+		Joins("JOIN genres ON genres.id = novel_genres.genre_id").
+		Where("genres.name = ?", genreName).
 		Preload("Authors").
 		Preload("Genres").
 		Preload("Tags").
@@ -367,10 +369,10 @@ func (n *NovelRepository) GetNovelsByGenreID(genreID uint, page, limit int) ([]m
 	return novels, total, nil
 }
 
-// GetNovelsByTagID gets a list of novels by tag ID.
+// GetNovelsByTagName gets a list of novels by tag name.
 //
 // Parameters:
-//   - tagID uint (ID of the tag)
+//   - tagName string (name of the tag)
 //   - page int (page number)
 //   - limit int (limit of novels per page)
 //
@@ -379,14 +381,15 @@ func (n *NovelRepository) GetNovelsByGenreID(genreID uint, page, limit int) ([]m
 //   - int64 (total number of novels)
 //   - INTERNAL_SERVER_ERROR if the novels could not be fetched
 //   - NO_NOVELS_ERROR if the novels could not be fetched
-func (n *NovelRepository) GetNovelsByTagID(tagID uint, page, limit int) ([]models.Novel, int64, error) {
+func (n *NovelRepository) GetNovelsByTagName(tagName string, page, limit int) ([]models.Novel, int64, error) {
 	var novels []models.Novel
 	var total int64
 
 	// Count total novels for the tag
 	if err := n.db.Model(&models.Novel{}).
 		Joins("JOIN novel_tags ON novel_tags.novel_id = novels.id").
-		Where("novel_tags.tag_id = ?", tagID).
+		Joins("JOIN tags ON tags.id = novel_tags.tag_id").
+		Where("tags.name = ?", tagName).
 		Count(&total).Error; err != nil {
 
 		if err.Error() == "record not found" {
@@ -400,7 +403,8 @@ func (n *NovelRepository) GetNovelsByTagID(tagID uint, page, limit int) ([]model
 	offset := (page - 1) * limit
 	if err := n.db.Model(&models.Novel{}).
 		Joins("JOIN novel_tags ON novel_tags.novel_id = novels.id").
-		Where("novel_tags.tag_id = ?", tagID).
+		Joins("JOIN tags ON tags.id = novel_tags.tag_id").
+		Where("tags.name = ?", tagName).
 		Preload("Authors").
 		Preload("Genres").
 		Preload("Tags").
@@ -429,7 +433,7 @@ func (n *NovelRepository) GetNovelsByTagID(tagID uint, page, limit int) ([]model
 //   - int64 (total number of novels)
 //   - INTERNAL_SERVER_ERROR if the novels could not be fetched
 //   - NO_NOVELS_ERROR if the novels could not be fetched
-func (n *NovelRepository) GetNovels( page, limit int) ([]models.Novel, int64, error) {
+func (n *NovelRepository) GetNovels(page, limit int) ([]models.Novel, int64, error) {
 	var novels []models.Novel
 	var total int64
 
@@ -462,10 +466,10 @@ func (n *NovelRepository) GetNovels( page, limit int) ([]models.Novel, int64, er
 	return novels, total, nil
 }
 
-// GetNovelsByAuthorID gets a list of novels by author ID.
+// GetNovelsByAuthorName gets a list of novels by author name.
 //
 // Parameters:
-//   - authorID uint (ID of the author)
+//   - authorName string (name of the author)
 //   - page int (page number)
 //   - limit int (limit of novels per page)
 //
@@ -474,14 +478,15 @@ func (n *NovelRepository) GetNovels( page, limit int) ([]models.Novel, int64, er
 //   - int64 (total number of novels)
 //   - INTERNAL_SERVER_ERROR if the novels could not be fetched
 //   - NO_NOVELS_ERROR if the novels could not be fetched
-func (n *NovelRepository) GetNovelsByAuthorID(authorID uint, page, limit int) ([]models.Novel, int64, error) {
+func (n *NovelRepository) GetNovelsByAuthorName(authorName string, page, limit int) ([]models.Novel, int64, error) {
 	var novels []models.Novel
 	var total int64
 
 	// Count total novels for the author
 	if err := n.db.Model(&models.Novel{}).
 		Joins("JOIN novel_authors ON novel_authors.novel_id = novels.id").
-		Where("novel_authors.author_id = ?", authorID).
+		Joins("JOIN authors ON authors.id = novel_authors.author_id").
+		Where("authors.name = ?", authorName).
 		Count(&total).Error; err != nil {
 
 		if err.Error() == "record not found" {
@@ -495,7 +500,8 @@ func (n *NovelRepository) GetNovelsByAuthorID(authorID uint, page, limit int) ([
 	offset := (page - 1) * limit
 	if err := n.db.Model(&models.Novel{}).
 		Joins("JOIN novel_authors ON novel_authors.novel_id = novels.id").
-		Where("novel_authors.author_id = ?", authorID).
+		Joins("JOIN authors ON authors.id = novel_authors.author_id").
+		Where("authors.name = ?", authorName).
 		Preload("Authors").
 		Preload("Genres").
 		Preload("Tags").
@@ -538,6 +544,31 @@ func (n *NovelRepository) GetNovelByID(id uint) (*models.Novel, error) {
 	return &novel, nil
 }
 
+// GetNovelByTitle gets a novel by title.
+//
+// Parameters:
+//   - title string (title of the novel)
+//
+// Returns:
+//   - *models.Novel (pointer to Novel struct)
+//   - INTERNAL_SERVER_ERROR if the novel could not be fetched
+//   - NOVEL_NOT_FOUND_ERROR if the novel could not be fetched
+func (n *NovelRepository) GetNovelByTitle(title string) (*models.Novel, error) {
+	var novel models.Novel
+	if err := n.db.Where("title = ?", title).
+		Preload("Authors").
+		Preload("Genres").
+		Preload("Tags").
+		First(&novel).Error; err != nil {
+		if err.Error() == "record not found" {
+			return nil, types.WrapError(types.NOVEL_NOT_FOUND_ERROR, "No novels found", nil)
+		}
+
+		return nil, types.WrapError(types.INTERNAL_SERVER_ERROR, "Failed to fetch novel", err)
+	}
+	return &novel, nil
+}
+
 // GetChapterByID gets a chapter by ID.
 //
 // Parameters:
@@ -557,6 +588,56 @@ func (n *NovelRepository) GetChapterByID(id uint) (*models.Chapter, error) {
 		return nil, types.WrapError(types.INTERNAL_SERVER_ERROR, "Failed to fetch chapter", err)
 	}
 	return &chapter, nil
+}
+
+// GetChapterByNovelTitleAndChapterNo gets a chapter by novel title and chapter number.
+//
+// Parameters:
+//   - novelTitle string (title of the novel)
+//   - chapterNo uint (chapter number)
+//
+// Returns:
+//   - *models.Chapter (pointer to Chapter struct)
+//   - INTERNAL_SERVER_ERROR if the chapter could not be fetched
+//   - CHAPTER_NOT_FOUND_ERROR if the chapter could not be fetched
+func (n *NovelRepository) GetChapterByNovelTitleAndChapterNo(novelTitle string, chapterNo uint) (*models.Chapter, error) {
+	var chapter models.Chapter
+	if err := n.db.Model(&models.Chapter{}).
+		Joins("JOIN novels ON novels.id = chapters.novel_id").
+		Where("novels.title = ? AND chapters.chapter_no = ?", novelTitle, chapterNo).First(&chapter).Error; err != nil {
+		if err.Error() == "record not found" {
+			return nil, types.WrapError(types.CHAPTER_NOT_FOUND_ERROR, "Chapter not found", nil)
+		}
+		log.Println(err)
+		return nil, types.WrapError(types.INTERNAL_SERVER_ERROR, "Failed to fetch chapter", err)
+	}
+	return &chapter, nil
+}
+
+// GetChaptersByNovelTitleAndChapterNo gets a list of chapters by novel title and chapter number.
+//
+// Parameters:
+//   - novelTitle string (title of the novel)
+//   - chapterNo uint (chapter number)
+//
+// Returns:
+//   - []models.Chapter (list of Chapter structs)
+//   - INTERNAL_SERVER_ERROR if the chapters could not be fetched
+//   - NO_CHAPTERS_ERROR if the chapters could not be fetched
+func (n *NovelRepository) GetChaptersByNovelTitleAndChapterNo(novelTitle string, chapterNo uint) ([]models.Chapter, error) {
+	var chapters []models.Chapter
+
+	if err := n.db.Model(&models.Chapter{}).
+		Joins("JOIN novels ON novels.id = chapters.novel_id").
+		Where("novels.title = ? AND chapters.chapter_no = ?", novelTitle, chapterNo).
+		Find(&chapters).Error; err != nil {
+		if err.Error() == "record not found" {
+			return nil, types.WrapError(types.NO_CHAPTERS_ERROR, "No chapters found", nil)
+		}
+
+		return nil, types.WrapError(types.INTERNAL_SERVER_ERROR, "Failed to fetch chapters", err)
+	}
+	return chapters, nil
 }
 
 // isChapterCreated checks if a chapter with the given chapter number and novel ID already exists in the database.

@@ -5,12 +5,15 @@ import (
 )
 
 type NovelServiceInterface interface {
-	GetNovelsByAuthorID(authorID uint, page, limit int) ([]models.Novel, int64, error)
-	GetNovelsByGenreID(genreID uint, page, limit int) ([]models.Novel, int64, error)
-	GetNovelsByTagID(tagID uint, page, limit int) ([]models.Novel, int64, error)
+	GetNovelsByAuthorName(authorName string, page, limit int) ([]models.Novel, int64, error)
+	GetNovelsByGenreName(genreName string, page, limit int) ([]models.Novel, int64, error)
+	GetNovelsByTagName(tagName string, page, limit int) ([]models.Novel, int64, error)
 	GetNovels(page, limit int) ([]models.Novel, int64, error)
 	GetNovelByID(id uint) (*models.Novel, error)
+	GetNovelByTitle(title string) (*models.Novel, error)
 	GetChapterByID(id uint) (*models.Chapter, error)
+	GetChapterByNovelTitleAndChapterNo(novelTitle string, chapterNo uint) (*models.Chapter, error)
+	GetChaptersByNovelTitleAndChapterNo(novelTitle string, chapterNo uint) ([]models.Chapter, error)
 	CreateNovel(novel models.Novel) (*models.Novel, error)
 	CreateChapters(chapters []models.Chapter) (int, error)
 	ConvertToNovel(imported models.ImportedNovel) (*models.Novel, error)

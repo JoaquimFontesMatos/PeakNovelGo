@@ -224,13 +224,8 @@ func (n *NovelController) GetChaptersByNovelID(ctx *gin.Context) {
 	})
 }
 
-func (n *NovelController) GetNovelsByAuthorID(ctx *gin.Context) {
-	idParam := ctx.Param("author_id")
-	id, err := utils.ParseID(idParam)
-	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
+func (n *NovelController) GetNovelsByAuthorName(ctx *gin.Context) {
+	authorName := ctx.Param("author_name")
 
 	page, err := strconv.Atoi(ctx.DefaultQuery("page", "1")) // Default to page 1
 	if err != nil || page < 1 {
@@ -241,7 +236,7 @@ func (n *NovelController) GetNovelsByAuthorID(ctx *gin.Context) {
 		limit = 10
 	}
 
-	novels, total, err := n.novelService.GetNovelsByAuthorID(id, page, limit)
+	novels, total, err := n.novelService.GetNovelsByAuthorName(authorName, page, limit)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -264,13 +259,8 @@ func (n *NovelController) GetNovelsByAuthorID(ctx *gin.Context) {
 	})
 }
 
-func (n *NovelController) GetNovelsByGenreID(ctx *gin.Context) {
-	idParam := ctx.Param("genre_id")
-	id, err := utils.ParseID(idParam)
-	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
+func (n *NovelController) GetNovelsByGenreName(ctx *gin.Context) {
+	genreName := ctx.Param("genre_name")
 
 	page, err := strconv.Atoi(ctx.DefaultQuery("page", "1")) // Default to page 1
 	if err != nil || page < 1 {
@@ -281,7 +271,7 @@ func (n *NovelController) GetNovelsByGenreID(ctx *gin.Context) {
 		limit = 10
 	}
 
-	novels, total, err := n.novelService.GetNovelsByGenreID(id, page, limit)
+	novels, total, err := n.novelService.GetNovelsByGenreName(genreName, page, limit)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -304,13 +294,8 @@ func (n *NovelController) GetNovelsByGenreID(ctx *gin.Context) {
 	})
 }
 
-func (n *NovelController) GetNovelsByTagID(ctx *gin.Context) {
-	idParam := ctx.Param("tag_id")
-	id, err := utils.ParseID(idParam)
-	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
+func (n *NovelController) GetNovelsByTagName(ctx *gin.Context) {
+	tagName := ctx.Param("tag_name")
 
 	page, err := strconv.Atoi(ctx.DefaultQuery("page", "1")) // Default to page 1
 	if err != nil || page < 1 {
@@ -321,7 +306,7 @@ func (n *NovelController) GetNovelsByTagID(ctx *gin.Context) {
 		limit = 10
 	}
 
-	novels, total, err := n.novelService.GetNovelsByTagID(id, page, limit)
+	novels, total, err := n.novelService.GetNovelsByTagName(tagName, page, limit)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -394,6 +379,18 @@ func (n *NovelController) GetNovelByID(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, novel)
 }
 
+func (n *NovelController) GetNovelByTitle(ctx *gin.Context) {
+	title := ctx.Param("title")
+
+	novel, err := n.novelService.GetNovelByTitle(title)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, novel)
+}
+
 func (n *NovelController) GetChapterByID(ctx *gin.Context) {
 	idParam := ctx.Param("chapter_id")
 	id, err := utils.ParseID(idParam)
@@ -409,6 +406,44 @@ func (n *NovelController) GetChapterByID(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, chapter)
+}
+
+func (n *NovelController) GetChapterByNovelTitleAndChapterNo(ctx *gin.Context) {
+	novelTitle := ctx.Param("novel_title")
+	chapterNo := ctx.Param("chapter_no")
+
+	chapterNoUint, err := utils.ParseID(chapterNo)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	chapter, err := n.novelService.GetChapterByNovelTitleAndChapterNo(novelTitle, chapterNoUint)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, chapter)
+}
+
+func (n *NovelController) GetChaptersByNovelTitleAndChapterNo(ctx *gin.Context) {
+	novelTitle := ctx.Param("novel_title")
+	chapterNo := ctx.Param("chapter_no")
+
+	chapterNoUint, err := utils.ParseID(chapterNo)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	chapters, err := n.novelService.GetChaptersByNovelTitleAndChapterNo(novelTitle, chapterNoUint)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, chapters)
 }
 
 func (n *NovelController) CreateChapter(ctx *gin.Context) {

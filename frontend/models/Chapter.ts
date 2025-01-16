@@ -1,12 +1,12 @@
 export interface Chapter {
-  id: number;
-  createdAt: string;
-  updatedAt: string;
-  deletedAt?: string | null;
+  ID: number;
+  CreatedAt: string;
+  UpdatedAt: string;
+  DeletedAt?: string | null;
 
-  chapter_no: number;
-  novel_id: number;
+  chapterNo: number;
+  novelId: number;
   title: string;
-  chapter_url: string;
+  chapterUrl: string;
   body: string;
 }

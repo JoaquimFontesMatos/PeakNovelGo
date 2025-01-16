@@ -13,21 +13,25 @@ func NewNovelService(repo interfaces.NovelRepositoryInterface) *NovelService {
 	return &NovelService{repo: repo}
 }
 
-func (s *NovelService) GetNovelsByAuthorID(authorID uint, page, limit int) ([]models.Novel, int64, error) {
-	return s.repo.GetNovelsByAuthorID(authorID, page, limit)
+func (s *NovelService) GetNovelsByAuthorName(authorName string, page, limit int) ([]models.Novel, int64, error) {
+	return s.repo.GetNovelsByAuthorName(authorName, page, limit)
 }
 
-func (s *NovelService) GetNovelsByGenreID(genreID uint, page, limit int) ([]models.Novel, int64, error) {
-	return s.repo.GetNovelsByGenreID(genreID, page, limit)
+func (s *NovelService) GetNovelsByGenreName(genreName string, page, limit int) ([]models.Novel, int64, error) {
+	return s.repo.GetNovelsByGenreName(genreName, page, limit)
 }
 
-func (s *NovelService) GetNovelsByTagID(tagID uint, page, limit int) ([]models.Novel, int64, error) {
-	return s.repo.GetNovelsByTagID(tagID, page, limit)
+func (s *NovelService) GetNovelsByTagName(tagName string, page, limit int) ([]models.Novel, int64, error) {
+	return s.repo.GetNovelsByTagName(tagName, page, limit)
 }
 
 func (s *NovelService) GetNovels(page, limit int) ([]models.Novel, int64, error) {
 	return s.repo.GetNovels(page, limit)
-}	
+}
+
+func (s *NovelService) GetNovelByTitle(title string) (*models.Novel, error) {
+	return s.repo.GetNovelByTitle(title)
+}
 
 func (s *NovelService) GetNovelByID(id uint) (*models.Novel, error) {
 	return s.repo.GetNovelByID(id)
@@ -35,6 +39,14 @@ func (s *NovelService) GetNovelByID(id uint) (*models.Novel, error) {
 
 func (s *NovelService) GetChapterByID(id uint) (*models.Chapter, error) {
 	return s.repo.GetChapterByID(id)
+}
+
+func (s *NovelService) GetChapterByNovelTitleAndChapterNo(novelTitle string, chapterNo uint) (*models.Chapter, error) {
+	return s.repo.GetChapterByNovelTitleAndChapterNo(novelTitle, chapterNo)
+}
+
+func (s *NovelService) GetChaptersByNovelTitleAndChapterNo(novelTitle string, chapterNo uint) ([]models.Chapter, error) {
+	return s.repo.GetChaptersByNovelTitleAndChapterNo(novelTitle, chapterNo)
 }
 
 func (s *NovelService) CreateNovel(novel models.Novel) (*models.Novel, error) {

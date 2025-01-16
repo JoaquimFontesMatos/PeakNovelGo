@@ -51,10 +51,10 @@ type NovelRepositoryInterface interface {
 	//   - NO_CHAPTERS_ERROR if the chapters could not be fetched
 	GetChaptersByNovelID(novelID uint, page, limit int) ([]models.Chapter, int64, error)
 
-	// GetNovelsByAuthorID gets a list of novels by author ID.
+	// GetNovelsByAuthorName gets a list of novels by author name.
 	//
 	// Parameters:
-	//   - authorID uint (ID of the author)
+	//   - authorName string (name of the author)
 	//   - page int (page number)
 	//   - limit int (limit of novels per page)
 	//
@@ -63,7 +63,7 @@ type NovelRepositoryInterface interface {
 	//   - int64 (total number of novels)
 	//   - INTERNAL_SERVER_ERROR if the novels could not be fetched
 	//   - NO_NOVELS_ERROR if the novels could not be fetched
-	GetNovelsByAuthorID(authorID uint, page, limit int) ([]models.Novel, int64, error)
+	GetNovelsByAuthorName(authorName string, page, limit int) ([]models.Novel, int64, error)
 
 	// GetNovels gets a list of novels.
 	//
@@ -78,10 +78,10 @@ type NovelRepositoryInterface interface {
 	//   - NO_NOVELS_ERROR if the novels could not be fetched
 	GetNovels(page, limit int) ([]models.Novel, int64, error)
 
-	// GetNovelsByGenreID gets a list of novels by genre ID.
+	// GetNovelsByGenreName gets a list of novels by genre name.
 	//
 	// Parameters:
-	//   - genreID uint (ID of the genre)
+	//   - genreName string (name of the genre)
 	//   - page int (page number)
 	//   - limit int (limit of novels per page)
 	//
@@ -90,12 +90,12 @@ type NovelRepositoryInterface interface {
 	//   - int64 (total number of novels)
 	//   - INTERNAL_SERVER_ERROR if the novels could not be fetched
 	//   - NO_NOVELS_ERROR if the novels could not be fetched
-	GetNovelsByGenreID(genreID uint, page, limit int) ([]models.Novel, int64, error)
+	GetNovelsByGenreName(genreName string, page, limit int) ([]models.Novel, int64, error)
 
-	// GetNovelsByTagID gets a list of novels by tag ID.
+	// GetNovelsByTagName gets a list of novels by tag name.
 	//
 	// Parameters:
-	//   - tagID uint (ID of the tag)
+	//   - tagName string (name of the tag)
 	//   - page int (page number)
 	//   - limit int (limit of novels per page)
 	//
@@ -104,7 +104,7 @@ type NovelRepositoryInterface interface {
 	//   - int64 (total number of novels)
 	//   - INTERNAL_SERVER_ERROR if the novels could not be fetched
 	//   - NO_NOVELS_ERROR if the novels could not be fetched
-	GetNovelsByTagID(tagID uint, page, limit int) ([]models.Novel, int64, error)
+	GetNovelsByTagName(tagName string, page, limit int) ([]models.Novel, int64, error)
 
 	// GetNovelByID gets a novel by ID.
 	//
@@ -117,6 +117,17 @@ type NovelRepositoryInterface interface {
 	//   - NOVEL_NOT_FOUND_ERROR if the novel could not be fetched
 	GetNovelByID(id uint) (*models.Novel, error)
 
+	// GetNovelByTitle gets a novel by title.
+	//
+	// Parameters:
+	//   - title string (title of the novel)
+	//
+	// Returns:
+	//   - *models.Novel (pointer to Novel struct)
+	//   - INTERNAL_SERVER_ERROR if the novel could not be fetched
+	//   - NOVEL_NOT_FOUND_ERROR if the novel could not be fetched
+	GetNovelByTitle(title string) (*models.Novel, error)
+
 	// GetChapterByID gets a chapter by ID.
 	//
 	// Parameters:
@@ -127,6 +138,30 @@ type NovelRepositoryInterface interface {
 	//   - INTERNAL_SERVER_ERROR if the chapter could not be fetched
 	//   - CHAPTER_NOT_FOUND_ERROR if the chapter could not be fetched
 	GetChapterByID(id uint) (*models.Chapter, error)
+
+	// GetChapterByNovelTitleAndChapterNo gets a chapter by novel title and chapter number.
+	//
+	// Parameters:
+	//   - novelTitle string (title of the novel)
+	//   - chapterNo uint (chapter number)
+	//
+	// Returns:
+	//   - *models.Chapter (pointer to Chapter struct)
+	//   - INTERNAL_SERVER_ERROR if the chapter could not be fetched
+	//   - CHAPTER_NOT_FOUND_ERROR if the chapter could not be fetched
+	GetChapterByNovelTitleAndChapterNo(novelTitle string, chapterNo uint) (*models.Chapter, error)
+
+	// GetChaptersByNovelTitleAndChapterNo gets a list of chapters by novel title and chapter number.
+	//
+	// Parameters:
+	//   - novelTitle string (title of the novel)
+	//   - chapterNo uint (chapter number)
+	//
+	// Returns:
+	//   - []models.Chapter (list of Chapter structs)
+	//   - INTERNAL_SERVER_ERROR if the chapters could not be fetched
+	//   - NO_CHAPTERS_ERROR if the chapters could not be fetched
+	GetChaptersByNovelTitleAndChapterNo(novelTitle string, chapterNo uint) ([]models.Chapter, error)
 
 	// CreateChapter creates a new chapter in the database.
 	//

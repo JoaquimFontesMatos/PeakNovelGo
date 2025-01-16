@@ -6,9 +6,9 @@ import (
 
 type BookmarkedNovel struct {
 	gorm.Model
-	NovelID        int    `gorm:"constraint:OnUpdate:CASCADE,OnDelete:SET NULL;" json:"novel_id"`
-	UserID         int    `gorm:"constraint:OnUpdate:CASCADE,OnDelete:SET NULL;" json:"user_id"`
+	NovelID        int    `gorm:"constraint:OnUpdate:CASCADE,OnDelete:SET NULL;" json:"novelId"`
+	UserID         int    `gorm:"constraint:OnUpdate:CASCADE,OnDelete:SET NULL;" json:"userId"`
 	Status         string `gorm:"not null" json:"status"`
 	Score          int    `gorm:"default:0;max:5" json:"score"`
-	CurrentChapter int    `gorm:"default:0" json:"current_chapter"`
+	CurrentChapter int    `gorm:"default:0" json:"currentChapter"`
 }
