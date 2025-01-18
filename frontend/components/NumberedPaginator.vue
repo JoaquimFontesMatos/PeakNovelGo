@@ -1,44 +1,112 @@
 <script setup lang="ts">
+import { useRoute, useRouter } from "vue-router";
+import { ref, watch } from "vue";
+
+const route = useRoute();
+const router = useRouter();
+
+const currentPage = ref(Number(route.query.page) || 1);
+const selectedPageSize = ref(Number(route.query.pageSize) || 10);
+
+onMounted(() => {
+  if (!route.query.page) currentPage.value = 1;
+  if (!route.query.pageSize) selectedPageSize.value = 10;
+  props.onPageChange(currentPage.value, selectedPageSize.value);
+});
+
 const props = defineProps<{
-  currentPage: number;
   totalPages: number;
-  limit: number;
   total: number;
   onPageChange: (newPage: number, limit: number) => void;
 }>();
 
-const selectedPageSize = ref(props.limit);
+function updateQueryParams(page: number, limit: number) {
+  router.replace({
+    query: { ...route.query, page, pageSize: limit },
+  });
+}
 
 function goToNextPage() {
-  if (props.currentPage < props.totalPages) {
-    props.onPageChange(props.currentPage + 1, props.limit);
+  if (currentPage.value < props.totalPages) {
+    currentPage.value += 1;
+    updateQueryParams(currentPage.value, selectedPageSize.value);
+    props.onPageChange(currentPage.value, selectedPageSize.value);
   }
 }
 
 function goToPreviousPage() {
-  if (props.currentPage > 1) {
-    props.onPageChange(props.currentPage - 1, props.limit);
+  if (currentPage.value > 1) {
+    currentPage.value -= 1;
+    updateQueryParams(currentPage.value, selectedPageSize.value);
+    props.onPageChange(currentPage.value, selectedPageSize.value);
   }
 }
 
-function goToSelectedPage(newPage: number, limit: number = props.limit) {
+function goToSelectedPage(
+  newPage: number,
+  limit: number = selectedPageSize.value
+) {
+  currentPage.value = newPage;
+  selectedPageSize.value = limit;
+  updateQueryParams(newPage, limit);
   props.onPageChange(newPage, limit);
 }
 
 function gotToFirstPage() {
-  props.onPageChange(1, props.limit);
+  currentPage.value = 1;
+  updateQueryParams(currentPage.value, selectedPageSize.value);
+  props.onPageChange(1, selectedPageSize.value);
 }
 
 function gotToLastPage() {
-  props.onPageChange(props.totalPages, props.limit);
+  currentPage.value = props.totalPages;
+  updateQueryParams(currentPage.value, selectedPageSize.value);
+  props.onPageChange(props.totalPages, selectedPageSize.value);
 }
+
+/**
+ * Calculate the visible page numbers.
+ */
+function getVisiblePages(): number[] {
+  const maxVisiblePages = 10;
+  const pages = [];
+
+  const startPage = Math.max(
+    1,
+    currentPage.value - Math.floor(maxVisiblePages / 2)
+  );
+  const endPage = Math.min(props.totalPages, startPage + maxVisiblePages - 1);
+
+  for (let i = startPage; i <= endPage; i++) {
+    pages.push(i);
+  }
+
+  // Ensure the first and last pages are included.
+  if (!pages.includes(1)) pages.unshift(1);
+  if (!pages.includes(props.totalPages)) pages.push(props.totalPages);
+
+  return pages;
+}
+
+/**
+ * Add a debounce to the page size change to prevent rapid page changes
+ */
+
+// Watch for changes in query params to keep the UI reactive
+watch(
+  () => route.query,
+  (newQuery) => {
+    if (newQuery.page) currentPage.value = Number(newQuery.page);
+    if (newQuery.pageSize) selectedPageSize.value = Number(newQuery.pageSize);
+  }
+);
 </script>
 
 <template>
   <nav class="flex flex-row justify-center gap-2 items-center">
     <button
       class="rounded-full p-2 py-1 border-2 border-transparent hover:enabled:text-primary hover:enabled:bg-accent-gold-light hover:enabled:border-accent-gold disabled:text-secondary-content disabled:cursor-not-allowed"
-      :disabled="currentPage === totalPages"
+      :disabled="currentPage === 1"
       @click="gotToFirstPage"
     >
       <<
@@ -53,14 +121,21 @@ function gotToLastPage() {
     </button>
 
     <button
-      v-for="page in totalPages"
+      v-for="(page, index) in getVisiblePages()"
       :key="page"
       @click="goToSelectedPage(page)"
-      class="rounded-full p-2 py-1 border-2 border-transparent hover:enabled:text-primary hover:enabled:bg-accent-gold-light hover:enabled:border-accent-gold disabled:text-secondary-content disabled:cursor-not-allowed"
+      class="flex items-center justify-center gap-2 rounded-full p-2 py-1 border-2 border-transparent hover:enabled:text-primary hover:enabled:bg-accent-gold-light hover:enabled:border-accent-gold disabled:text-secondary-content disabled:cursor-not-allowed"
       :class="currentPage === page ? 'bg-accent-gold' : ''"
       :disabled="currentPage === page"
     >
+      <span
+        v-if="page === totalPages && page - 1 != getVisiblePages()[index - 1]"
+        >...</span
+      >
       {{ page }}
+      <span v-if="page === 1 && page + 1 != getVisiblePages()[index + 1]"
+        >...</span
+      >
     </button>
 
     <button

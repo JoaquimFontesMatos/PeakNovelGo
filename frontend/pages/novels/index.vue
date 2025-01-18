@@ -10,32 +10,20 @@ const url = runtimeConfig.public.apiUrl;
 // Reactive variable for holding the data
 const paginatedData = ref<PaginatedServerResponse<Novel> | null>(null);
 
-// Fetch data on initial load
-const { data, error } = await useAsyncData("novels", () =>
-  fetchNovels(url, 1, 10)
-);
-paginatedData.value = data.value;
-
-if (paginatedData.value == undefined || paginatedData.value.data.length == 0) {
-  errorMessage = "Novels not found";
-}
-
-if (error.value) {
-  errorMessage = error.value.message;
-}
+onMounted(async () => {
+  onPageChange(1, 10);
+});
 
 // Fetch novels function with support for pagination
-function fetchNovels(
+async function fetchNovels(
   url: string,
   page: number,
   limit: number
 ): Promise<PaginatedServerResponse<Novel>> {
-  return fetch(`${url}/novels?page=${page}&limit=${limit}`).then((res) =>
-    res.json()
-  );
+  const res = await fetch(`${url}/novels?page=${page}&limit=${limit}`);
+  return await res.json();
 }
 
-// Handle page changes
 async function onPageChange(newPage: number, limit: number) {
   try {
     const response = await fetchNovels(url, newPage, limit);
