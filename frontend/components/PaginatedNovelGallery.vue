@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import type { Novel } from "~/models/Novel";
 import type { PaginatedServerResponse } from "~/models/PaginatedServerResponse";
 import NumberedPaginator from "./NumberedPaginator.vue";
+import type { Novel } from "~/models/Novel";
 
 defineProps<{
   errorMessage: string;
@@ -28,7 +28,7 @@ defineProps<{
         :key="novel.ID"
         class="bg-secondary h-full rounded-md"
       >
-        <NuxtLink :to="`/novels/${novel.title}`">
+        <NuxtLink :to="`/novels/${novel.novelUpdatesId}`">
           <div class="flex flex-row text-secondary-content w-full h-full">
             <div>
               <img
@@ -44,6 +44,8 @@ defineProps<{
         </NuxtLink>
       </div>
     </div>
+
+    <VerticalSpacer />
 
     <NumberedPaginator
       :totalPages="paginatedData.totalPages"

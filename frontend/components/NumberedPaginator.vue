@@ -103,7 +103,7 @@ watch(
 </script>
 
 <template>
-  <nav class="flex flex-row justify-center gap-2 items-center">
+  <nav class="flex flex-wrap justify-center gap-2 items-center">
     <button
       class="rounded-full p-2 py-1 border-2 border-transparent hover:enabled:text-primary hover:enabled:bg-accent-gold-light hover:enabled:border-accent-gold disabled:text-secondary-content disabled:cursor-not-allowed"
       :disabled="currentPage === 1"

@@ -3,6 +3,7 @@ package utils
 import (
 	"backend/internal/types"
 	"strconv"
+	"strings"
 )
 
 // ParseID parses the ID from the URL parameter and returns it as a uint.
@@ -24,4 +25,17 @@ func ParseID(idParam string) (uint, error) {
 	uid := uint(id)
 
 	return uid, nil
+}
+
+func ParseInt(int string) (int, error) {
+	int = strings.TrimSpace(int)
+	int = strings.ReplaceAll(int, "\n", "")
+	
+	num, err := strconv.Atoi(int)
+
+	if err != nil || num <= 0 {
+		return 0, types.WrapError(types.VALIDATION_ERROR, "Invalid Conversion", err)
+	}
+
+	return num, nil
 }

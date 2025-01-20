@@ -4,7 +4,6 @@ export interface Novel {
   UpdatedAt: string;
   DeletedAt?: string | null;
 
-  url: string;
   title: string;
   synopsis: string;
   coverUrl: string;
@@ -14,11 +13,15 @@ export interface Novel {
   tags: Tag[];
   authors: Author[];
   genres: Genre[];
+  year: string;
+  releaseFrequency: string;
+  novelUpdatesId: string;
 }
 
 export interface Tag {
   id: number;
   name: string;
+  description: string;
 }
 
 export interface Author {
@@ -29,4 +32,5 @@ export interface Author {
 export interface Genre {
   id: number;
   name: string;
+  description: string;
 }

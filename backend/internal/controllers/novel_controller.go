@@ -6,12 +6,15 @@ import (
 	"backend/internal/services/interfaces"
 	"backend/internal/types"
 	"backend/internal/utils"
-	"backend/internal/validators"
+	"strings"
+
+	//"backend/internal/validators"
 	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
+	"os/exec"
 	"strconv"
 	"sync"
 
@@ -40,31 +43,54 @@ type Metadata struct {
 
 // HandleGetNovels handles POST /novel
 func (n *NovelController) HandleImportNovel(ctx *gin.Context) {
-	if ctx.Request.Body == nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "No body provided"})
+	novelUpdatesID := ctx.Param("novel_updates_id")
+
+	if novelUpdatesID == "" {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "No novel updates ID provided"})
 		return
 	}
 
-	metadata := Metadata{}
+	// Specify the Python script and its module
+	cmd := exec.Command("python", "-m", "novel_updates_scraper.client", novelUpdatesID)
 
-	if err := validators.ValidateBody(ctx, &metadata); err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	metadata.Novel.Synopsis = utils.StripHTML(metadata.Novel.Synopsis)
-
-	// Convert the imported novel to a Novel struct
-	novel, err := n.novelService.ConvertToNovel(metadata.Novel)
-
+	// Capture the output of the Python script
+	output, err := cmd.Output()
 	if err != nil {
-		log.Println(err)
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Failed to convert imported novel to Novel struct"})
+		fmt.Println("Error:", err)
+		ctx.JSON(500, gin.H{"error": "Failed to execute Python script"})
 		return
+	}
+
+	// Ensure the output is unmarshaled into a valid JSON object
+	var result models.ImportedNovel
+	err = json.Unmarshal(output, &result)
+	if err != nil {
+		fmt.Println("Error unmarshaling JSON:", err)
+		ctx.JSON(500, gin.H{"error": "Failed to parse Python script output as JSON"})
+		return
+	}
+
+	year := strings.ReplaceAll(result.Year, "\n", "")
+	status := strings.ReplaceAll(result.Status, "\n", "")
+	language := strings.ReplaceAll(result.Language.Name, "\n", "")
+
+	novel := models.Novel{
+		Title:            result.Title,
+		Synopsis:         result.Synopsis,
+		CoverUrl:         result.CoverUrl,
+		Language:         language,
+		Status:           status,
+		NovelUpdatesUrl:  fmt.Sprintf("https://www.novelupdates.com/series/%s", novelUpdatesID),
+		NovelUpdatesID:   novelUpdatesID,
+		Tags:             result.Tags,
+		Authors:          result.Authors,
+		Genres:           result.Genres,
+		Year:             year,
+		ReleaseFrequency: result.ReleaseFrequency,
 	}
 
 	// Save the novel to the database
-	createdNovel, err := n.novelService.CreateNovel(*novel)
+	createdNovel, err := n.novelService.CreateNovel(novel)
 
 	if err != nil {
 		log.Println(err)
@@ -75,6 +101,7 @@ func (n *NovelController) HandleImportNovel(ctx *gin.Context) {
 	log.Println("Novel saved successfully")
 
 	ctx.JSON(200, createdNovel)
+
 }
 
 // HandleUploadNovelZip handles POST /novel/upload
@@ -379,10 +406,10 @@ func (n *NovelController) GetNovelByID(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, novel)
 }
 
-func (n *NovelController) GetNovelByTitle(ctx *gin.Context) {
+func (n *NovelController) GetNovelByUpdatesID(ctx *gin.Context) {
 	title := ctx.Param("title")
 
-	novel, err := n.novelService.GetNovelByTitle(title)
+	novel, err := n.novelService.GetNovelByUpdatesID(title)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -408,7 +435,7 @@ func (n *NovelController) GetChapterByID(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, chapter)
 }
 
-func (n *NovelController) GetChapterByNovelTitleAndChapterNo(ctx *gin.Context) {
+func (n *NovelController) GetChapterByNovelUpdatesIDAndChapterNo(ctx *gin.Context) {
 	novelTitle := ctx.Param("novel_title")
 	chapterNo := ctx.Param("chapter_no")
 
@@ -418,7 +445,7 @@ func (n *NovelController) GetChapterByNovelTitleAndChapterNo(ctx *gin.Context) {
 		return
 	}
 
-	chapter, err := n.novelService.GetChapterByNovelTitleAndChapterNo(novelTitle, chapterNoUint)
+	chapter, err := n.novelService.GetChapterByNovelUpdatesIDAndChapterNo(novelTitle, chapterNoUint)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -427,23 +454,39 @@ func (n *NovelController) GetChapterByNovelTitleAndChapterNo(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, chapter)
 }
 
-func (n *NovelController) GetChaptersByNovelTitleAndChapterNo(ctx *gin.Context) {
+func (n *NovelController) GetChaptersByNovelUpdatesID(ctx *gin.Context) {
 	novelTitle := ctx.Param("novel_title")
-	chapterNo := ctx.Param("chapter_no")
 
-	chapterNoUint, err := utils.ParseID(chapterNo)
-	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
+	page, err := strconv.Atoi(ctx.DefaultQuery("page", "1")) // Default to page 1
+	if err != nil || page < 1 {
+		page = 1
+	}
+	limit, err := strconv.Atoi(ctx.DefaultQuery("limit", "10")) // Default to 10 items per page
+	if err != nil || limit < 1 {
+		limit = 10
 	}
 
-	chapters, err := n.novelService.GetChaptersByNovelTitleAndChapterNo(novelTitle, chapterNoUint)
+	chapters, total, err := n.novelService.GetChaptersByNovelUpdatesID(novelTitle, page, limit)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	ctx.JSON(http.StatusOK, chapters)
+	totalPages := (total + int64(limit) - 1) / int64(limit)
+
+	if int64(page) > totalPages {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Page out of range"})
+		return
+	}
+
+	// Build response with pagination metadata
+	ctx.JSON(http.StatusOK, gin.H{
+		"data":       chapters,
+		"total":      total,
+		"page":       page,
+		"limit":      limit,
+		"totalPages": totalPages,
+	})
 }
 
 func (n *NovelController) CreateChapter(ctx *gin.Context) {

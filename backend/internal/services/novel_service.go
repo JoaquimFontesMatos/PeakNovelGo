@@ -29,8 +29,8 @@ func (s *NovelService) GetNovels(page, limit int) ([]models.Novel, int64, error)
 	return s.repo.GetNovels(page, limit)
 }
 
-func (s *NovelService) GetNovelByTitle(title string) (*models.Novel, error) {
-	return s.repo.GetNovelByTitle(title)
+func (s *NovelService) GetNovelByUpdatesID(title string) (*models.Novel, error) {
+	return s.repo.GetNovelByUpdatesID(title)
 }
 
 func (s *NovelService) GetNovelByID(id uint) (*models.Novel, error) {
@@ -41,12 +41,12 @@ func (s *NovelService) GetChapterByID(id uint) (*models.Chapter, error) {
 	return s.repo.GetChapterByID(id)
 }
 
-func (s *NovelService) GetChapterByNovelTitleAndChapterNo(novelTitle string, chapterNo uint) (*models.Chapter, error) {
-	return s.repo.GetChapterByNovelTitleAndChapterNo(novelTitle, chapterNo)
+func (s *NovelService) GetChapterByNovelUpdatesIDAndChapterNo(novelTitle string, chapterNo uint) (*models.Chapter, error) {
+	return s.repo.GetChapterByNovelUpdatesIDAndChapterNo(novelTitle, chapterNo)
 }
 
-func (s *NovelService) GetChaptersByNovelTitleAndChapterNo(novelTitle string, chapterNo uint) ([]models.Chapter, error) {
-	return s.repo.GetChaptersByNovelTitleAndChapterNo(novelTitle, chapterNo)
+func (s *NovelService) GetChaptersByNovelUpdatesID(novelTitle string, page, limit int) ([]models.Chapter, int64, error) {
+	return s.repo.GetChaptersByNovelUpdatesID(novelTitle, page, limit)
 }
 
 func (s *NovelService) CreateNovel(novel models.Novel) (*models.Novel, error) {
@@ -55,10 +55,6 @@ func (s *NovelService) CreateNovel(novel models.Novel) (*models.Novel, error) {
 
 func (s *NovelService) CreateChapters(chapters []models.Chapter) (int, error) {
 	return s.repo.CreateChapters(chapters)
-}
-
-func (s *NovelService) ConvertToNovel(imported models.ImportedNovel) (*models.Novel, error) {
-	return s.repo.ConvertToNovel(imported)
 }
 
 func (s *NovelService) GetChaptersByNovelID(novelID uint, page, limit int) ([]models.Chapter, int64, error) {

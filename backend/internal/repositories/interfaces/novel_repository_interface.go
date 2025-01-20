@@ -27,16 +27,6 @@ type NovelRepositoryInterface interface {
 	//   - NO_NEW_CHAPTERS_ERROR if there's no new chapters to create
 	CreateChapters(chapters []models.Chapter) (int, error)
 
-	// ConvertToNovel convert an imported novel struct to a novel struct.
-	//
-	// Parameters:
-	//   - imported models.ImportedNovel (imported novel struct)
-	//
-	// Returns:
-	//   - *models.Novel (pointer to Novel struct)
-	//   - INTERNAL_SERVER_ERROR if an error occurred while converting the imported novel struct to a novel struct
-	ConvertToNovel(imported models.ImportedNovel) (*models.Novel, error)
-
 	// GetChaptersByNovelID gets a list of chapters by novel ID.
 	//
 	// Parameters:
@@ -117,7 +107,7 @@ type NovelRepositoryInterface interface {
 	//   - NOVEL_NOT_FOUND_ERROR if the novel could not be fetched
 	GetNovelByID(id uint) (*models.Novel, error)
 
-	// GetNovelByTitle gets a novel by title.
+	// GetNovelByUpdatesID gets a novel by novel updates id.
 	//
 	// Parameters:
 	//   - title string (title of the novel)
@@ -126,7 +116,7 @@ type NovelRepositoryInterface interface {
 	//   - *models.Novel (pointer to Novel struct)
 	//   - INTERNAL_SERVER_ERROR if the novel could not be fetched
 	//   - NOVEL_NOT_FOUND_ERROR if the novel could not be fetched
-	GetNovelByTitle(title string) (*models.Novel, error)
+	GetNovelByUpdatesID(title string) (*models.Novel, error)
 
 	// GetChapterByID gets a chapter by ID.
 	//
@@ -139,7 +129,7 @@ type NovelRepositoryInterface interface {
 	//   - CHAPTER_NOT_FOUND_ERROR if the chapter could not be fetched
 	GetChapterByID(id uint) (*models.Chapter, error)
 
-	// GetChapterByNovelTitleAndChapterNo gets a chapter by novel title and chapter number.
+	// GetChapterByNovelUpdatesIDAndChapterNo gets a chapter by novel title and chapter number.
 	//
 	// Parameters:
 	//   - novelTitle string (title of the novel)
@@ -149,9 +139,9 @@ type NovelRepositoryInterface interface {
 	//   - *models.Chapter (pointer to Chapter struct)
 	//   - INTERNAL_SERVER_ERROR if the chapter could not be fetched
 	//   - CHAPTER_NOT_FOUND_ERROR if the chapter could not be fetched
-	GetChapterByNovelTitleAndChapterNo(novelTitle string, chapterNo uint) (*models.Chapter, error)
+	GetChapterByNovelUpdatesIDAndChapterNo(novelTitle string, chapterNo uint) (*models.Chapter, error)
 
-	// GetChaptersByNovelTitleAndChapterNo gets a list of chapters by novel title and chapter number.
+	// GetChaptersByNovelUpdatesID gets a list of chapters by novel title and chapter number.
 	//
 	// Parameters:
 	//   - novelTitle string (title of the novel)
@@ -161,7 +151,7 @@ type NovelRepositoryInterface interface {
 	//   - []models.Chapter (list of Chapter structs)
 	//   - INTERNAL_SERVER_ERROR if the chapters could not be fetched
 	//   - NO_CHAPTERS_ERROR if the chapters could not be fetched
-	GetChaptersByNovelTitleAndChapterNo(novelTitle string, chapterNo uint) ([]models.Chapter, error)
+	GetChaptersByNovelUpdatesID(novelTitle string, page, limit int) ([]models.Chapter, int64, error)
 
 	// CreateChapter creates a new chapter in the database.
 	//

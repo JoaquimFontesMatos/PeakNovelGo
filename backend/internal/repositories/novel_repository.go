@@ -39,6 +39,75 @@ func (n *NovelRepository) CreateNovel(novel models.Novel) (*models.Novel, error)
 		return nil, types.WrapError("CONFLICT_ERROR", "Novel already exists", nil)
 	}
 
+	// Initialize slices for the new relationships
+	newTags := []models.Tag{}
+	newAuthors := []models.Author{}
+	newGenres := []models.Genre{}
+
+	// Process tags
+	for _, tag := range novel.Tags {
+		var existingTag models.Tag
+
+		if tag.Name == "" {
+			continue // Skip empty tags
+		}
+
+		err := n.db.Where("name = ?", tag.Name).FirstOrCreate(&existingTag, models.Tag{
+			Name:        tag.Name,
+			Description: tag.Description,
+		}).Error
+
+		if err != nil {
+			return nil, types.WrapError(types.INTERNAL_SERVER_ERROR, "Failed to associate tag", err)
+		}
+
+		newTags = append(newTags, existingTag) // Append to the newTags slice
+	}
+
+	// Process authors
+	for _, author := range novel.Authors {
+		var existingAuthor models.Author
+
+		if author.Name == "" {
+			continue // Skip empty authors
+		}
+
+		err := n.db.Where("name = ?", author.Name).FirstOrCreate(&existingAuthor, models.Author{
+			Name: author.Name,
+		}).Error
+
+		if err != nil {
+			return nil, types.WrapError(types.INTERNAL_SERVER_ERROR, "Failed to associate author", err)
+		}
+
+		newAuthors = append(newAuthors, existingAuthor) // Append to the newAuthors slice
+	}
+
+	// Process genres
+	for _, genre := range novel.Genres {
+		var existingGenre models.Genre
+
+		if genre.Name == "" {
+			continue // Skip empty genres
+		}
+
+		err := n.db.Where("name = ?", genre.Name).FirstOrCreate(&existingGenre, models.Genre{
+			Name:        genre.Name,
+			Description: genre.Description,
+		}).Error
+
+		if err != nil {
+			return nil, types.WrapError(types.INTERNAL_SERVER_ERROR, "Failed to associate genre", err)
+		}
+
+		newGenres = append(newGenres, existingGenre) // Append to the newGenres slice
+	}
+
+	// Update the novel with associated relationships
+	novel.Tags = newTags
+	novel.Authors = newAuthors
+	novel.Genres = newGenres
+
 	// Save the novel with relationships
 	if err := n.db.Create(&novel).Error; err != nil {
 		log.Println(err)
@@ -57,7 +126,7 @@ func (n *NovelRepository) CreateNovel(novel models.Novel) (*models.Novel, error)
 //   - bool (true if the novel already exists, false otherwise)
 func (n *NovelRepository) isNovelCreated(novel models.Novel) bool {
 	var existingNovel models.Novel
-	if err := n.db.Where("url = ?", novel.Url).First(&existingNovel).Error; err != nil {
+	if err := n.db.Where("novel_updates_id = ?", novel.NovelUpdatesID).First(&existingNovel).Error; err != nil {
 		return false
 	}
 	return existingNovel.ID != 0
@@ -139,138 +208,6 @@ func (n *NovelRepository) CreateChapters(chapters []models.Chapter) (int, error)
 
 		return nil
 	})
-}
-
-// getTagsByName gets a map of tags and whether they already exist in the database.
-//
-// Parameters:
-//   - names []string (list of tag names)
-//
-// Returns:
-//   - map[string]models.Tag (map of tags and whether they already exist)
-//   - INTERNAL_SERVER_ERROR if the tags could not be fetched
-func (n *NovelRepository) getTagsByName(names []string) (map[string]models.Tag, error) {
-	var existingTags []models.Tag
-	if err := n.db.Where("name IN ?", names).Find(&existingTags).Error; err != nil {
-		return nil, types.WrapError(types.INTERNAL_SERVER_ERROR, "Failed to get the existing tags", err)
-	}
-
-	// Create a map for quick lookups
-	tagMap := make(map[string]models.Tag, len(existingTags))
-	for _, tag := range existingTags {
-		tagMap[tag.Name] = tag
-	}
-	return tagMap, nil
-}
-
-// getAuthorsByName gets a map of authors and whether they already exist in the database.
-//
-// Parameters:
-//   - names []string (list of author names)
-//
-// Returns:
-//   - map[string]models.Author (map of authors and whether they already exist)
-//   - INTERNAL_SERVER_ERROR if the authors could not be fetched
-func (n *NovelRepository) getAuthorsByName(names []string) (map[string]models.Author, error) {
-	var existingAuthors []models.Author
-	if err := n.db.Where("name IN ?", names).Find(&existingAuthors).Error; err != nil {
-		return nil, types.WrapError(types.INTERNAL_SERVER_ERROR, "Failed to get the existing authors", err)
-	}
-
-	// Create a map for quick lookups
-	authorMap := make(map[string]models.Author, len(existingAuthors))
-	for _, author := range existingAuthors {
-		authorMap[author.Name] = author
-	}
-	return authorMap, nil
-}
-
-// getGenresByName gets a map of genres and whether they already exist in the database.
-//
-// Parameters:
-//   - names []string (list of genre names)
-//
-// Returns:
-//   - map[string]models.Genre (map of genres and whether they already exist)
-//   - INTERNAL_SERVER_ERROR if the genres could not be fetched
-func (n *NovelRepository) getGenresByName(names []string) (map[string]models.Genre, error) {
-	var existingGenres []models.Genre
-	if err := n.db.Where("name IN ?", names).Find(&existingGenres).Error; err != nil {
-		return nil, types.WrapError(types.INTERNAL_SERVER_ERROR, "Failed to get the existing genres", err)
-	}
-
-	// Create a map for quick lookups
-	genreMap := make(map[string]models.Genre, len(existingGenres))
-	for _, genre := range existingGenres {
-		genreMap[genre.Name] = genre
-	}
-	return genreMap, nil
-}
-
-// ConvertToNovel convert an imported novel struct to a novel struct.
-//
-// Parameters:
-//   - imported models.ImportedNovel (imported novel struct)
-//
-// Returns:
-//   - *models.Novel (pointer to Novel struct)
-//   - INTERNAL_SERVER_ERROR if an error occurred while converting the imported novel struct to a novel struct
-func (n *NovelRepository) ConvertToNovel(imported models.ImportedNovel) (*models.Novel, error) {
-	// Handle Tags
-	tagMap, err := n.getTagsByName(imported.Tags)
-	if err != nil {
-		return nil, err
-	}
-	var tags []models.Tag
-	for _, tagName := range imported.Tags {
-		if tag, exists := tagMap[tagName]; exists {
-			tags = append(tags, tag)
-		} else {
-			tags = append(tags, models.Tag{Name: tagName})
-		}
-	}
-
-	// Handle Authors
-	authorMap, err := n.getAuthorsByName(imported.Authors)
-	if err != nil {
-		return nil, err
-	}
-	var authors []models.Author
-	for _, authorName := range imported.Authors {
-		if author, exists := authorMap[authorName]; exists {
-			authors = append(authors, author)
-		} else {
-			authors = append(authors, models.Author{Name: authorName})
-		}
-	}
-
-	// Handle Genres
-	genreMap, err := n.getGenresByName(imported.Genres)
-	if err != nil {
-		return nil, err
-	}
-	var genres []models.Genre
-	for _, genreName := range imported.Genres {
-		if genre, exists := genreMap[genreName]; exists {
-			genres = append(genres, genre)
-		} else {
-			genres = append(genres, models.Genre{Name: genreName})
-		}
-	}
-
-	// Return the Novel struct with associated tags, authors, and genres
-	return &models.Novel{
-		Url:             imported.Url,
-		Title:           imported.Title,
-		Synopsis:        imported.Synopsis,
-		CoverUrl:        imported.CoverUrl,
-		Language:        imported.Language,
-		Status:          imported.Status,
-		NovelUpdatesUrl: imported.NovelUpdatesUrl,
-		Tags:            tags,
-		Authors:         authors,
-		Genres:          genres,
-	}, nil
 }
 
 // GetChaptersByNovelID gets a list of chapters by novel ID.
@@ -544,18 +481,18 @@ func (n *NovelRepository) GetNovelByID(id uint) (*models.Novel, error) {
 	return &novel, nil
 }
 
-// GetNovelByTitle gets a novel by title.
+// GetNovelByUpdatesID gets a novel by NovelUpdatesID.
 //
 // Parameters:
-//   - title string (title of the novel)
+//   - NovelUpdatesID string (NovelUpdatesID of the novel)
 //
 // Returns:
 //   - *models.Novel (pointer to Novel struct)
 //   - INTERNAL_SERVER_ERROR if the novel could not be fetched
 //   - NOVEL_NOT_FOUND_ERROR if the novel could not be fetched
-func (n *NovelRepository) GetNovelByTitle(title string) (*models.Novel, error) {
+func (n *NovelRepository) GetNovelByUpdatesID(title string) (*models.Novel, error) {
 	var novel models.Novel
-	if err := n.db.Where("title = ?", title).
+	if err := n.db.Where("novel_updates_id = ?", title).
 		Preload("Authors").
 		Preload("Genres").
 		Preload("Tags").
@@ -590,7 +527,7 @@ func (n *NovelRepository) GetChapterByID(id uint) (*models.Chapter, error) {
 	return &chapter, nil
 }
 
-// GetChapterByNovelTitleAndChapterNo gets a chapter by novel title and chapter number.
+// GetChapterByNovelUpdatesIDAndChapterNo gets a chapter by novel title and chapter number.
 //
 // Parameters:
 //   - novelTitle string (title of the novel)
@@ -600,11 +537,11 @@ func (n *NovelRepository) GetChapterByID(id uint) (*models.Chapter, error) {
 //   - *models.Chapter (pointer to Chapter struct)
 //   - INTERNAL_SERVER_ERROR if the chapter could not be fetched
 //   - CHAPTER_NOT_FOUND_ERROR if the chapter could not be fetched
-func (n *NovelRepository) GetChapterByNovelTitleAndChapterNo(novelTitle string, chapterNo uint) (*models.Chapter, error) {
+func (n *NovelRepository) GetChapterByNovelUpdatesIDAndChapterNo(novelTitle string, chapterNo uint) (*models.Chapter, error) {
 	var chapter models.Chapter
 	if err := n.db.Model(&models.Chapter{}).
 		Joins("JOIN novels ON novels.id = chapters.novel_id").
-		Where("novels.title = ? AND chapters.chapter_no = ?", novelTitle, chapterNo).First(&chapter).Error; err != nil {
+		Where("novels.novel_updates_id = ? AND chapters.chapter_no = ?", novelTitle, chapterNo).First(&chapter).Error; err != nil {
 		if err.Error() == "record not found" {
 			return nil, types.WrapError(types.CHAPTER_NOT_FOUND_ERROR, "Chapter not found", nil)
 		}
@@ -614,30 +551,46 @@ func (n *NovelRepository) GetChapterByNovelTitleAndChapterNo(novelTitle string, 
 	return &chapter, nil
 }
 
-// GetChaptersByNovelTitleAndChapterNo gets a list of chapters by novel title and chapter number.
+// GetChaptersByNovelUpdatesID gets a list of chapters by novel updates ID.
 //
 // Parameters:
 //   - novelTitle string (title of the novel)
-//   - chapterNo uint (chapter number)
 //
 // Returns:
 //   - []models.Chapter (list of Chapter structs)
 //   - INTERNAL_SERVER_ERROR if the chapters could not be fetched
 //   - NO_CHAPTERS_ERROR if the chapters could not be fetched
-func (n *NovelRepository) GetChaptersByNovelTitleAndChapterNo(novelTitle string, chapterNo uint) ([]models.Chapter, error) {
+func (n *NovelRepository) GetChaptersByNovelUpdatesID(novelTitle string, page, limit int) ([]models.Chapter, int64, error) {
 	var chapters []models.Chapter
+	var total int64
 
 	if err := n.db.Model(&models.Chapter{}).
 		Joins("JOIN novels ON novels.id = chapters.novel_id").
-		Where("novels.title = ? AND chapters.chapter_no = ?", novelTitle, chapterNo).
-		Find(&chapters).Error; err != nil {
+		Where("novels.novel_updates_id = ?", novelTitle).
+		Count(&total).Error; err != nil {
 		if err.Error() == "record not found" {
-			return nil, types.WrapError(types.NO_CHAPTERS_ERROR, "No chapters found", nil)
+			return nil, 0, types.WrapError(types.NO_CHAPTERS_ERROR, "No chapters found", nil)
 		}
 
-		return nil, types.WrapError(types.INTERNAL_SERVER_ERROR, "Failed to fetch chapters", err)
+		return nil, 0, types.WrapError(types.INTERNAL_SERVER_ERROR, "Failed to get the total number of chapters", err)
 	}
-	return chapters, nil
+	// Apply pagination and ordering
+	offset := (page - 1) * limit
+	if err := n.db.Model(&models.Chapter{}).
+		Joins("JOIN novels ON novels.id = chapters.novel_id").
+		Where("novels.novel_updates_id = ?", novelTitle).
+		Order("chapter_no ASC").
+		Limit(limit).Offset(offset).
+		Offset(offset).
+		Find(&chapters).Error; err != nil {
+
+		if err.Error() == "record not found" {
+			return nil, 0, types.WrapError(types.NO_CHAPTERS_ERROR, "No chapters found", nil)
+		}
+
+		return nil, 0, types.WrapError(types.INTERNAL_SERVER_ERROR, "Failed to fetch chapters", err)
+	}
+	return chapters, total, nil
 }
 
 // isChapterCreated checks if a chapter with the given chapter number and novel ID already exists in the database.
