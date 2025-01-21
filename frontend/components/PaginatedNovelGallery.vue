@@ -4,29 +4,24 @@ import NumberedPaginator from "./NumberedPaginator.vue";
 import type { Novel } from "~/models/Novel";
 
 defineProps<{
-  errorMessage: string;
+  errorMessage: string | null;
   paginatedData: PaginatedServerResponse<Novel> | null;
   onPageChange: (newPage: number, limit: number) => void;
 }>();
 </script>
 
 <template>
-  <ErrorAlert
-    v-if="
-      errorMessage !== '' ||
-      (paginatedData && paginatedData.data.length == 0) ||
-      paginatedData == null
-    "
+  <ErrorAlert v-if="errorMessage !== '' && errorMessage !== null"
     >Error:
     {{ errorMessage == "" ? "No Novels Found" : errorMessage }}</ErrorAlert
   >
 
   <div v-else-if="paginatedData && paginatedData.data.length > 0">
-    <div class="grid grid-cols-2 gap-10 justify-center">
-      <div
+    <ul v-auto-animate class="grid grid-cols-2 gap-10 justify-center">
+      <li
         v-for="novel in paginatedData.data"
-        :key="novel.ID"
-        class="bg-secondary h-full rounded-md"
+        :key="novel.novelUpdatesId"
+        class="bg-secondary h-full rounded-md border-2 border-transparent transition-all duration-150 hover:border-accent-gold hover:scale-[1.01] hover:brightness-105 hover:drop-shadow-md"
       >
         <NuxtLink :to="`/novels/${novel.novelUpdatesId}`">
           <div class="flex flex-row text-secondary-content w-full h-full">
@@ -42,8 +37,8 @@ defineProps<{
             </div>
           </div>
         </NuxtLink>
-      </div>
-    </div>
+      </li>
+    </ul>
 
     <VerticalSpacer />
 
@@ -52,5 +47,8 @@ defineProps<{
       :total="paginatedData.total"
       @page-change="(page, limit) => onPageChange(page, limit)"
     />
+  </div>
+  <div v-else>
+    <ErrorAlert>No novels found</ErrorAlert>
   </div>
 </template>

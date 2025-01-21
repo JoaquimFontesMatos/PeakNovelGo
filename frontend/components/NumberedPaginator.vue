@@ -52,18 +52,6 @@ function goToSelectedPage(
   props.onPageChange(newPage, limit);
 }
 
-function gotToFirstPage() {
-  currentPage.value = 1;
-  updateQueryParams(currentPage.value, selectedPageSize.value);
-  props.onPageChange(1, selectedPageSize.value);
-}
-
-function gotToLastPage() {
-  currentPage.value = props.totalPages;
-  updateQueryParams(currentPage.value, selectedPageSize.value);
-  props.onPageChange(props.totalPages, selectedPageSize.value);
-}
-
 /**
  * Calculate the visible page numbers.
  */
@@ -107,14 +95,6 @@ watch(
     <button
       class="rounded-full p-2 py-1 border-2 border-transparent hover:enabled:text-primary hover:enabled:bg-accent-gold-light hover:enabled:border-accent-gold disabled:text-secondary-content disabled:cursor-not-allowed"
       :disabled="currentPage === 1"
-      @click="gotToFirstPage"
-    >
-      <<
-    </button>
-
-    <button
-      class="rounded-full p-2 py-1 border-2 border-transparent hover:enabled:text-primary hover:enabled:bg-accent-gold-light hover:enabled:border-accent-gold disabled:text-secondary-content disabled:cursor-not-allowed"
-      :disabled="currentPage === 1"
       @click="goToPreviousPage"
     >
       <
@@ -144,14 +124,6 @@ watch(
       @click="goToNextPage"
     >
       >
-    </button>
-
-    <button
-      class="rounded-full p-2 py-1 border-2 border-transparent hover:enabled:text-primary hover:enabled:bg-accent-gold-light hover:enabled:border-accent-gold disabled:text-secondary-content disabled:cursor-not-allowed"
-      :disabled="currentPage === totalPages"
-      @click="gotToLastPage"
-    >
-      >>
     </button>
 
     <label for="page-size-select" class="text-secondary-content">

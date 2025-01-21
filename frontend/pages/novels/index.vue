@@ -1,38 +1,26 @@
 <script setup lang="ts">
-import type { Novel } from "~/models/Novel";
-import type { PaginatedServerResponse } from "~/models/PaginatedServerResponse";
-
-const runtimeConfig = useRuntimeConfig();
-
-var errorMessage = "";
-const url = runtimeConfig.public.apiUrl;
-
-// Reactive variable for holding the data
-const paginatedData = ref<PaginatedServerResponse<Novel> | null>(null);
+const currentPage = ref(1);
+const currentLimit = ref(10);
 
 onMounted(async () => {
-  onPageChange(1, 10);
+  await onPageChange(currentPage.value, currentLimit.value);
 });
 
-// Fetch novels function with support for pagination
-async function fetchNovels(
-  url: string,
-  page: number,
-  limit: number
-): Promise<PaginatedServerResponse<Novel>> {
-  const res = await fetch(`${url}/novels?page=${page}&limit=${limit}`);
-  return await res.json();
-}
+const { fetchingNovel, novelError, paginatedNovelsData } = storeToRefs(
+  useNovelStore()
+);
 
-async function onPageChange(newPage: number, limit: number) {
-  try {
-    const response = await fetchNovels(url, newPage, limit);
-    paginatedData.value = response;
-  } catch (err) {
-    errorMessage = "Failed to fetch new page";
-    console.error(err);
-  }
-}
+const onPageChange = async (newPage: number, limit: number) => {
+  if (
+    newPage === currentPage.value &&
+    limit === currentLimit.value &&
+    paginatedNovelsData.value.page != 0
+  )
+    return;
+  await useNovelStore().fetchNovels(newPage, limit);
+  currentPage.value = newPage;
+  currentLimit.value = limit;
+};
 </script>
 
 <template>
@@ -46,9 +34,12 @@ async function onPageChange(newPage: number, limit: number) {
 
     <VerticalSpacer />
 
+    <LoadingBar v-show="fetchingNovel" />
+
     <PaginatedNovelGallery
-      :errorMessage="errorMessage"
-      :paginatedData="paginatedData"
+      v-show="!fetchingNovel"
+      :errorMessage="novelError"
+      :paginatedData="paginatedNovelsData"
       @page-change="onPageChange"
     />
   </main>

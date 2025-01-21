@@ -1,51 +1,27 @@
 <script setup lang="ts">
-import type { Novel } from "~/models/Novel";
-import type { PaginatedServerResponse } from "~/models/PaginatedServerResponse";
-
-const runtimeConfig = useRuntimeConfig();
 const { tagName } = useRoute().params;
+const currentPage = ref(1);
+const currentLimit = ref(10);
 
-var errorMessage = "";
+onMounted(async () => {
+  await onPageChange(currentPage.value, currentLimit.value);
+});
 
-const url = runtimeConfig.public.apiUrl;
-
-const paginatedData = ref<PaginatedServerResponse<Novel> | null>(null);
-
-const { data, error } = await useAsyncData("novelsByTag", () =>
-  fetchNovels(tagName as string, url, 1, 10)
+const { fetchingNovel, novelError, paginatedNovelsDataByTag } = storeToRefs(
+  useNovelStore()
 );
 
-if (data.value == undefined || data.value.data.length == 0) {
-  errorMessage = "Novels not found";
-}
-
-if (error.value) {
-  errorMessage = error.value.message;
-}
-
-function fetchNovels(
-  tagName: string,
-  url: string,
-  page: number,
-  limit: number
-): Promise<PaginatedServerResponse<Novel>> {
-  return fetch(
-    `${url}/novels/tags/${encodeURIComponent(
-      tagName as string
-    )}?page=${page}&limit=${limit}`
-  ).then((res) => res.json());
-}
-
-// Handle page changes
-async function onPageChange(newPage: number, limit: number) {
-  try {
-    const response = await fetchNovels(tagName as string, url, newPage, limit);
-    paginatedData.value = response;
-  } catch (err) {
-    errorMessage = "Failed to fetch new page";
-    console.error(err);
-  }
-}
+const onPageChange = async (newPage: number, limit: number) => {
+  if (
+    newPage === currentPage.value &&
+    limit === currentLimit.value &&
+    paginatedNovelsDataByTag.value.page != 0
+  )
+    return;
+  await useNovelStore().fetchNovelsByTag(tagName as string, newPage, limit);
+  currentPage.value = newPage;
+  currentLimit.value = limit;
+};
 </script>
 
 <template>
@@ -60,9 +36,12 @@ async function onPageChange(newPage: number, limit: number) {
 
     <VerticalSpacer />
 
+    <LoadingBar v-show="fetchingNovel" />
+
     <PaginatedNovelGallery
-      :errorMessage="errorMessage"
-      :paginatedData="data"
+      v-show="!fetchingNovel"
+      :errorMessage="novelError"
+      :paginatedData="paginatedNovelsDataByTag"
       @page-change="onPageChange"
     />
   </main>

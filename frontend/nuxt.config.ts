@@ -1,7 +1,7 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
   alias: {
-    '@img': '/assets/img/',
+    "@img": "/assets/img/",
   },
   css: ["@/assets/css/tailwind.css"],
   postcss: {
@@ -12,7 +12,7 @@ export default defineNuxtConfig({
   },
   compatibilityDate: "2024-11-01",
   devtools: { enabled: true },
-  modules: ["@nuxtjs/tailwindcss"],
+  modules: ["@nuxtjs/tailwindcss", "@pinia/nuxt", "@formkit/auto-animate/nuxt", "@nuxt/icon"],
   runtimeConfig: {
     // Keys within public are also exposed client-side
     public: {
