@@ -8,7 +8,7 @@ const { novelTitle } = useRoute().params;
 defineProps<{
   errorMessage: string | null;
   paginatedData: PaginatedServerResponse<Chapter> | null;
-  onPageChange: (newPage: number, limit: number) => void;
+  onPageChange: (newPage: number, limit: number) => Promise<void>;
 }>();
 
 const [parent] = useAutoAnimate({ duration: 150 });
@@ -17,20 +17,18 @@ const [parent] = useAutoAnimate({ duration: 150 });
 <template>
   <ErrorAlert
     v-if="
-      (errorMessage !== '' &&
-        errorMessage != null &&
-        paginatedData &&
-        paginatedData.data.length == 0) ||
-      paginatedData == null
+      !paginatedData || !paginatedData.data || paginatedData.data.length === 0
     "
-    >Error:
-    {{ errorMessage == "" ? "No Chapters Found" : errorMessage }}</ErrorAlert
   >
+    Error:
+    {{
+      errorMessage === "" || errorMessage === null
+        ? "No Chapters Found"
+        : errorMessage
+    }}
+  </ErrorAlert>
 
-  <div
-    v-else-if="paginatedData && paginatedData.data.length > 0"
-    class="min-h-72"
-  >
+  <div v-else-if="paginatedData?.data?.length > 0" class="min-h-72">
     <NumberedPaginator
       :totalPages="paginatedData.totalPages"
       :total="paginatedData.total"
@@ -55,4 +53,6 @@ const [parent] = useAutoAnimate({ duration: 150 });
       @page-change="(page, limit) => onPageChange(page, limit)"
     />
   </div>
+
+  <ErrorAlert v-else> Error: Failed to Fetch Chapters </ErrorAlert>
 </template>

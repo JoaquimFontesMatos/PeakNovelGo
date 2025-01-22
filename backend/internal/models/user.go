@@ -20,5 +20,5 @@ type User struct {
 	DateOfBirth        time.Time `json:"dateOfBirth"`
 	PreferredLanguage  string    `gorm:"size:100" json:"preferredLanguage,omitempty"`
 	ReadingPreferences string    `gorm:"size:255" json:"readingPreferences,omitempty"`
-	IsDeleted          bool      `gorm:"default:false" json:"isDeleted"`
+	IsDeleted          bool      `gorm:"default:false" json:"-"`
 }

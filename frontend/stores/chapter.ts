@@ -5,13 +5,8 @@ export const useChapterStore = defineStore("Chapter", () => {
   const runtimeConfig = useRuntimeConfig();
   const url = runtimeConfig.public.apiUrl;
 
-  const paginatedChapterData = ref<PaginatedServerResponse<Chapter>>({
-    data: [],
-    limit: 0,
-    page: 0,
-    total: 0,
-    totalPages: 0,
-  });
+  const paginatedChapterData =
+    shallowRef<PaginatedServerResponse<Chapter> | null>(null);
   const fetchingChapters = ref(true);
   const chapterError = ref<string | null>(null);
 
@@ -30,6 +25,7 @@ export const useChapterStore = defineStore("Chapter", () => {
         paginatedChapterData.value = data;
       })
       .catch((error) => {
+        paginatedChapterData.value = null;
         chapterError.value = error;
       })
       .finally(() => {

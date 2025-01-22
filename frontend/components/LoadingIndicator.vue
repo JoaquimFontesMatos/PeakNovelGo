@@ -3,25 +3,25 @@
     <img
       id="clouds1"
       class="absolute top-0 left-0 h-12 cloud"
-      src="@img/cloud_01.svg"
+      src="/img/cloud_01.svg"
       alt="clouds"
     />
     <img
       id="clouds2"
       class="absolute top-5 left-5 h-12 cloud"
-      src="@img/cloud_02.svg"
+      src="/img/cloud_02.svg"
       alt="clouds"
     />
     <img
       id="clouds3"
       class="absolute top-10 left-10 h-12 cloud"
-      src="@img/cloud_03.svg"
+      src="/img/cloud_03.svg"
       alt="clouds"
     />
     <img
       id="clouds4"
       class="absolute top-2 left-2 h-12 cloud"
-      src="@img/cloud_04.svg"
+      src="/img/cloud_04.svg"
       alt="clouds"
     />
   </div>

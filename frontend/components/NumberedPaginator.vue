@@ -17,7 +17,7 @@ onMounted(() => {
 const props = defineProps<{
   totalPages: number;
   total: number;
-  onPageChange: (newPage: number, limit: number) => void;
+  onPageChange: (newPage: number, limit: number) => Promise<void>;
 }>();
 
 function updateQueryParams(page: number, limit: number) {

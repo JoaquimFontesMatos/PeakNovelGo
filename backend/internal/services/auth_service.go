@@ -107,12 +107,12 @@ func (s *AuthService) ValidateCredentials(email string, password string) (*model
 //   - [2]string ([0] is the access token, [1] is the refresh token)
 //   - REFRESH_TOKEN_REVOKED_ERROR if the refresh token has been revoked
 //   - INTERNAL_SERVER_ERROR if an error occurred while refreshing the token
-func (s *AuthService) RefreshToken(refreshToken string) (string, string, error) {
+func (s *AuthService) RefreshToken(refreshToken string) (string, string, *models.User, error) {
 	// Check if the refresh token is in the revoked tokens table
 	isRevoked := s.AuthRepo.CheckIfTokenRevoked(refreshToken)
 
 	if isRevoked {
-		return "", "", types.WrapError(types.REFRESH_TOKEN_REVOKED_ERROR, "Refresh token has been revoked", nil)
+		return "", "", nil, types.WrapError(types.REFRESH_TOKEN_REVOKED_ERROR, "Refresh token has been revoked", nil)
 	}
 
 	// Validate and parse the refresh token (same as before)
@@ -123,30 +123,30 @@ func (s *AuthService) RefreshToken(refreshToken string) (string, string, error) 
 		return s.SecretKey, nil
 	})
 	if err != nil {
-		return "", "", types.WrapError(types.INTERNAL_SERVER_ERROR, "Invalid or expired refresh token", err)
+		return "", "", nil, types.WrapError(types.INTERNAL_SERVER_ERROR, "Invalid or expired refresh token", err)
 	}
 
 	// Extract claims and validate the token
 	claims, ok := token.Claims.(jwt.MapClaims)
 	if !ok || !token.Valid {
-		return "", "", types.WrapError(types.INTERNAL_SERVER_ERROR, "Invalid token claims", err)
+		return "", "", nil, types.WrapError(types.INTERNAL_SERVER_ERROR, "Invalid token claims", err)
 	}
 
 	// Extract user ID from the claims
 	userID, ok := claims["user_id"].(float64)
 	if !ok {
-		return "", "", types.WrapError(types.INTERNAL_SERVER_ERROR, "Invalid token structure", err)
+		return "", "", nil, types.WrapError(types.INTERNAL_SERVER_ERROR, "Invalid token structure", err)
 	}
 
 	// Retrieve the user from the repository
 	fetchedUser, err := s.UserRepo.GetUserByID(uint(userID))
 	if err != nil {
-		return "", "", err
+		return "", "", nil, err
 	}
 
 	// Check if the user is active
 	if fetchedUser.IsDeleted {
-		return "", "", err
+		return "", "", nil, err
 	}
 
 	revokeErrChan := make(chan error)
@@ -170,15 +170,15 @@ func (s *AuthService) RefreshToken(refreshToken string) (string, string, error) 
 
 	revokeErr := <-revokeErrChan
 	if revokeErr != nil {
-		return "", "", types.WrapError(types.INTERNAL_SERVER_ERROR, "Failed to revoke token", revokeErr)
+		return "", "", nil, types.WrapError(types.INTERNAL_SERVER_ERROR, "Failed to revoke token", revokeErr)
 	}
 
 	tokens := <-tokenChan
 	if tokens[0] == "" && tokens[1] == "" {
-		return "", "", types.WrapError(types.INTERNAL_SERVER_ERROR, "Failed to generate tokens", err)
+		return "", "", nil, types.WrapError(types.INTERNAL_SERVER_ERROR, "Failed to generate tokens", err)
 	}
 
-	return tokens[0], tokens[1], nil
+	return tokens[0], tokens[1], fetchedUser, nil
 }
 
 // GenerateToken generates the access token and refresh token.

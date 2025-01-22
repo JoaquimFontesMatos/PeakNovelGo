@@ -14,6 +14,18 @@ if (id == 0 || id == undefined) {
 
 const url = runtimeConfig.public.apiUrl;
 
+const fetchChapter = async (
+  id: number,
+  url: string
+): Promise<Chapter | undefined> => {
+  const res = await fetch(
+    `${url}/novels/chapters/novel/${encodeURIComponent(
+      novelTitle as string
+    )}/chapter/${id}`
+  );
+  return await res.json();
+};
+
 const { data, error } = await useAsyncData("chapter", () =>
   fetchChapter(id, url)
 );
@@ -24,14 +36,6 @@ if (data.value == undefined || data.value.chapterNo == undefined) {
 
 if (error.value) {
   errorMessage = error.value.message;
-}
-
-function fetchChapter(id: number, url: string): Promise<Chapter | undefined> {
-  return fetch(
-    `${url}/novels/chapters/novel/${encodeURIComponent(
-      novelTitle as string
-    )}/chapter/${id}`
-  ).then((res) => res.json());
 }
 </script>
 

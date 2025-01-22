@@ -5,7 +5,7 @@ export const useNovelStore = defineStore("Novel", () => {
   const runtimeConfig = useRuntimeConfig();
   const url = runtimeConfig.public.apiUrl;
 
-  const novel = ref<Novel | null>(null);
+  const novel = shallowRef<Novel | null>(null);
   const fetchingNovel = ref(true);
   const novelError = ref<string | null>(null);
 

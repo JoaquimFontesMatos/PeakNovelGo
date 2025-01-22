@@ -10,7 +10,7 @@ const { paginatedChapterData, fetchingChapters, chapterError } = storeToRefs(
   useChapterStore()
 );
 
-const onPageChange = async (newPage: number, limit: number) => {
+const onPageChange = async (newPage: number, limit: number): Promise<void> => {
   await useChapterStore().fetchChapters(novelTitle as string, newPage, limit);
 };
 
@@ -109,7 +109,7 @@ watch(
 
             <DetailsLabel>Tag(s):</DetailsLabel>
             <ul
-              class="flex flex-wrap max-h-28 overflow-scroll lg:max-h-64 xl:h-auto"
+              class="flex flex-wrap max-h-28 overflow-scroll lg:max-h-64 xl:max-h-full"
             >
               <li
                 v-for="({ name, id }, index) in novel.tags"
@@ -145,9 +145,9 @@ watch(
             <SmallVerticalSpacer />
 
             <DetailsLabel>Status:</DetailsLabel>
-            <novel>
+            <DetailsInfo>
               {{ novel.status }}
-            </novel>
+            </DetailsInfo>
             <SmallVerticalSpacer />
 
             <DetailsLabel>Language:</DetailsLabel>
@@ -171,34 +171,36 @@ watch(
             />
           </div>
           <div class="buttons">
-            <DetailsLabel>Controls:</DetailsLabel>
             <LoadingIndicator v-show="fetchingChapters" />
-            <div
-              v-show="!fetchingChapters"
-              v-if="
-                paginatedChapterData && paginatedChapterData.data.length > 0
-              "
-              class="flex gap-4"
-            >
-              <Button class="flex-grow">
-                <NuxtLink
-                  class="block w-full h-full text-center"
-                  :to="`/novels/${novelTitle}/1`"
-                  >First</NuxtLink
-                ></Button
-              >
+            <section v-show="!fetchingChapters">
+              <div v-if="paginatedChapterData?.data?.length">
+                <DetailsLabel>Controls:</DetailsLabel>
 
-              <Button class="flex-grow">
-                <NuxtLink
-                  class="block w-full h-full text-center"
-                  :to="`/novels/${novelTitle}/${paginatedChapterData.total}`"
-                  >Last -> {{ paginatedChapterData.total }}</NuxtLink
-                ></Button
-              >
-            </div>
-            <div v-show="!fetchingChapters" v-else>
-              <ErrorAlert>Loading Chapters...</ErrorAlert>
-            </div>
+                <section class="flex gap-4">
+                  <Button
+                    v-if="paginatedChapterData && !fetchingChapters"
+                    class="flex-grow"
+                  >
+                    <NuxtLink
+                      class="block w-full h-full text-center"
+                      :to="`/novels/${novelTitle}/1`"
+                      >First</NuxtLink
+                    >
+                  </Button>
+
+                  <Button
+                    v-if="paginatedChapterData && !fetchingChapters"
+                    class="flex-grow"
+                  >
+                    <NuxtLink
+                      class="block w-full h-full text-center"
+                      :to="`/novels/${novelTitle}/${paginatedChapterData!.total}`"
+                      >Last -> {{ paginatedChapterData!.total }}</NuxtLink
+                    ></Button
+                  >
+                </section>
+              </div>
+            </section>
           </div>
         </div>
         <DetailsLabel>Description:</DetailsLabel>
@@ -208,14 +210,14 @@ watch(
 
         <DetailsLabel>Chapters:</DetailsLabel>
 
+        <LoadingBar v-show="fetchingChapters" />
+
         <PaginatedChapterList
           v-show="!fetchingChapters"
           :paginated-data="paginatedChapterData"
           :error-message="chapterError"
           :on-page-change="onPageChange"
         />
-
-        <LoadingBar v-show="fetchingChapters" />
       </div>
       <div v-else>
         <ErrorAlert

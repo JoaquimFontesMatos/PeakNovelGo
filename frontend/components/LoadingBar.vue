@@ -1,173 +1,85 @@
+<script setup lang="ts">
+import { ref, computed, onMounted, onUnmounted } from "vue";
+
+const cloudCount = 18;
+const dragonProps = ref({
+  animationDelay: 0,
+  animationDuration: 8,
+  scale: 1,
+  zIndex: 0,
+});
+
+// Randomize dragon properties periodically
+const randomizeDragonProps = () => {
+  dragonProps.value = {
+    animationDelay: Math.random() * 5, // Delay between 0 to 5 seconds
+    animationDuration: 8 + Math.random() * 5, // Duration between 8 to 13 seconds
+    scale: 0.8 + Math.random() * 0.5, // Scale between 0.8 to 1.3
+    zIndex: Math.floor(Math.random() * 3), // Random z-index between 0 and 2
+  };
+};
+
+let intervalId: NodeJS.Timeout;
+onMounted(() => {
+  // Re-randomize dragon properties every 10 seconds
+  intervalId = setInterval(
+    randomizeDragonProps,
+    dragonProps.value.animationDuration * 1000 +
+      dragonProps.value.animationDelay * 1000
+  );
+  randomizeDragonProps(); // Initial randomization
+});
+
+onUnmounted(() => {
+  clearInterval(intervalId);
+});
+
+const getCloudImage = (i: number) => {
+  const images = [
+    "/img/cloud_01.svg",
+    "/img/cloud_02.svg",
+    "/img/cloud_03.svg",
+    "/img/cloud_04.svg",
+  ];
+  return images[i % images.length];
+};
+
+// Generate cloud delays dynamically
+const cloudDelays = computed(() =>
+  Array.from({ length: cloudCount }, (_, i) => 0.45 * i + Math.random() * 0.1)
+);
+</script>
+
 <template>
-  <div class="relative h-40 overflow-hidden">
+  <div class="relative h-16 overflow-hidden flex items-center">
+    <!-- Clouds -->
     <img
-      id="clouds1"
-      class="top-0 left-0 h-12 cloud"
-      src="@img/cloud_01.svg"
-      alt="clouds"
+      v-for="i in cloudCount"
+      :key="`cloud-${i}`"
+      class="cloud h-12"
+      :style="{
+        animationDelay: `${cloudDelays[i - 1]}s`,
+        zIndex: Math.floor(i / 6),
+      }"
+      :src="getCloudImage(i)"
+      alt="cloud"
     />
+
+    <!-- Dragon -->
     <img
-      id="clouds2"
-      class="top-5 left-5 h-12 cloud"
-      src="@img/cloud_02.svg"
-      alt="clouds"
-    />
-    <img
-      id="clouds3"
-      class="top-10 left-10 h-12 cloud"
-      src="@img/cloud_03.svg"
-      alt="clouds"
-    />
-    <img
-      id="clouds4"
-      class="top-2 left-2 h-12 cloud"
-      src="@img/cloud_04.svg"
-      alt="clouds"
-    />
-    <img
-      id="clouds5"
-      class="top-0 left-3 h-12 cloud hidden md:block"
-      src="@img/cloud_01.svg"
-      alt="clouds"
-    />
-    <img
-      id="clouds6"
-      class="top-4 left-5 h-12 cloud hidden md:block"
-      src="@img/cloud_02.svg"
-      alt="clouds"
-    />
-    <img
-      id="clouds7"
-      class="top-3 left-9 h-12 cloud hidden md:block"
-      src="@img/cloud_03.svg"
-      alt="clouds"
-    />
-    <img
-      id="clouds8 "
-      class="top-3 left-2 h-12 cloud hidden md:block"
-      src="@img/cloud_04.svg"
-      alt="clouds"
-    />
-    <img
-      id="clouds9"
-      class="top-2 left-2 h-12 cloud"
-      src="@img/cloud_04.svg"
-      alt="clouds"
-    />
-    <img
-      id="clouds10"
-      class="top-0 left-3 h-12 cloud hidden md:block"
-      src="@img/cloud_01.svg"
-      alt="clouds"
-    />
-    <img
-      id="clouds11"
-      class="top-4 left-5 h-12 cloud hidden md:block"
-      src="@img/cloud_02.svg"
-      alt="clouds"
-    />
-    <img
-      id="clouds12"
-      class="top-3 left-9 h-12 cloud hidden md:block"
-      src="@img/cloud_03.svg"
-      alt="clouds"
-    />
-    <img
-      id="clouds13 "
-      class="top-3 left-2 h-12 cloud hidden md:block"
-      src="@img/cloud_04.svg"
-      alt="clouds"
-    />
-    <img
-      id="clouds14"
-      class="top-2 left-2 h-12 cloud"
-      src="@img/cloud_04.svg"
-      alt="clouds"
-    />
-    <img
-      id="clouds15"
-      class="top-0 left-3 h-12 cloud hidden md:block"
-      src="@img/cloud_01.svg"
-      alt="clouds"
-    />
-    <img
-      id="clouds16"
-      class="top-4 left-5 h-12 cloud hidden md:block"
-      src="@img/cloud_02.svg"
-      alt="clouds"
-    />
-    <img
-      id="clouds17"
-      class="top-3 left-9 h-12 cloud hidden md:block"
-      src="@img/cloud_03.svg"
-      alt="clouds"
-    />
-    <img
-      id="clouds18 "
-      class="top-3 left-2 h-12 cloud hidden md:block"
-      src="@img/cloud_04.svg"
-      alt="clouds"
+      src="/img/dragon.png"
+      class="dragon"
+      :style="{
+        animationDelay: `${dragonProps.animationDelay}s`,
+        animationDuration: `${dragonProps.animationDuration}s`,
+        transform: `scale(${dragonProps.scale})`,
+        zIndex: dragonProps.zIndex,
+      }"
     />
   </div>
 </template>
 
 <style scoped>
-/* Individual delays for a staggered effect */
-#clouds1 {
-  animation-delay: 0.25s;
-}
-#clouds2 {
-  animation-delay: 1.23s;
-}
-#clouds3 {
-  animation-delay: 2.44s;
-}
-#clouds4 {
-  animation-delay: 3.31s;
-}
-#clouds5 {
-  animation-delay: 4.34s;
-}
-#clouds6 {
-  animation-delay: 5.64s;
-}
-#clouds7 {
-  animation-delay: 6.11s;
-}
-#clouds8 {
-  animation-delay: 7.24s;
-}
-#clouds9 {
-  animation-delay: 8.34s;
-}
-#clouds10 {
-  animation-delay: 9.31s;
-}
-#clouds11 {
-  animation-delay: 10.23s;
-}
-#clouds12 {
-  animation-delay: 11.44s;
-}
-#clouds13 {
-  animation-delay: 12.31s;
-}
-#clouds14 {
-  animation-delay: 13.34s;
-}
-#clouds15 {
-  animation-delay: 14.64s;
-}
-#clouds16 {
-  animation-delay: 15.11s;
-}
-#clouds17 {
-  animation-delay: 16.24s;
-}
-#clouds18 {
-  animation-delay: 17.34s;
-}
-
 /* Keyframes for dynamic movement */
 @keyframes moveAndBounce {
   0% {
@@ -205,7 +117,91 @@
 
 .cloud {
   opacity: 0;
+  animation-duration: calc(8s + 4 * var(--index, 0));
   position: absolute;
+  transform: scale(0.8);
   animation: moveAndBounce 10s linear infinite;
+}
+.cloud:nth-child(odd) {
+  transform: scale(1.1);
+}
+.cloud:nth-child(even) {
+  transform: scale(0.9);
+}
+
+.cloud:hover {
+  filter: brightness(1.5) contrast(1.2);
+  transition: filter 0.3s ease;
+}
+
+@keyframes dragonFlight {
+  0% {
+    left: -20%; /* Start off-screen */
+    transform: translateY(0) scale(1);
+    opacity: 0;
+  }
+  25% {
+    transform: translateY(-20%) scale(1.1);
+  }
+  50% {
+    left: 50%; /* Mid-screen */
+    transform: translateY(10%) scale(1.2);
+    opacity: 1;
+  }
+  75% {
+    transform: translateY(-10%) scale(1.1);
+  }
+  100% {
+    left: 120%; /* End off-screen */
+    transform: translateY(0) scale(1);
+    opacity: 0.5;
+  }
+}
+
+@keyframes fall {
+  0% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  100% {
+    opacity: 0; /* Fade out as it falls */
+    transform: translateY(
+      100px
+    ); /* You can add a translateY to make it fall further */
+  }
+}
+
+.dragon-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.dragon {
+  opacity: 0;
+  position: absolute;
+  height: 3rem;
+  animation: dragonFlight 10s linear infinite;
+  transition: transform 0.3s ease, filter 0.3s ease;
+}
+
+.dragon:hover {
+  animation-play-state: paused;
+  filter: brightness(1.5) contrast(1.2);
+  transition: filter 0.3s ease;
+}
+
+.background {
+  background: linear-gradient(to bottom, #f0f8ff, #add8e6);
+  animation: backgroundMove 20s linear infinite;
+}
+
+@keyframes backgroundMove {
+  0% {
+    background-position: 0% 0%;
+  }
+  100% {
+    background-position: 100% 100%;
+  }
 }
 </style>

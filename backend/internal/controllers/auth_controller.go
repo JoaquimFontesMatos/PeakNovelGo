@@ -7,7 +7,6 @@ import (
 	"backend/internal/dtos"
 	"backend/internal/services/interfaces"
 	"backend/internal/types"
-	"backend/internal/utils"
 	"backend/internal/validators"
 
 	"github.com/gin-gonic/gin"
@@ -89,28 +88,33 @@ func (ac *AuthController) Login(c *gin.Context) {
 		return
 	}
 
-	// Respond with both tokens
+	// Store refreshToken in HttpOnly cookie
+	c.SetCookie(
+		"refreshToken", // Name
+		refreshToken,   // Value
+		7*24*60*60,     // MaxAge: 7 days
+		"/",            // Path
+		"",             // Domain
+		false,          // Secure: Only send over HTTPS
+		true,           // HttpOnly: Inaccessible to JavaScript
+	)
+
+	// Respond with the access token and user info
 	c.JSON(http.StatusOK, gin.H{
-		"access_token":  accessToken,
-		"refresh_token": refreshToken,
+		"accessToken": accessToken,
+		"user":        user,
 	})
 }
 
 func (c *AuthController) RefreshToken(ctx *gin.Context) {
-	authHeader := ctx.GetHeader("Authorization")
-	if authHeader == "" {
-		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Authorization token is required"})
-		return
-	}
-
-	refreshToken, err := utils.ExtractToken(authHeader)
+	refreshToken, err := ctx.Cookie("refreshToken")
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid token format"})
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "No refresh token provided"})
 		return
 	}
 
 	// Call the service to refresh the token
-	newAccessToken, newRefreshToken, err := c.AuthService.RefreshToken(refreshToken)
+	newAccessToken, newRefreshToken, user, err := c.AuthService.RefreshToken(refreshToken)
 	if err != nil {
 		var userErr *types.MyError
 		if errors.As(err, &userErr) {
@@ -132,22 +136,27 @@ func (c *AuthController) RefreshToken(ctx *gin.Context) {
 	}
 
 	// Send the new tokens back to the client
+	ctx.SetCookie(
+		"refreshToken",  // Name
+		newRefreshToken, // Value
+		7*24*60*60,      // MaxAge: 7 days
+		"/",             // Path
+		"",              // Domain
+		false,           // Secure: Only send over HTTPS
+		true,            // HttpOnly: Inaccessible to JavaScript
+	)
+
+	// Respond with the access token and user info
 	ctx.JSON(http.StatusOK, gin.H{
-		"access_token":  newAccessToken,
-		"refresh_token": newRefreshToken,
+		"accessToken": newAccessToken,
+		"user":        user,
 	})
 }
 
 func (ac *AuthController) Logout(ctx *gin.Context) {
-	authHeader := ctx.GetHeader("Authorization")
-	if authHeader == "" {
-		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Authorization token is required"})
-		return
-	}
-
-	refreshToken, err := utils.ExtractToken(authHeader)
+	refreshToken, err := ctx.Cookie("refreshToken")
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid token format"})
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "No refresh token provided"})
 		return
 	}
 
@@ -155,6 +164,10 @@ func (ac *AuthController) Logout(ctx *gin.Context) {
 		ctx.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
 	}
+
+	ctx.SetCookie(
+		"refreshToken", "", -1, "/", "", true, true, // Set MaxAge to -1 to delete the cookie
+	)
 
 	ctx.JSON(http.StatusOK, gin.H{"message": "Logged out successfully"})
 }

@@ -5,6 +5,6 @@ type RegisterRequest struct {
 	Email    string `json:"email" binding:"required"`
 	Password string `json:"password" binding:"required"`
 	Bio      string `json:"bio" binding:"required"`
-	ProfilePicture     string `json:"profile_picture" binding:"required"`
-	DateOfBirth        string `json:"date_of_birth" binding:"required"`
+	ProfilePicture     string `json:"profilePicture" binding:"required"`
+	DateOfBirth        string `json:"dateOfBirth" binding:"required"`
 }

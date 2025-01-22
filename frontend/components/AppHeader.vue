@@ -13,6 +13,12 @@ onMounted(() => {
 onUnmounted(() => {
   window.removeEventListener("scroll", handleScroll);
 });
+
+const { user } = storeToRefs(useAuthStore());
+
+const handleLogout = async () => {
+  await useAuthStore().logout();
+};
 </script>
 
 <template>
@@ -42,7 +48,10 @@ onUnmounted(() => {
         >
       </div>
 
-      <div class="flex gap-5 float-right pr-4">
+      <div
+        v-if="user === undefined || user === null"
+        class="flex gap-5 float-right pr-4"
+      >
         <NuxtLink
           class="hover:text-accent-gold hover:underline"
           to="/auth/login"
@@ -53,6 +62,15 @@ onUnmounted(() => {
           to="/auth/sign-in"
           >Register</NuxtLink
         >
+      </div>
+      <div v-else class="flex gap-5 float-right pr-4">
+        <p>Hello, {{ user.username }}</p>
+        <p
+          @click="handleLogout()"
+          class="hover:text-accent-gold hover:underline cursor-pointer"
+        >
+          Logout
+        </p>
       </div>
     </div>
   </header>
