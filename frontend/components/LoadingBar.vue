@@ -1,5 +1,7 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from "vue";
+import {
+  ref, computed, onMounted, onUnmounted
+} from "vue";
 
 const cloudCount = 18;
 const dragonProps = ref({
@@ -12,10 +14,14 @@ const dragonProps = ref({
 // Randomize dragon properties periodically
 const randomizeDragonProps = () => {
   dragonProps.value = {
-    animationDelay: Math.random() * 5, // Delay between 0 to 5 seconds
-    animationDuration: 8 + Math.random() * 5, // Duration between 8 to 13 seconds
-    scale: 0.8 + Math.random() * 0.5, // Scale between 0.8 to 1.3
-    zIndex: Math.floor(Math.random() * 3), // Random z-index between 0 and 2
+    animationDelay: Math.random() * 5,
+    // Delay between 0 to 5 seconds
+    animationDuration: 8 + Math.random() * 5,
+    // Duration between 8 to 13 seconds
+    scale: 0.8 + Math.random() * 0.5,
+    // Scale between 0.8 to 1.3
+    zIndex: Math.floor(Math.random() * 3),
+    // Random z-index between 0 and 2
   };
 };
 
@@ -25,7 +31,7 @@ onMounted(() => {
   intervalId = setInterval(
     randomizeDragonProps,
     dragonProps.value.animationDuration * 1000 +
-      dragonProps.value.animationDelay * 1000
+    dragonProps.value.animationDelay * 1000
   );
   randomizeDragonProps(); // Initial randomization
 });
@@ -55,10 +61,10 @@ const cloudDelays = computed(() =>
     <!-- Clouds -->
     <img
       v-for="i in cloudCount"
-      :key="`cloud-${i}`"
+      :key="`cloud-$ {i}`"
       class="cloud h-12"
-      :style="{
-        animationDelay: `${cloudDelays[i - 1]}s`,
+      :style=" {
+        animationDelay: `$ {cloudDelays[i - 1]}s`,
         zIndex: Math.floor(i / 6),
       }"
       :src="getCloudImage(i)"
@@ -69,10 +75,10 @@ const cloudDelays = computed(() =>
     <img
       src="/img/dragon.png"
       class="dragon"
-      :style="{
-        animationDelay: `${dragonProps.animationDelay}s`,
-        animationDuration: `${dragonProps.animationDuration}s`,
-        transform: `scale(${dragonProps.scale})`,
+      :style=" {
+        animationDelay: `$ {dragonProps.animationDelay}s`,
+        animationDuration: `$ {dragonProps.animationDuration}s`,
+        transform: `scale($ {dragonProps.scale})`,
         zIndex: dragonProps.zIndex,
       }"
     />

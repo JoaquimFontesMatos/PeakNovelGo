@@ -1,12 +1,15 @@
-import type { LoginForm, SignInForm } from "~/models/Forms";
-import type { LoginResponse } from "~/models/Response";
-import type { User } from "~/models/User";
+import type {LoginForm, SignUpForm} from "~/veeSchemas/Forms";
+import type {LoginResponse} from "~/models/Response";
+import type {User} from "~/models/User";
 
 export const useAuthStore = defineStore("Auth", () => {
-  const user = ref<User | null>(null);
-  const accessToken = ref<string | null>(null);
+  const user: Ref<User | null> = ref<User | null>(null);
+  const accessToken: Ref<string | null> = ref<string | null>(null);
   const runtimeConfig = useRuntimeConfig();
-  const url = runtimeConfig.public.apiUrl;
+  const url: string = runtimeConfig.public.apiUrl;
+  const loginError: Ref<string | null> = ref<string | null>(null);
+  const loadingLogin: Ref<boolean | null> = ref<boolean>(false);
+  const signUpError: Ref<string | null> = ref<string | null>(null)
 
   // Function to set the access token and user info
   const setSession = (loginResponse: LoginResponse) => {
@@ -14,29 +17,22 @@ export const useAuthStore = defineStore("Auth", () => {
     user.value = loginResponse.user;
 
     if (import.meta.client) {
-      localStorage.setItem("accessToken", loginResponse.accessToken);
       localStorage.setItem("user", JSON.stringify(loginResponse.user));
     }
   };
 
-  const clearSession = () => {
+  const clearSession = (): void => {
     accessToken.value = null;
     user.value = null;
 
     if (import.meta.client) {
-      localStorage.removeItem("accessToken");
       localStorage.removeItem("user");
     }
   };
 
   const initSession = async () => {
     if (import.meta.client) {
-      const storedAccessToken = localStorage.getItem("accessToken");
       const storedUser = localStorage.getItem("user");
-
-      if (storedAccessToken) {
-        accessToken.value = storedAccessToken;
-      }
 
       if (storedUser) {
         user.value = JSON.parse(storedUser);
@@ -47,7 +43,8 @@ export const useAuthStore = defineStore("Auth", () => {
   };
 
   // Login function
-  const login = async (form: LoginForm) => {
+  const login = async (form: LoginForm): Promise<void> => {
+    loadingLogin.value = true;
     try {
       const response = await fetch(`${url}/auth/login`, {
         method: "POST",
@@ -60,17 +57,30 @@ export const useAuthStore = defineStore("Auth", () => {
 
       if (response.status === 200) {
         const loginResponse: LoginResponse = await response.json();
+        loginError.value = null;
         setSession(loginResponse);
       } else {
-        console.log(response.status);
+        // Handle errors based on response status
+        const errorResponse = await response.json();
+        if (response.status === 400) {
+          loginError.value = errorResponse.error;
+        } else if (response.status === 401) {
+          loginError.value = errorResponse.error;
+        } else if (response.status === 500) {
+          loginError.value = errorResponse.error;
+        } else {
+          console.error("Unexpected error:", response.status);
+        }
       }
     } catch (error) {
       console.error("Login error:", error);
+    } finally {
+      loadingLogin.value = false;
     }
   };
 
   // Automatically refresh the access token when needed
-  const refreshAccessToken = async () => {
+  const refreshAccessToken = async (): Promise<void> => {
     try {
       const response = await fetch(`${url}/auth/refresh-token`, {
         method: "POST",
@@ -94,11 +104,15 @@ export const useAuthStore = defineStore("Auth", () => {
     input: RequestInfo,
     init: RequestInit = {}
   ) => {
+
+
     if (
       !accessToken.value ||
       accessToken.value === "" ||
       accessToken.value === null
     ) {
+      console.error("Accessed refresh")
+
       await refreshAccessToken();
     }
 
@@ -107,24 +121,36 @@ export const useAuthStore = defineStore("Auth", () => {
       Authorization: `Bearer ${accessToken.value}`,
     };
 
-    return fetch(input, { ...init, headers });
+    return fetch(input, {...init, headers});
   };
 
-  const signIn = async (form: SignInForm) => {
+  const signUp = async (form: SignUpForm) => {
     try {
-      const response = await fetch(`${url}/auth/signin`, {
+      const registerData = {
+        username: form.username,
+        email: form.email,
+        password: form.password,
+        bio: "Please edit me",
+        profilePicture: "Please edit me",
+        dateOfBirth: form.dateOfBirth,
+      };
+
+      const response = await fetch(`${url}/auth/register`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(form),
+        body: JSON.stringify(registerData),
       });
 
       if (response.status === 200) {
         const data = await response.json();
         user.value = data.user;
       } else {
-        console.log(response.status);
+        const errorResponse = await response.json();
+
+        signUpError.value = errorResponse.error;
+        console.log(response);
       }
     } catch (error) {
       console.error("Sign-in error:", error);
@@ -175,9 +201,11 @@ export const useAuthStore = defineStore("Auth", () => {
   return {
     user,
     accessToken,
+    loginError,
+    loadingLogin,
     initSession,
     login,
-    signIn,
+    signUp,
     logout,
     refreshAccessToken,
     authorizedFetch,

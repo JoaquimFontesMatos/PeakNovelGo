@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { useRoute, useRouter } from "vue-router";
-import { ref, watch } from "vue";
+import {useRoute, useRouter} from "vue-router";
+import {ref, watch} from "vue";
 
 const route = useRoute();
 const router = useRouter();
@@ -22,7 +22,7 @@ const props = defineProps<{
 
 function updateQueryParams(page: number, limit: number) {
   router.replace({
-    query: { ...route.query, page, pageSize: limit },
+    query: {...route.query, page, pageSize: limit},
   });
 }
 
@@ -110,11 +110,11 @@ watch(
     >
       <span
         v-if="page === totalPages && page - 1 != getVisiblePages()[index - 1]"
-        >...</span
+      >...</span
       >
       {{ page }}
       <span v-if="page === 1 && page + 1 != getVisiblePages()[index + 1]"
-        >...</span
+      >...</span
       >
     </button>
 
@@ -131,7 +131,7 @@ watch(
     </label>
     <select
       id="page-size-select"
-      class="rounded-full bg-secondary p-2 py-1 border-2 border-accent-gold"
+      class="w-16 rounded-full bg-secondary p-2 py-1 border-2 border-accent-gold"
       v-model="selectedPageSize"
       @change="goToSelectedPage(1, selectedPageSize)"
     >

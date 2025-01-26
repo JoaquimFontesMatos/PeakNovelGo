@@ -3,21 +3,23 @@ const { authorName } = useRoute().params;
 const currentPage = ref(1);
 const currentLimit = ref(10);
 
-onMounted(async () => {
+onMounted(async() => {
   await onPageChange(currentPage.value, currentLimit.value);
 });
 
-const { fetchingNovel, novelError, paginatedNovelsDataByAuthor } = storeToRefs(
-  useNovelStore()
-);
+const {
+    fetchingNovel, novelError, paginatedNovelsDataByAuthor
+  } = storeToRefs(
+    useNovelStore()
+  );
 
-const onPageChange = async (newPage: number, limit: number) => {
+const onPageChange = async(newPage: number, limit: number) => {
   if (
     newPage === currentPage.value &&
     limit === currentLimit.value &&
     paginatedNovelsDataByAuthor.value.page != 0
-  )
-    return;
+    )
+    return ;
   await useNovelStore().fetchNovelsByAuthor(
     authorName as string,
     newPage,
@@ -34,13 +36,16 @@ const onPageChange = async (newPage: number, limit: number) => {
       :routes="[
         { path: '/', name: 'Home' },
         { path: '/novels', name: 'Novels' },
-        { path: `/author/${authorName}`, name: authorName as string },
+        {
+          path: '/novels/author/' + authorName,
+          name: authorName as string
+        },
       ]"
     />
 
-    <VerticalSpacer />
+    <VerticalSpacer/>
 
-    <LoadingBar v-show="fetchingNovel" />
+    <LoadingBar v-show="fetchingNovel"/>
 
     <PaginatedNovelGallery
       v-show="!fetchingNovel"

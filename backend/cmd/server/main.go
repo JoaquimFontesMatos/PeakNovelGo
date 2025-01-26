@@ -15,7 +15,7 @@ import (
 func main() {
 	port := os.Getenv("PORT")
 	if port == "" {
-		port = "8080" // Default port for local testing
+		port = "8081" // Default port for local testing
 	}
 
 	db := config.ConnectDB(false)
@@ -44,5 +44,5 @@ func main() {
 	routes.SetupRoutes(r, authController, userController, novelController, ttsController)
 
 	fmt.Printf("Server running on port %s\n", port)
-	r.Run(":8080") // Start server on port 8080
+	r.Run(":8081") // Start server on port 8080
 }

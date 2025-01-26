@@ -6,13 +6,13 @@ import type { Novel } from "~/models/Novel";
 defineProps<{
   errorMessage: string | null;
   paginatedData: PaginatedServerResponse<Novel> | null;
-  onPageChange: (newPage: number, limit: number) => void;
+  onPageChange: (newPage: number, limit: number) => Promise<void>;
 }>();
 </script>
 
 <template>
   <ErrorAlert v-if="errorMessage !== '' && errorMessage !== null"
-    >Error:
+  >Error:
     {{ errorMessage == "" ? "No Novels Found" : errorMessage }}</ErrorAlert
   >
 
@@ -23,7 +23,7 @@ defineProps<{
         :key="novel.novelUpdatesId"
         class="bg-secondary h-full rounded-md border-2 border-transparent transition-all duration-150 hover:border-accent-gold hover:scale-[1.01] hover:brightness-105 hover:drop-shadow-md"
       >
-        <NuxtLink :to="`/novels/${novel.novelUpdatesId}`">
+        <NuxtLink :to="'/novels/' + novel.novelUpdatesId">
           <div class="flex flex-row text-secondary-content w-full h-full">
             <div>
               <img
@@ -40,7 +40,7 @@ defineProps<{
       </li>
     </ul>
 
-    <VerticalSpacer />
+    <VerticalSpacer/>
 
     <NumberedPaginator
       :totalPages="paginatedData.totalPages"

@@ -17,14 +17,14 @@ const [parent] = useAutoAnimate({ duration: 150 });
 <template>
   <ErrorAlert
     v-if="
-      !paginatedData || !paginatedData.data || paginatedData.data.length === 0
+    !paginatedData || !paginatedData.data || paginatedData.data.length === 0
     "
   >
     Error:
     {{
-      errorMessage === "" || errorMessage === null
-        ? "No Chapters Found"
-        : errorMessage
+    errorMessage === "" || errorMessage === null
+    ? "No Chapters Found"
+    : errorMessage
     }}
   </ErrorAlert>
 
@@ -34,18 +34,18 @@ const [parent] = useAutoAnimate({ duration: 150 });
       :total="paginatedData.total"
       @page-change="(page, limit) => onPageChange(page, limit)"
     />
-    <VerticalSpacer />
+    <VerticalSpacer/>
     <ul ref="parent" class="grid grid-cols-2 gap-10 justify-center gap-y-2">
       <li v-for="chapter in paginatedData.data" :key="chapter.chapterNo">
         <NuxtLink
           class="block bg-secondary border-2 border-transparent h-full rounded-md transition-all duration-150 hover:border-accent-gold hover:scale-[1.01] hover:brightness-105 hover:drop-shadow-md"
-          :to="`/novels/${novelTitle}/${chapter.chapterNo}`"
+          :to="'/novels/' + novelTitle + '/' + chapter.chapterNo"
         >
           <span class="ml-2">Chapter {{ chapter.chapterNo }}</span>
         </NuxtLink>
       </li>
     </ul>
-    <VerticalSpacer />
+    <VerticalSpacer/>
     <NumberedPaginator
       v-show="paginatedData.limit > 25"
       :totalPages="paginatedData.totalPages"
@@ -54,5 +54,5 @@ const [parent] = useAutoAnimate({ duration: 150 });
     />
   </div>
 
-  <ErrorAlert v-else> Error: Failed to Fetch Chapters </ErrorAlert>
+  <ErrorAlert v-else>Error: Failed to Fetch Chapters</ErrorAlert>
 </template>

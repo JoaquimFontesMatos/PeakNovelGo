@@ -33,7 +33,7 @@ const inlineConfig = {
       },
     },
   },
-  plugins: [],
+  plugins: [require('@tailwindcss/forms'),],
 };
 
 const config = [].reduce(

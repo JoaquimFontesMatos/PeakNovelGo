@@ -680,16 +680,17 @@ func (n *NovelRepository) GetBookmarkedNovelsByUserID(userID uint, page, limit i
 //
 // Parameters:
 //   - userID uint (ID of the user)
-//   - novelID uint (ID of the novel)
+//   - novelID string (ID of the novel)
 //
 // Returns:
 //   - models.BookmarkedNovel (BookmarkedNovel struct)
 //   - INTERNAL_SERVER_ERROR if the bookmarked novel could not be fetched
 //   - NOVEL_NOT_FOUND_ERROR if the bookmarked novel could not be fetched
-func (n *NovelRepository) GetBookmarkedNovelByUserIDAndNovelID(userID uint, novelID uint) (models.BookmarkedNovel, error) {
+func (n *NovelRepository) GetBookmarkedNovelByUserIDAndNovelID(userID uint, novelID string) (models.BookmarkedNovel, error) {
 	var novel models.BookmarkedNovel
 	if err := n.db.Model(&models.BookmarkedNovel{}).
-		Where("bookmarked_novels.user_id = ? AND bookmarked_novels.novel_id = ?", userID, novelID).
+		Joins("JOIN novels ON novels.id = bookmarked_novels.novel_id").
+		Where("bookmarked_novels.user_id = ? AND novels.novel_updates_id = ?", userID, novelID).
 		First(&novel).Error; err != nil {
 
 		if err.Error() == "record not found" {
@@ -759,7 +760,7 @@ func (n *NovelRepository) CreateBookmarkedNovel(bookmarkedNovel models.Bookmarke
 //   - bool (true if the bookmarked novel already exists, false otherwise)
 func (n *NovelRepository) isBookmarkedNovelCreated(bookmarkedNovel models.BookmarkedNovel) bool {
 	var existingBookmarkedNovel models.BookmarkedNovel
-	if err := n.db.Where("novel_id = ? AND user_id = ?", bookmarkedNovel.NovelID, bookmarkedNovel.UserID).First(&existingBookmarkedNovel).Error; err != nil {
+	if err := n.db.Where("novel_id = ? AND user_id = ? AND deleted_at IS NOT NULL", bookmarkedNovel.NovelID, bookmarkedNovel.UserID).First(&existingBookmarkedNovel).Error; err != nil {
 		return false
 	}
 	return existingBookmarkedNovel.ID != 0
@@ -781,7 +782,6 @@ func (n *NovelRepository) DeleteBookmarkedNovel(userID uint, novelID uint) error
 		Delete(&models.BookmarkedNovel{}).Error
 
 	if err != nil {
-
 		if err.Error() == "record not found" {
 			return types.WrapError(types.NOVEL_NOT_FOUND_ERROR, "Novel not found", nil)
 		}

@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"errors"
+	"log"
 	"net/http"
 
 	"backend/internal/dtos"
@@ -29,11 +30,15 @@ func (ac *AuthController) Register(c *gin.Context) {
 
 	if err := validators.ValidateBody(c, &registerRequest); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+
+		log.Println(err)
 		return
 	}
 
 	// Call the user service to create a new user
 	if err := ac.UserService.RegisterUser(&registerRequest); err != nil {
+		log.Println(err)
+
 		var error *types.MyError
 		if errors.As(err, &error) {
 			switch error.Code {

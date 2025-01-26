@@ -1,0 +1,10 @@
+{
+    "plugins": [
+        {
+            "type": "add",
+            "pluginName": "com.github.catppuccin.fleet"
+        }
+    ],
+    "prettier.mode": "Auto",
+    "editor.formatOnSave": true,
+}

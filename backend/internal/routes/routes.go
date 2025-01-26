@@ -74,6 +74,7 @@ func SetupRoutes(r *gin.Engine,
 			bookmarked.PUT("/", middleware.AuthMiddleware(), novelController.UpdateBookmarkedNovel)
 			bookmarked.GET("/:user_id", middleware.AuthMiddleware(), novelController.GetBookmarkedNovelsByUserID)
 			bookmarked.GET("/user/:user_id/novel/:novel_id", middleware.AuthMiddleware(), novelController.GetBookmarkedNovelByUserIDAndNovelID)
+			bookmarked.DELETE("/user/:user_id/novel/:novel_id", middleware.AuthMiddleware(), novelController.UnbookmarkNovel)
 		}
 
 		tts := r.Group("/novels/tts")

@@ -3,7 +3,6 @@ export default defineNuxtConfig({
   alias: {
     "@img": "/assets/img/",
   },
-  css: ["@/assets/css/tailwind.css"],
   postcss: {
     plugins: {
       tailwindcss: {},
@@ -12,7 +11,19 @@ export default defineNuxtConfig({
   },
   compatibilityDate: "2024-11-01",
   devtools: { enabled: true },
-  modules: ["@nuxtjs/tailwindcss", "@pinia/nuxt", "@formkit/auto-animate/nuxt", "@nuxt/icon"],
+  modules: [
+    "@nuxtjs/tailwindcss",
+    "@pinia/nuxt",
+    "@formkit/auto-animate/nuxt",
+    [
+      "@vee-validate/nuxt",
+      {
+        // disable or enable auto imports
+        autoImports: true,
+      },
+    ],
+    "@nuxt/icon",
+  ],
   runtimeConfig: {
     // Keys within public are also exposed client-side
     public: {

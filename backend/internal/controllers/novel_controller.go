@@ -591,13 +591,8 @@ func (n *NovelController) GetBookmarkedNovelByUserIDAndNovelID(ctx *gin.Context)
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	novelID, err := utils.ParseID(novelIDParam)
-	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
 
-	novel, err := n.novelService.GetBookmarkedNovelByUserIDAndNovelID(userID, novelID)
+	novel, err := n.novelService.GetBookmarkedNovelByUserIDAndNovelID(userID, novelIDParam)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -607,13 +602,17 @@ func (n *NovelController) GetBookmarkedNovelByUserIDAndNovelID(ctx *gin.Context)
 }
 
 func (n *NovelController) UnbookmarkNovel(ctx *gin.Context) {
-	userID, err := strconv.ParseUint(ctx.Param("userID"), 10, 64)
+
+	userID, err := utils.ParseID(ctx.Param("user_id"))
+
 	if err != nil {
+		log.Println(err)
 		ctx.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
 	}
 
-	novelID, err := strconv.ParseUint(ctx.Param("novelID"), 10, 64)
+	novelID, err := utils.ParseID(ctx.Param("novel_id"))
+
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return

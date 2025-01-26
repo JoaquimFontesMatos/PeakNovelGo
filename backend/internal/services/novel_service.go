@@ -69,7 +69,7 @@ func (s *NovelService) GetBookmarkedNovelsByUserID(userID uint, page, limit int)
 	return s.repo.GetBookmarkedNovelsByUserID(userID, page, limit)
 }
 
-func (s *NovelService) GetBookmarkedNovelByUserIDAndNovelID(userID uint, novelID uint) (models.BookmarkedNovel, error) {
+func (s *NovelService) GetBookmarkedNovelByUserIDAndNovelID(userID uint, novelID string) (models.BookmarkedNovel, error) {
 	return s.repo.GetBookmarkedNovelByUserIDAndNovelID(userID, novelID)
 }
 

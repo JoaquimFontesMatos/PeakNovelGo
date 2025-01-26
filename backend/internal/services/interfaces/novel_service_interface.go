@@ -19,7 +19,7 @@ type NovelServiceInterface interface {
 	GetChaptersByNovelID(novelID uint, page, limit int) ([]models.Chapter, int64, error)
 	CreateChapter(chapter models.Chapter) (*models.Chapter, error)
 	GetBookmarkedNovelsByUserID(userID uint, page, limit int) ([]models.BookmarkedNovel, int64, error)
-	GetBookmarkedNovelByUserIDAndNovelID(userID uint, novelID uint) (models.BookmarkedNovel, error)
+	GetBookmarkedNovelByUserIDAndNovelID(userID uint, novelID string) (models.BookmarkedNovel, error)
 	UpdateBookmarkedNovel(novel models.BookmarkedNovel) (models.BookmarkedNovel, error)
 	CreateBookmarkedNovel(bookmarkedNovel models.BookmarkedNovel) (*models.BookmarkedNovel, error)
 	UnbookmarkNovel(userID uint, novelID uint) error

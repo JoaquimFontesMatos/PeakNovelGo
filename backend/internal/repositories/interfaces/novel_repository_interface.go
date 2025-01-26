@@ -182,13 +182,13 @@ type NovelRepositoryInterface interface {
 	//
 	// Parameters:
 	//   - userID uint (ID of the user)
-	//   - novelID uint (ID of the novel)
+	//   - novelID string (ID of the novel)
 	//
 	// Returns:
 	//   - models.BookmarkedNovel (BookmarkedNovel struct)
 	//   - INTERNAL_SERVER_ERROR if the bookmarked novel could not be fetched
 	//   - NOVEL_NOT_FOUND_ERROR if the bookmarked novel could not be fetched
-	GetBookmarkedNovelByUserIDAndNovelID(userID uint, novelID uint) (models.BookmarkedNovel, error)
+	GetBookmarkedNovelByUserIDAndNovelID(userID uint, novelID string) (models.BookmarkedNovel, error)
 
 	// UpdateBookmarkedNovel updates a bookmarked novel in the database.
 	//
