@@ -3,11 +3,8 @@ package repositories
 import (
 	"backend/internal/models"
 	"backend/internal/types"
-	"fmt"
-	"os"
+	"errors"
 	"time"
-
-	"github.com/golang-jwt/jwt"
 	"gorm.io/gorm"
 )
 
@@ -48,36 +45,22 @@ func (r *AuthRepository) CheckIfTokenRevoked(refreshToken string) bool {
 // Returns:
 //   - INTERNAL_SERVER_ERROR if an error occurred while revoking token
 //   - VALIDATION_ERROR if an the token is invalid
-func (r *AuthRepository) RevokeToken(refreshToken string) error {
-	// Parse the refresh token to get its expiration time
-	token, err := jwt.Parse(refreshToken, func(token *jwt.Token) (interface{}, error) {
-		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, types.WrapError(types.VALIDATION_ERROR, "Invalid token", fmt.Errorf("unexpected signing method: %v", token.Header["alg"]))
-		}
-		return []byte(os.Getenv("SECRET_KEY")), nil
-	})
-	if err != nil {
-		return types.WrapError(types.VALIDATION_ERROR, "Invalid token", err)
+func (repo *AuthRepository) RevokeToken(refreshToken string) error {
+	var existingToken models.RevokedToken
+	err := repo.db.Where("token = ?", refreshToken).First(&existingToken).Error
+	if err == nil {
+		// Token is already revoked
+		return nil
+	}
+	if !errors.Is(err, gorm.ErrRecordNotFound) {
+		// Unexpected error
+		return types.WrapError(types.INTERNAL_SERVER_ERROR, "Occured an error revoking the token", err)
 	}
 
-	// Extract the claims to get the expiration time
-	claims, ok := token.Claims.(jwt.MapClaims)
-	if !ok || !token.Valid {
-		return types.WrapError(types.VALIDATION_ERROR, "Invalid token", err)
-	}
-
-	// Extract expiration time and create a RevokedToken record
-	expirationTime := time.Unix(int64(claims["exp"].(float64)), 0)
-
-	revokedToken := models.RevokedToken{
+	// Token not found, proceed to insert
+	newRevokedToken := models.RevokedToken{
 		Token:     refreshToken,
-		ExpiredAt: expirationTime,
+		ExpiredAt: time.Now().Add(7 * 24 * time.Hour), // Adjust based on your requirements
 	}
-
-	// Store the revoked token in the database
-	if err := r.db.Create(&revokedToken).Error; err != nil {
-		return types.WrapError(types.INTERNAL_SERVER_ERROR, "Failed to revoke token", err)
-	}
-
-	return nil
+	return repo.db.Create(&newRevokedToken).Error
 }

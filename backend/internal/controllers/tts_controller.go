@@ -18,9 +18,10 @@ func NewTTSController(ttsService interfaces.TTSServiceInterface) *TTSController 
 
 func (t *TTSController) GenerateTTS(ctx *gin.Context) {
 	var request struct {
-		Text    string `json:"text"`
-		Voice   string `json:"voice"`
-		NovelID uint   `json:"novel_id"`
+		Text      string `json:"text"`
+		Voice     string `json:"voice"`
+		NovelID   uint   `json:"novelId"`
+		ChapterNo uint   `json:"chapterNo"`
 	}
 
 	if err := validators.ValidateBody(ctx, &request); err != nil {
@@ -28,13 +29,13 @@ func (t *TTSController) GenerateTTS(ctx *gin.Context) {
 		return
 	}
 
-	ttsMap, err := t.ttsService.GenerateTTSMap(request.Text, request.Voice, request.NovelID, "http://localhost:8080/tts-files")
+	paragraphs, err := t.ttsService.GenerateTTSMap(request.Text, request.Voice, request.NovelID, request.ChapterNo, "http://localhost:8081/tts-files")
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate TTS"})
 		return
 	}
 
-	ctx.JSON(http.StatusOK, gin.H{"ttsMap": ttsMap})
+	ctx.JSON(http.StatusOK, paragraphs)
 }
 
 func (t *TTSController) GetVoices(ctx *gin.Context) {

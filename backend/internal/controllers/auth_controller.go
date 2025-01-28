@@ -104,10 +104,17 @@ func (ac *AuthController) Login(c *gin.Context) {
 		true,           // HttpOnly: Inaccessible to JavaScript
 	)
 
+	userDto, err := dtos.ConvertUserModelToDTO(*user)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
 	// Respond with the access token and user info
 	c.JSON(http.StatusOK, gin.H{
 		"accessToken": accessToken,
-		"user":        user,
+		"user":        userDto,
 	})
 }
 
@@ -151,10 +158,17 @@ func (c *AuthController) RefreshToken(ctx *gin.Context) {
 		true,            // HttpOnly: Inaccessible to JavaScript
 	)
 
+	userDto, err := dtos.ConvertUserModelToDTO(*user)
+
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
 	// Respond with the access token and user info
 	ctx.JSON(http.StatusOK, gin.H{
 		"accessToken": newAccessToken,
-		"user":        user,
+		"user":        userDto,
 	})
 }
 

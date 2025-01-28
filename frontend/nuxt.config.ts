@@ -1,7 +1,7 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
   alias: {
-    "@img": "/assets/img/",
+    '@img': '/assets/img/',
   },
   postcss: {
     plugins: {
@@ -9,21 +9,33 @@ export default defineNuxtConfig({
       autoprefixer: {},
     },
   },
-  compatibilityDate: "2024-11-01",
+  compatibilityDate: '2024-11-01',
   devtools: { enabled: true },
   modules: [
-    "@nuxtjs/tailwindcss",
-    "@pinia/nuxt",
-    "@formkit/auto-animate/nuxt",
+    '@nuxtjs/tailwindcss',
+    '@pinia/nuxt',
+    '@formkit/auto-animate/nuxt',
     [
-      "@vee-validate/nuxt",
+      '@vee-validate/nuxt',
       {
         // disable or enable auto imports
         autoImports: true,
       },
     ],
-    "@nuxt/icon",
+    '@nuxt/icon',
+    '@nuxt/fonts',
   ],
+  fonts: {
+    defaults: {
+      weights: [400],
+      styles: ['normal', 'italic'],
+    },
+    families: [
+      { name: 'Montserratt' },
+      { name: 'Noto Sans' },
+      { name: 'Raleway' },
+    ],
+  },
   runtimeConfig: {
     // Keys within public are also exposed client-side
     public: {

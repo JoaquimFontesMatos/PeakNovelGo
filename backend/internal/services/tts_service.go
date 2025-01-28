@@ -18,10 +18,10 @@ type TTSService struct {
 }
 
 type Paragraph struct {
-	Text     string
-	Index    int
+	Text     string `json:"text"`
+	Index    int    `json:"index"`
 	Filepath string `json:"-"`
-	URL      string
+	URL      string `json:"url"`
 }
 
 // GenerateTTSFile generates TTS audio for a given text and voice and saves it to a file.
@@ -32,7 +32,7 @@ func (s *TTSService) GenerateTTSFile(paragraphs []Paragraph, voice string) error
 		edgetts.WithVoice(voice),
 	}
 
-	edgetts, err := edgetts.NewSpeech(options...)
+	tts, err := edgetts.NewSpeech(options...)
 	if err != nil {
 		return fmt.Errorf("failed to create TTS client")
 	}
@@ -50,7 +50,7 @@ func (s *TTSService) GenerateTTSFile(paragraphs []Paragraph, voice string) error
 				return
 			}
 
-			err = edgetts.AddSingleTask(paragraph.Text, ioWriter)
+			err = tts.AddSingleTask(paragraph.Text, ioWriter)
 			if err != nil {
 				log.Printf("Error adding task for paragraph %d: %v", paragraph.Index, err)
 			}
@@ -60,7 +60,7 @@ func (s *TTSService) GenerateTTSFile(paragraphs []Paragraph, voice string) error
 	// Wait for all tasks to finish
 	wg.Wait()
 
-	err = edgetts.StartTasks()
+	err = tts.StartTasks()
 
 	if err != nil {
 		return fmt.Errorf("failed to start tasks")
@@ -79,16 +79,32 @@ func (s *TTSService) generateFile(filePath string) (io.Writer, error) {
 	return os.Create(filePath)
 }
 
-// GenerateParagraphs splits the text into paragraphs based on double newlines.
-func (s *TTSService) GenerateParagraphs(text string, novelID uint, baseUrl string) []Paragraph {
-
+func (s *TTSService) GenerateParagraphs(text string, novelID uint, chapterNo uint, baseUrl string) []Paragraph {
+	// Split the text into paragraphs based on double newlines
 	paragraphs := strings.Split(text, "\n\n")
 
-	result := make([]Paragraph, len(paragraphs))
-	for i, paragraph := range paragraphs {
+	// Process paragraphs to handle dots or other special cases
+	processedParagraphs := make([]string, 0, len(paragraphs))
+	for _, paragraph := range paragraphs {
+		trimmedParagraph := strings.TrimSpace(paragraph)
+		if trimmedParagraph == "" {
+			// Skip empty paragraphs
+			continue
+		} else if isOnlyDots(trimmedParagraph) {
+			// Replace dots with a meaningful placeholder for TTS
+			processedParagraphs = append(processedParagraphs, "<break time='3s'/>")
+		} else {
+			// Keep the paragraph as is
+			processedParagraphs = append(processedParagraphs, trimmedParagraph)
+		}
+	}
+
+	// Create the result array
+	result := make([]Paragraph, len(processedParagraphs))
+	for i, paragraph := range processedParagraphs {
 		name := fmt.Sprintf("%d", i)
 
-		filename := fmt.Sprintf("novel_%d_%s.wav", novelID, name)
+		filename := fmt.Sprintf("novel_%d_chap%d_%s.wav", novelID, chapterNo, name)
 		filePath := filepath.Join(s.OutputDir, filename)
 
 		result[i] = Paragraph{
@@ -104,11 +120,21 @@ func (s *TTSService) GenerateParagraphs(text string, novelID uint, baseUrl strin
 	return result
 }
 
+// Helper function to check if a string contains only dots
+func isOnlyDots(s string) bool {
+	for _, char := range s {
+		if char != '.' {
+			return false
+		}
+	}
+	return true
+}
+
 // GenerateTTSMap generates a map of paragraphs to their respective TTS file URLs in parallel, preserving order.
-func (s *TTSService) GenerateTTSMap(text string, voice string, novelID uint, baseURL string) ([]Paragraph, error) {
+func (s *TTSService) GenerateTTSMap(text string, voice string, novelID uint, chapterNo uint, baseURL string) ([]Paragraph, error) {
 	os.MkdirAll(s.OutputDir, 0755)
 
-	paragraphs := s.GenerateParagraphs(text, novelID, baseURL)
+	paragraphs := s.GenerateParagraphs(text, novelID, chapterNo, baseURL)
 
 	err := s.GenerateTTSFile(paragraphs, voice)
 

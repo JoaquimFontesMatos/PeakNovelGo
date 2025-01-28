@@ -1,15 +1,15 @@
-import type {LoginForm, SignUpForm} from "~/veeSchemas/Forms";
-import type {LoginResponse} from "~/models/Response";
-import type {User} from "~/models/User";
+import type { LoginForm, SignUpForm } from '~/veeSchemas/Forms';
+import type { LoginResponse } from '~/models/Response';
+import type { User } from '~/models/User';
 
-export const useAuthStore = defineStore("Auth", () => {
+export const useAuthStore = defineStore('Auth', () => {
   const user: Ref<User | null> = ref<User | null>(null);
   const accessToken: Ref<string | null> = ref<string | null>(null);
   const runtimeConfig = useRuntimeConfig();
   const url: string = runtimeConfig.public.apiUrl;
   const loginError: Ref<string | null> = ref<string | null>(null);
   const loadingLogin: Ref<boolean | null> = ref<boolean>(false);
-  const signUpError: Ref<string | null> = ref<string | null>(null)
+  const signUpError: Ref<string | null> = ref<string | null>(null);
 
   // Function to set the access token and user info
   const setSession = (loginResponse: LoginResponse) => {
@@ -17,7 +17,8 @@ export const useAuthStore = defineStore("Auth", () => {
     user.value = loginResponse.user;
 
     if (import.meta.client) {
-      localStorage.setItem("user", JSON.stringify(loginResponse.user));
+      localStorage.setItem('user', JSON.stringify(loginResponse.user));
+      localStorage.setItem('accessToken', loginResponse.accessToken);
     }
   };
 
@@ -26,20 +27,9 @@ export const useAuthStore = defineStore("Auth", () => {
     user.value = null;
 
     if (import.meta.client) {
-      localStorage.removeItem("user");
+      localStorage.removeItem('user');
+      localStorage.removeItem('accessToken');
     }
-  };
-
-  const initSession = async () => {
-    if (import.meta.client) {
-      const storedUser = localStorage.getItem("user");
-
-      if (storedUser) {
-        user.value = JSON.parse(storedUser);
-      }
-    }
-
-    await checkAuthStatus();
   };
 
   // Login function
@@ -47,12 +37,12 @@ export const useAuthStore = defineStore("Auth", () => {
     loadingLogin.value = true;
     try {
       const response = await fetch(`${url}/auth/login`, {
-        method: "POST",
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify(form),
-        credentials: "include",
+        credentials: 'include',
       });
 
       if (response.status === 200) {
@@ -69,59 +59,74 @@ export const useAuthStore = defineStore("Auth", () => {
         } else if (response.status === 500) {
           loginError.value = errorResponse.error;
         } else {
-          console.error("Unexpected error:", response.status);
+          console.error('Unexpected error:', response.status);
         }
       }
     } catch (error) {
-      console.error("Login error:", error);
+      console.error('Login error:', error);
     } finally {
       loadingLogin.value = false;
     }
   };
 
-  // Automatically refresh the access token when needed
+  const scheduleTokenRefresh = (expiresIn: number) => {
+    setTimeout(async () => {
+      await refreshAccessToken();
+    }, expiresIn - 60 * 1000); // Refresh 1 minute before expiry
+  };
+
   const refreshAccessToken = async (): Promise<void> => {
     try {
       const response = await fetch(`${url}/auth/refresh-token`, {
-        method: "POST",
-        credentials: "include",
+        method: 'POST',
+        credentials: 'include',
       });
 
       if (response.status === 200) {
         const loginResponse: LoginResponse = await response.json();
         setSession(loginResponse);
+
+        // Schedule the next refresh
+        scheduleTokenRefresh(15 * 60 * 1000);
       } else {
-        clearSession(); // Logout if refresh fails
+        clearSession();
       }
     } catch (error) {
-      console.error("Failed to refresh token:", error);
+      console.error('Failed to refresh token:', error);
       clearSession();
     }
   };
 
   // Attach the access token to every request
-  const authorizedFetch = async (
-    input: RequestInfo,
-    init: RequestInit = {}
-  ) => {
-
-
-    if (
-      !accessToken.value ||
-      accessToken.value === "" ||
-      accessToken.value === null
-    ) {
-      console.error("Accessed refresh")
-
+  const authorizedFetch = async (input: RequestInfo, init: RequestInit = {}) => {
+    if (!accessToken.value) {
       await refreshAccessToken();
     }
 
-    const headers = {
-      ...init.headers,
-      Authorization: `Bearer ${accessToken.value}`,
-    };
+    let response = await fetch(input, {
+      ...init,
+      headers: {
+        ...init.headers,
+        Authorization: `Bearer ${accessToken.value}`,
+      },
+    });
 
-    return fetch(input, {...init, headers});
+    // If unauthorized, try refreshing the token and retrying
+    if (response.status === 401) {
+      await refreshAccessToken();
+
+      if (accessToken.value) {
+        response = await fetch(input, {
+          ...init,
+          headers: {
+            ...init.headers,
+            Authorization: `Bearer ${accessToken.value}`,
+          },
+        });
+      }
+    }
+
+    return response;
   };
 
   const signUp = async (form: SignUpForm) => {
@@ -130,15 +135,15 @@ export const useAuthStore = defineStore("Auth", () => {
         username: form.username,
         email: form.email,
         password: form.password,
-        bio: "Please edit me",
-        profilePicture: "Please edit me",
+        bio: 'Please edit me',
+        profilePicture: 'Please edit me',
         dateOfBirth: form.dateOfBirth,
       };
 
       const response = await fetch(`${url}/auth/register`, {
-        method: "POST",
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify(registerData),
       });
@@ -153,7 +158,7 @@ export const useAuthStore = defineStore("Auth", () => {
         console.log(response);
       }
     } catch (error) {
-      console.error("Sign-in error:", error);
+      console.error('Sign-in error:', error);
     }
   };
 
@@ -161,13 +166,13 @@ export const useAuthStore = defineStore("Auth", () => {
   const logout = async () => {
     try {
       await fetch(`${url}/auth/logout`, {
-        method: "POST",
-        credentials: "include", // Send the refresh token cookie
+        method: 'POST',
+        credentials: 'include', // Send the refresh token cookie
       });
 
       clearSession();
     } catch (error) {
-      console.error("Logout error:", error);
+      console.error('Logout error:', error);
     }
   };
 
@@ -176,25 +181,28 @@ export const useAuthStore = defineStore("Auth", () => {
 
     try {
       await authorizedFetch(`${url}/user/${id}`, {
-        method: "DELETE",
+        method: 'DELETE',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
       });
     } catch (error) {
-      console.log("Delete User", error);
+      console.log('Delete User', error);
     }
   };
 
-  // Check if the user is logged in by verifying the access token
-  const checkAuthStatus = async () => {
-    if (accessToken.value) {
-      // If there's an access token, consider the user as logged in
-      return true;
-    } else {
-      // If no access token, try refreshing the session
-      await refreshAccessToken();
-      return !!accessToken.value; // Return true if access token is set
+  const initSession = async () => {
+    if (import.meta.client) {
+      const storedUser = localStorage.getItem('user');
+      const storedAccessToken = localStorage.getItem('accessToken');
+
+      if (storedUser) user.value = JSON.parse(storedUser);
+      if (storedAccessToken) accessToken.value = storedAccessToken;
+
+      if (!accessToken.value) {
+        // If no access token, try refreshing the session
+        await refreshAccessToken();
+      }
     }
   };
 
