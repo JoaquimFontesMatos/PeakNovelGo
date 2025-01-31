@@ -19,7 +19,7 @@
     "@vee-validate/nuxt": "^4.15.0",
     "@vee-validate/yup": "^4.15.0",
     "@vueuse/nuxt": "^12.5.0",
-    "nuxt": "^3.15.1",
+    "nuxt": "^3.15.4",
     "pinia": "^2.3.1",
     "vue": "latest",
     "vue-router": "latest",
