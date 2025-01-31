@@ -1,5 +1,5 @@
 [build]
-publish = ".output/server"
+publish = ".nuxt/dist"
 command = "npm run build"
 
 [context.production.environment]
