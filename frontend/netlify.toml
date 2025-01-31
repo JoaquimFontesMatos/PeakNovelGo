@@ -1,6 +1,6 @@
 [build]
 publish = ".output/public"
-command = "nuxt build run"
+command = "nuxt build .output/public"
 
 [context.production.environment]
 NITRO_PRESET = "netlify"
