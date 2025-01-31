@@ -3,6 +3,7 @@ FROM golang:1.23.4 AS builder
 
 # Set environment variables
 ENV GO111MODULE=on
+ENV CGO_ENABLED=0
 
 # Create and set the working directory
 WORKDIR /app
@@ -19,7 +20,7 @@ COPY . .
 # Set the working directory to the location of main.go
 WORKDIR /app/backend/cmd/server
 
-# Build the Go application
+# Build the Go application with static linking
 RUN go build -o main .
 
 # Stage 2: Runtime environment
