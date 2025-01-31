@@ -4,6 +4,8 @@ import (
 	"errors"
 	"log"
 	"net/http"
+	"os"
+	"strconv"
 
 	"backend/internal/dtos"
 	"backend/internal/services/interfaces"
@@ -93,6 +95,11 @@ func (ac *AuthController) Login(c *gin.Context) {
 		return
 	}
 
+	secure, err := strconv.ParseBool(os.Getenv("COOKIES_SECURE"))
+	if err != nil {
+		// Handle the error (e.g., log it or use a default value)
+		secure = false // Default value if parsing fails
+	}
 	// Store refreshToken in HttpOnly cookie
 	c.SetCookie(
 		"refreshToken", // Name
@@ -100,7 +107,7 @@ func (ac *AuthController) Login(c *gin.Context) {
 		7*24*60*60,     // MaxAge: 7 days
 		"/",            // Path
 		"",             // Domain
-		false,          // Secure: Only send over HTTPS
+		secure,         // Secure: Only send over HTTPS
 		true,           // HttpOnly: Inaccessible to JavaScript
 	)
 
@@ -147,6 +154,12 @@ func (c *AuthController) RefreshToken(ctx *gin.Context) {
 		return
 	}
 
+	secure, err := strconv.ParseBool(os.Getenv("COOKIES_SECURE"))
+	if err != nil {
+		// Handle the error (e.g., log it or use a default value)
+		secure = false // Default value if parsing fails
+	}
+
 	// Send the new tokens back to the client
 	ctx.SetCookie(
 		"refreshToken",  // Name
@@ -154,7 +167,7 @@ func (c *AuthController) RefreshToken(ctx *gin.Context) {
 		7*24*60*60,      // MaxAge: 7 days
 		"/",             // Path
 		"",              // Domain
-		false,           // Secure: Only send over HTTPS
+		secure,          // Secure: Only send over HTTPS
 		true,            // HttpOnly: Inaccessible to JavaScript
 	)
 
@@ -184,8 +197,20 @@ func (ac *AuthController) Logout(ctx *gin.Context) {
 		return
 	}
 
+	secure, err := strconv.ParseBool(os.Getenv("COOKIES_SECURE"))
+	if err != nil {
+		// Handle the error (e.g., log it or use a default value)
+		secure = false // Default value if parsing fails
+	}
+
 	ctx.SetCookie(
-		"refreshToken", "", -1, "/", "", true, true, // Set MaxAge to -1 to delete the cookie
+		"refreshToken",
+		"",
+		-1,
+		"/",
+		"",
+		secure,
+		true, // Set MaxAge to -1 to delete the cookie
 	)
 
 	ctx.JSON(http.StatusOK, gin.H{"message": "Logged out successfully"})
