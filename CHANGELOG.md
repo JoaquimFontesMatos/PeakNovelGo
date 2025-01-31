@@ -1,3 +1,7 @@
+## v0.9.2 - 2025-01-31
+* Merge remote-tracking branch 'origin/main'
+* fix
+* chore: update release notes and changelog for v0.9.1
 ## v0.9.1 - 2025-01-31
 * Merge branch 'dev'
 * fix: added netlify.tml
