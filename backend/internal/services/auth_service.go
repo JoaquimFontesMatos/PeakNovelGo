@@ -3,9 +3,10 @@ package services
 import (
 	"backend/internal/models"
 	"backend/internal/repositories/interfaces"
+	"backend/internal/types"
 	"backend/internal/utils"
+
 	"backend/internal/validators"
-	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -23,12 +24,21 @@ func init() {
 	}
 }
 
+// AuthService struct represents an authentication service.
 type AuthService struct {
 	UserRepo  interfaces.UserRepositoryInterface
 	AuthRepo  interfaces.AuthRepositoryInterface
 	SecretKey []byte
 }
 
+// NewAuthService creates a new AuthService instance.
+//
+// Parameters:
+//   - userRepo interfaces.UserRepositoryInterface (UserRepository instance)
+//   - authRepo interfaces.AuthRepositoryInterface (AuthRepository instance)
+//
+// Returns:
+//   - *AuthService (pointer to AuthService struct)
 func NewAuthService(userRepo interfaces.UserRepositoryInterface, authRepo interfaces.AuthRepositoryInterface) *AuthService {
 	secretKey := os.Getenv("SECRET_KEY")
 	if secretKey == "" {
@@ -41,6 +51,16 @@ func NewAuthService(userRepo interfaces.UserRepositoryInterface, authRepo interf
 	}
 }
 
+// ValidateCredentials validates the credentials and returns the user if the credentials are valid.
+//
+// Parameters:
+//   - email string (email of the user)
+//   - password string (password of the user)
+//
+// Returns:
+//   - *models.User (pointer to User struct)
+//   - INVALID_CREDENTIALS_ERROR if the credentials are invalid
+//   - INTERNAL_SERVER_ERROR if the user could not be fetched
 func (s *AuthService) ValidateCredentials(email string, password string) (*models.User, error) {
 	if err := validators.ValidateEmail(email); err != nil {
 		return nil, err
@@ -57,7 +77,7 @@ func (s *AuthService) ValidateCredentials(email string, password string) (*model
 	go func() {
 		user, err := s.UserRepo.GetUserByEmail(email)
 		if err != nil {
-			errChan <- validators.ErrUserNotFound
+			errChan <- err
 			return
 		}
 		userChan <- user
@@ -66,7 +86,7 @@ func (s *AuthService) ValidateCredentials(email string, password string) (*model
 	select {
 	case user := <-userChan:
 		if !utils.ComparePassword(user.Password, password) {
-			return nil, errors.New("invalid credentials")
+			return nil, types.WrapError(types.INVALID_CREDENTIALS_ERROR, "Invalid credentials", nil)
 		}
 		user.LastLogin = time.Now()
 		if err := s.UserRepo.UpdateUser(user); err != nil {
@@ -78,48 +98,55 @@ func (s *AuthService) ValidateCredentials(email string, password string) (*model
 	}
 }
 
-func (s *AuthService) RefreshToken(refreshToken string) (string, string, error) {
+// RefreshToken refreshes the access token and refresh token.
+//
+// Parameters:
+//   - refreshToken string (refresh token to be refreshed)
+//
+// Returns:
+//   - [2]string ([0] is the access token, [1] is the refresh token)
+//   - REFRESH_TOKEN_REVOKED_ERROR if the refresh token has been revoked
+//   - INTERNAL_SERVER_ERROR if an error occurred while refreshing the token
+func (s *AuthService) RefreshToken(refreshToken string) (string, string, *models.User, error) {
 	// Check if the refresh token is in the revoked tokens table
-	isRevoked, err := s.AuthRepo.CheckIfTokenRevoked(refreshToken)
-	if err != nil {
-		return "", "", fmt.Errorf("error checking if token is revoked: %v", err)
-	}
+	isRevoked := s.AuthRepo.CheckIfTokenRevoked(refreshToken)
+
 	if isRevoked {
-		return "", "", fmt.Errorf("refresh token has been revoked")
+		return "", "", nil, types.WrapError(types.REFRESH_TOKEN_REVOKED_ERROR, "Refresh token has been revoked", nil)
 	}
 
 	// Validate and parse the refresh token (same as before)
 	token, err := jwt.Parse(refreshToken, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+			return nil, types.WrapError(types.INTERNAL_SERVER_ERROR, "Unexpected signing method", fmt.Errorf("unexpected signing method: %v", token.Header["alg"]))
 		}
 		return s.SecretKey, nil
 	})
 	if err != nil {
-		return "", "", fmt.Errorf("invalid or expired refresh token")
+		return "", "", nil, types.WrapError(types.INTERNAL_SERVER_ERROR, "Invalid or expired refresh token", err)
 	}
 
 	// Extract claims and validate the token
 	claims, ok := token.Claims.(jwt.MapClaims)
 	if !ok || !token.Valid {
-		return "", "", fmt.Errorf("invalid token claims")
+		return "", "", nil, types.WrapError(types.INTERNAL_SERVER_ERROR, "Invalid token claims", err)
 	}
 
 	// Extract user ID from the claims
 	userID, ok := claims["user_id"].(float64)
 	if !ok {
-		return "", "", fmt.Errorf("invalid token structure")
+		return "", "", nil, types.WrapError(types.INTERNAL_SERVER_ERROR, "Invalid token structure", err)
 	}
 
 	// Retrieve the user from the repository
 	fetchedUser, err := s.UserRepo.GetUserByID(uint(userID))
 	if err != nil {
-		return "", "", validators.ErrUserNotFound
+		return "", "", nil, err
 	}
 
 	// Check if the user is active
 	if fetchedUser.IsDeleted {
-		return "", "", validators.ErrUserDeleted
+		return "", "", nil, err
 	}
 
 	revokeErrChan := make(chan error)
@@ -143,23 +170,26 @@ func (s *AuthService) RefreshToken(refreshToken string) (string, string, error) 
 
 	revokeErr := <-revokeErrChan
 	if revokeErr != nil {
-		return "", "", fmt.Errorf("failed to revoke token: %v", revokeErr)
+		return "", "", nil, types.WrapError(types.INTERNAL_SERVER_ERROR, "Failed to revoke token", revokeErr)
 	}
 
 	tokens := <-tokenChan
 	if tokens[0] == "" && tokens[1] == "" {
-		return "", "", fmt.Errorf("failed to generate tokens")
+		return "", "", nil, types.WrapError(types.INTERNAL_SERVER_ERROR, "Failed to generate tokens", err)
 	}
 
-	return tokens[0], tokens[1], nil
+	return tokens[0], tokens[1], fetchedUser, nil
 }
 
+// GenerateToken generates the access token and refresh token.
+//
+// Parameters:
+//   - user *models.User (User struct)
+//
+// Returns:
+//   - [2]string ([0] is the access token, [1] is the refresh token)
+//   - INTERNAL_SERVER_ERROR if an error occurred while generating the tokens
 func (s *AuthService) GenerateToken(user *models.User) (string, string, error) {
-	secretKey := os.Getenv("SECRET_KEY")
-	if secretKey == "" {
-		return "", "", fmt.Errorf("SECRET_KEY is not set")
-	}
-
 	// Access Token
 	accessClaims := jwt.MapClaims{
 		"user_id": user.ID,
@@ -168,9 +198,9 @@ func (s *AuthService) GenerateToken(user *models.User) (string, string, error) {
 		"exp":     time.Now().Add(15 * time.Minute).Unix(),
 	}
 	accessToken := jwt.NewWithClaims(jwt.SigningMethodHS256, accessClaims)
-	accessTokenString, err := accessToken.SignedString([]byte(secretKey))
+	accessTokenString, err := accessToken.SignedString(s.SecretKey)
 	if err != nil {
-		return "", "", fmt.Errorf("failed to sign access token: %w", err)
+		return "", "", types.WrapError(types.INTERNAL_SERVER_ERROR, "Failed to sign access token", err)
 	}
 
 	// Refresh Token
@@ -181,65 +211,67 @@ func (s *AuthService) GenerateToken(user *models.User) (string, string, error) {
 		"exp":     time.Now().Add(24 * time.Hour).Unix(),
 	}
 	refreshToken := jwt.NewWithClaims(jwt.SigningMethodHS256, refreshClaims)
-	refreshTokenString, err := refreshToken.SignedString([]byte(secretKey))
+	refreshTokenString, err := refreshToken.SignedString(s.SecretKey)
 	if err != nil {
-		return "", "", fmt.Errorf("failed to sign refresh token: %w", err)
+		return "", "", types.WrapError(types.INTERNAL_SERVER_ERROR, "Failed to sign refresh token", err)
 	}
 
 	return accessTokenString, refreshTokenString, nil
 }
 
 func (s *AuthService) RevokeRefreshToken(refreshToken string) error {
-	secretKey := os.Getenv("SECRET_KEY")
-	if secretKey == "" {
-		return fmt.Errorf("SECRET_KEY is not set")
-	}
-
 	// Parse token
 	token, err := jwt.Parse(refreshToken, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+			return nil, types.WrapError(types.INTERNAL_SERVER_ERROR, "Unexpected signing method", fmt.Errorf("unexpected signing method: %v", token.Header["alg"]))
 		}
-		return []byte(secretKey), nil
+		return s.SecretKey, nil
 	})
 	if err != nil {
-		return fmt.Errorf("invalid refresh token: %w", err)
+		return types.WrapError(types.INVALID_TOKEN_ERROR, "Invalid refresh token", err)
 	}
 
 	// Validate claims
 	claims, ok := token.Claims.(jwt.MapClaims)
 	if !ok || !token.Valid {
-		return fmt.Errorf("invalid token claims")
+		return types.WrapError(types.INTERNAL_SERVER_ERROR, "Invalid token claims", err)
 	}
 
 	userID, ok := claims["user_id"].(float64)
 	if !ok {
-		return fmt.Errorf("invalid user_id in token claims")
+		return types.WrapError(types.INTERNAL_SERVER_ERROR, "Invalid user_id in token claims", err)
 	}
 
 	// Verify user existence
 	user, err := s.UserRepo.GetUserByID(uint(userID))
 	if err != nil {
-		return validators.ErrUserNotFound
+		return err
 	}
 	if user.IsDeleted {
-		return validators.ErrUserDeleted
+		return err
 	}
 
 	// Revoke token
 	err = s.AuthRepo.RevokeToken(refreshToken)
 	if err != nil {
-		return fmt.Errorf("failed to revoke token: %w", err)
+		return types.WrapError(types.INTERNAL_SERVER_ERROR, "Failed to revoke token", err)
 	}
 
 	return nil
 }
 
+// Logout revokes the refresh token.
+//
+// Parameters:
+//   - refreshToken string (refresh token to be revoked)
+//
+// Returns:
+//   - INTERNAL_SERVER_ERROR if an error occurred while revoking the token
 func (s *AuthService) Logout(refreshToken string) error {
 	// Revoke the refresh token
 	err := s.RevokeRefreshToken(refreshToken)
 	if err != nil {
-		return fmt.Errorf("failed to revoke token: %v", err)
+		return types.WrapError(types.INTERNAL_SERVER_ERROR, "Failed to revoke token", err)
 	}
 	return nil
 }

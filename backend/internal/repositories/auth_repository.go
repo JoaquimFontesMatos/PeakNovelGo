@@ -2,67 +2,65 @@ package repositories
 
 import (
 	"backend/internal/models"
-	"fmt"
-	"os"
+	"backend/internal/types"
+	"errors"
 	"time"
-
-	"github.com/golang-jwt/jwt"
 	"gorm.io/gorm"
 )
 
+// AuthRepository struct represents a repository for auth management.
 type AuthRepository struct {
 	db *gorm.DB
 }
 
+// NewAuthRepository creates a new AuthRepository instance
+//
+// Parameters:
+//   - db *gorm.DB (Gorm database connection)
+//
+// Returns:
+//   - *AuthRepository (pointer to AuthRepository struct)
 func NewAuthRepository(db *gorm.DB) *AuthRepository {
 	return &AuthRepository{db: db}
 }
 
-// CheckIfTokenRevoked checks if the given refresh token has been revoked.
-func (r *AuthRepository) CheckIfTokenRevoked(refreshToken string) (bool, error) {
+// CheckIfTokenRevoked checks if the the refresh token is revoked
+//
+// Parameters:
+//   - refreshToken string (refresh token to check)
+//
+// Returns:
+//   - bool (true if the token is revoked, false otherwise)
+func (r *AuthRepository) CheckIfTokenRevoked(refreshToken string) bool {
 	var revokedToken models.RevokedToken
 	err := r.db.Where("token = ?", refreshToken).First(&revokedToken).Error
-	if err == nil {
-		// Token is revoked
-		return true, nil
-	} else if err != gorm.ErrRecordNotFound {
-		// If some unexpected error occurs while querying the database
-		return false, fmt.Errorf("failed to check revocation status: %v", err)
-	}
-	return false, nil
+	return err == nil
 }
 
-// RevokeToken stores the revoked refresh token in the database.
-func (r *AuthRepository) RevokeToken(refreshToken string) error {
-	// Parse the refresh token to get its expiration time
-	token, err := jwt.Parse(refreshToken, func(token *jwt.Token) (interface{}, error) {
-		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
-		}
-		return []byte(os.Getenv("SECRET_KEY")), nil
-	})
-	if err != nil {
-		return fmt.Errorf("invalid refresh token")
+// RevokeToken revokes the given refresh token so it can't be used again
+//
+// Parameters:
+//   - refreshToken string (refresh token to be revoked)
+//
+// Returns:
+//   - INTERNAL_SERVER_ERROR if an error occurred while revoking token
+//   - VALIDATION_ERROR if an the token is invalid
+func (repo *AuthRepository) RevokeToken(refreshToken string) error {
+	var existingToken models.RevokedToken
+	err := repo.db.Where("token = ?", refreshToken).First(&existingToken).Error
+	if err == nil {
+		// Token is already revoked
+		return nil
+	}
+	if !errors.Is(err, gorm.ErrRecordNotFound) {
+		// Unexpected error
+		return types.WrapError(types.INTERNAL_SERVER_ERROR, "Occured an error revoking the token", err)
 	}
 
-	// Extract the claims to get the expiration time
-	claims, ok := token.Claims.(jwt.MapClaims)
-	if !ok || !token.Valid {
-		return fmt.Errorf("invalid token claims")
-	}
-
-	// Extract expiration time and create a RevokedToken record
-	expirationTime := time.Unix(int64(claims["exp"].(float64)), 0)
-
-	revokedToken := models.RevokedToken{
+	// Token not found, proceed to insert
+	newRevokedToken := models.RevokedToken{
 		Token:     refreshToken,
-		ExpiredAt: expirationTime,
+		ExpiredAt: time.Now().Add(7 * 24 * time.Hour), // Adjust based on your requirements
 	}
-
-	// Store the revoked token in the database
-	if err := r.db.Create(&revokedToken).Error; err != nil {
-		return fmt.Errorf("failed to revoke token: %v", err)
-	}
-
-	return nil
+	return repo.db.Create(&newRevokedToken).Error
 }

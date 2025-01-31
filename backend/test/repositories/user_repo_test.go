@@ -279,9 +279,11 @@ func TestUserRepository_UpdateUser(t *testing.T) {
 
 	fetchedUser, err := userRepo.GetUserByID(uint(1))
 	if err != nil {
-		t.Errorf("Failed to fetch user: %v", err)
+		if !(err.Error() == "User account is deactivated") {
+			t.Errorf("Failed to set user as deactivated: %v", err)
+		}
+		return
 	}
-
 	if fetchedUser.Username != updatedUser.Username {
 		t.Errorf("Expected user username to be %s, but got %s", updatedUser.Username, fetchedUser.Username)
 	}
@@ -388,7 +390,10 @@ func TestUserRepository_DeleteUser(t *testing.T) {
 
 	fetchedUser, err := userRepo.GetUserByID(uint(1))
 	if err != nil {
-		t.Errorf("Failed to fetch user: %v", err)
+		if !(err.Error() == "User account is deactivated") {
+			t.Errorf("Failed to set user as deactivated: %v", err)
+		}
+		return
 	}
 
 	if fetchedUser.IsDeleted != true {

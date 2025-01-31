@@ -8,25 +8,80 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func SetupRoutes(r *gin.Engine, authController *controllers.AuthController, userController *controllers.UserController) {
+func SetupRoutes(r *gin.Engine,
+	authController *controllers.AuthController,
+	userController *controllers.UserController,
+	novelController *controllers.NovelController,
+	ttsController *controllers.TTSController) {
+
+	r.Use(func(c *gin.Context) {
+		c.Writer.Header().Set("Access-Control-Allow-Origin", "http://localhost:3000")
+		c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
+		c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+		if c.Request.Method == "OPTIONS" {
+			c.Writer.WriteHeader(http.StatusOK)
+			return
+		}
+		c.Next()
+	})
+
+	// Serve TTS files
+	r.Static("/tts-files", "./tts-files")
+
 	r.StaticFile("/", "./static/index.html")
 
 	auth := r.Group("/auth")
 	{
 		auth.POST("/register", authController.Register)
 		auth.POST("/login", authController.Login)
-		auth.POST("/refresh-token", middleware.AuthMiddleware(), authController.RefreshToken)
+		auth.POST("/refresh-token", middleware.RefreshTokenMiddleware(), authController.RefreshToken)
 		auth.GET("/verify-email", authController.VerifyEmail)
+		auth.POST("/logout", middleware.RefreshTokenMiddleware(), authController.Logout)
 	}
 	user := r.Group("/user")
 	{
-		user.GET("/users/:id", userController.HandleGetUser)
-		user.GET("/users/email/:email", middleware.AuthMiddleware(), userController.HandleGetUserByEmail)
-		user.GET("/users/username/:username", middleware.AuthMiddleware(), userController.HandleGetUserByUsername)
-		user.PUT("/users/:id/password", middleware.AuthMiddleware(), userController.UpdatePassword)
-		user.PUT("/users/:id/email", middleware.AuthMiddleware(), userController.UpdateEmail)
-		user.PUT("/users/:id/fields", middleware.AuthMiddleware(), userController.UpdateUserFields)
-		user.DELETE("/users/:id", middleware.AuthMiddleware(), userController.HandleDeleteUser)
+		user.GET("/:id", userController.HandleGetUser)
+		user.GET("/email/:email", middleware.AuthMiddleware(), userController.HandleGetUserByEmail)
+		user.GET("/username/:username", userController.HandleGetUserByUsername)
+		user.PUT("/:id/password", middleware.AuthMiddleware(), userController.UpdatePassword)
+		user.PUT("/:id/email", middleware.AuthMiddleware(), userController.UpdateEmail)
+		user.PUT("/:id/fields", middleware.AuthMiddleware(), userController.UpdateUserFields)
+		user.DELETE("/:id", middleware.AuthMiddleware(), userController.HandleDeleteUser)
+	}
+
+	novel := r.Group("/novels")
+	{
+		novel.POST("/:novel_updates_id", middleware.AuthMiddleware(), novelController.HandleImportNovel)
+		novel.GET("/", novelController.GetNovels)
+		novel.GET("/authors/:author_name", novelController.GetNovelsByAuthorName)
+		novel.GET("/genres/:genre_name", novelController.GetNovelsByGenreName)
+		novel.GET("/tags/:tag_name", novelController.GetNovelsByTagName)
+		novel.GET("/:novel_id", novelController.GetNovelByID)
+		novel.GET("/title/:title", novelController.GetNovelByUpdatesID)
+
+		chapters := r.Group("/novels/chapters")
+		{
+			chapters.POST("/:novel_id", middleware.AuthMiddleware(), novelController.HandleImportChaptersZip)
+			chapters.GET("/:novel_id", novelController.GetChaptersByNovelID)
+			chapters.GET("/chapter/:chapter_id", novelController.GetChapterByID)
+			chapters.GET("/novel/:novel_title/chapter/:chapter_no", novelController.GetChapterByNovelUpdatesIDAndChapterNo)
+			chapters.GET("/novel/:novel_title/chapters", novelController.GetChaptersByNovelUpdatesID)
+		}
+
+		bookmarked := r.Group("/novels/bookmarked")
+		{
+			bookmarked.POST("/", middleware.AuthMiddleware(), novelController.CreateBookmarkedNovel)
+			bookmarked.PUT("/", middleware.AuthMiddleware(), novelController.UpdateBookmarkedNovel)
+			bookmarked.GET("/:user_id", middleware.AuthMiddleware(), novelController.GetBookmarkedNovelsByUserID)
+			bookmarked.GET("/user/:user_id/novel/:novel_id", middleware.AuthMiddleware(), novelController.GetBookmarkedNovelByUserIDAndNovelID)
+			bookmarked.DELETE("/user/:user_id/novel/:novel_id", middleware.AuthMiddleware(), novelController.UnbookmarkNovel)
+		}
+
+		tts := r.Group("/novels/tts")
+		{
+			tts.POST("/", middleware.AuthMiddleware(), ttsController.GenerateTTS)
+			tts.GET("/voices", middleware.AuthMiddleware(), ttsController.GetVoices)
+		}
 	}
 
 	// Health check route
