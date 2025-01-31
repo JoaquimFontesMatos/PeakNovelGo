@@ -1,5 +1,5 @@
 [build]
-publish = ".output/server"
+publish = ".output"
 command = "npm run build"
 
 [context.production.environment]
