@@ -2,7 +2,7 @@ package validators
 
 import (
 	"backend/internal/types"
-
+	
 	"bytes"
 	"encoding/json"
 	"io"

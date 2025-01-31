@@ -1,8 +1,10 @@
 package controllers
 
 import (
+	"backend/internal/dtos"
 	"backend/internal/services/interfaces"
 	"backend/internal/validators"
+	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -17,19 +19,15 @@ func NewTTSController(ttsService interfaces.TTSServiceInterface) *TTSController 
 }
 
 func (t *TTSController) GenerateTTS(ctx *gin.Context) {
-	var request struct {
-		Text      string `json:"text"`
-		Voice     string `json:"voice"`
-		NovelID   uint   `json:"novelId"`
-		ChapterNo uint   `json:"chapterNo"`
-	}
+	var request dtos.TTSRequest
 
 	if err := validators.ValidateBody(ctx, &request); err != nil {
+		log.Printf(err.Error())
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
 		return
 	}
 
-	paragraphs, err := t.ttsService.GenerateTTSMap(request.Text, request.Voice, request.NovelID, request.ChapterNo, "http://localhost:8081/tts-files")
+	paragraphs, err := t.ttsService.GenerateTTSMap(&request, "http://localhost:8081/tts-files")
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate TTS"})
 		return
@@ -41,6 +39,8 @@ func (t *TTSController) GenerateTTS(ctx *gin.Context) {
 func (t *TTSController) GetVoices(ctx *gin.Context) {
 	voices, err := t.ttsService.GetVoices()
 	if err != nil {
+		log.Printf(err.Error())
+
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get voices"})
 		return
 	}

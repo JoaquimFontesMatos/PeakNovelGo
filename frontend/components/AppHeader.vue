@@ -18,6 +18,7 @@ const { user } = storeToRefs(useAuthStore());
 
 const handleLogout = async() => {
   await useAuthStore().logout();
+  navigateTo("/");
 };
 
 const handleClickHome = () => {
@@ -47,7 +48,7 @@ const handleClickHome = () => {
         <NuxtLink class="hover:text-accent-gold hover:underline" to="/novels"
         >Novels</NuxtLink
         >
-        <NuxtLink class="hover:text-accent-gold hover:underline" to="/settings"
+        <NuxtLink v-if="user" class="hover:text-accent-gold hover:underline" to="/settings"
         >Settings</NuxtLink
         >
       </div>

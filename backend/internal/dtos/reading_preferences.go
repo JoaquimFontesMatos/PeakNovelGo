@@ -8,7 +8,7 @@ type ReadingPreferences struct {
 }
 
 type TTSPreferences struct {
-    Autoplay bool    `json:"autoplay,omitempty"`
-    Voice    string  `json:"voice,omitempty"`
-    Speed    float32 `json:"speed,omitempty"`
+    Autoplay bool   `json:"autoplay,omitempty"`
+    Voice    string `json:"voice,omitempty"`
+    Rate     int    `json:"rate,omitempty"`
 }

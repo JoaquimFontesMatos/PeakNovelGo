@@ -63,12 +63,8 @@ const handleChangeReadingPreferences = async() => {
                 v-model="user.readingPreferences.theme"
                 @change="handleChangeReadingPreferences()"
             >
-                <option value="Unfollow">Unfollow</option>
-                <option value="Reading">Reading</option>
-                <option value="Completed">Completed</option>
-                <option value="On-Hold">On-Hold</option>
-                <option value="Dropped">Dropped</option>
-                <option value="Plan to Read">Plan to Read</option>
+                <option value="dark">dark</option>
+                <option value="light">light</option>
             </select>
         </div>
 
@@ -97,7 +93,7 @@ const handleChangeReadingPreferences = async() => {
                         v-model="user.readingPreferences.tts.voice"
                         @change="handleChangeReadingPreferences()"
                     >
-                        <option value="en-US-AriaNeural">"en-US AriaNeural"</option>
+                        <option value="en-US-AriaNeural">en-US AriaNeural</option>
                         <option value="Reading">Reading</option>
                         <option value="Completed">Completed</option>
                         <option value="On-Hold">On-Hold</option>
@@ -108,17 +104,18 @@ const handleChangeReadingPreferences = async() => {
 
                 <!-- Speed Input -->
                 <div class="form-group">
-                    <label for="speed" class="block text-sm font-medium text-secondary-content">Speed</label>
+                    <label for="rate" class="block text-sm font-medium text-secondary-content">Rate</label>
                     <input
-                        id="speed"
-                        name="speed"
-                        type="number"
-                        step="0.1"
-                        min="0.1"
-                        max="3"
-                        v-model="user.readingPreferences.tts.speed"
+                        id="rate"
+                        name="rate"
+                        type="range"
+                        step="5"
+                        min="-100"
+                        max="100"
+                        v-model.number="user.readingPreferences.tts.rate"
                         @change="handleChangeReadingPreferences()"
                     />
+                    <span class="block text-sm font-medium text-secondary-content">{{user.readingPreferences.tts.rate}}%</span>
                 </div>
             </div>
         </fieldset>

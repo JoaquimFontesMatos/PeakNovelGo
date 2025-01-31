@@ -22,7 +22,10 @@
   }
   [type='checkbox'],
   [type='radio'] {
-    @apply  rounded border-gray-300 text-indigo-500 focus:ring-indigo-500;
+    @apply  rounded border-secondary-content text-accent-gold-dark focus:ring-accent-gold-dark;
+  }
+  [type='range'] {
+    @apply w-full border-secondary rounded-lg shadow-sm accent-accent-gold-dark text-neutral-light bg-border;
   }
 }
 

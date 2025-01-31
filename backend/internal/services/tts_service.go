@@ -1,6 +1,8 @@
 package services
 
 import (
+	"backend/internal/dtos"
+	"backend/internal/types"
 	"fmt"
 	"io"
 	"log"
@@ -25,11 +27,19 @@ type Paragraph struct {
 }
 
 // GenerateTTSFile generates TTS audio for a given text and voice and saves it to a file.
-func (s *TTSService) GenerateTTSFile(paragraphs []Paragraph, voice string) error {
-	// Generate a unique filename based on the current time
+func (s *TTSService) GenerateTTSFile(paragraphs []Paragraph, voice string, rate int) error {
+	// Validate the rate value
+	if rate < -100 || rate > 100 {
+		return fmt.Errorf("rate must be between -100 and 100 (inclusive)")
+	}
 
+	// Format the rate as a string with a % sign
+	rateStr := fmt.Sprintf("%+d%%", rate)
+
+	// Generate a unique filename based on the current time
 	options := []edgetts.Option{
 		edgetts.WithVoice(voice),
+		edgetts.WithRate(rateStr),
 	}
 
 	tts, err := edgetts.NewSpeech(options...)
@@ -66,7 +76,7 @@ func (s *TTSService) GenerateTTSFile(paragraphs []Paragraph, voice string) error
 		return fmt.Errorf("failed to start tasks")
 	}
 
-	go s.scheduleCleanup(s.OutputDir, 15*time.Minute)
+	go s.scheduleCleanup(paragraphs, 60*time.Minute, 30*time.Minute)
 
 	return nil
 }
@@ -79,9 +89,9 @@ func (s *TTSService) generateFile(filePath string) (io.Writer, error) {
 	return os.Create(filePath)
 }
 
-func (s *TTSService) GenerateParagraphs(text string, novelID uint, chapterNo uint, baseUrl string) []Paragraph {
+func (s *TTSService) GenerateParagraphs(ttsRequest *dtos.TTSRequest, baseUrl string) []Paragraph {
 	// Split the text into paragraphs based on double newlines
-	paragraphs := strings.Split(text, "\n\n")
+	paragraphs := strings.Split(ttsRequest.Text, "\n\n")
 
 	// Process paragraphs to handle dots or other special cases
 	processedParagraphs := make([]string, 0, len(paragraphs))
@@ -92,7 +102,7 @@ func (s *TTSService) GenerateParagraphs(text string, novelID uint, chapterNo uin
 			continue
 		} else if isOnlyDots(trimmedParagraph) {
 			// Replace dots with a meaningful placeholder for TTS
-			processedParagraphs = append(processedParagraphs, "<break time='3s'/>")
+			processedParagraphs = append(processedParagraphs, ". . .    cenary change    . . .")
 		} else {
 			// Keep the paragraph as is
 			processedParagraphs = append(processedParagraphs, trimmedParagraph)
@@ -104,7 +114,7 @@ func (s *TTSService) GenerateParagraphs(text string, novelID uint, chapterNo uin
 	for i, paragraph := range processedParagraphs {
 		name := fmt.Sprintf("%d", i)
 
-		filename := fmt.Sprintf("novel_%d_chap%d_%s.wav", novelID, chapterNo, name)
+		filename := fmt.Sprintf("novel_%d_chap%d_%s_[%s_%d].wav", ttsRequest.NovelID, ttsRequest.ChapterNo, name, ttsRequest.Voice, ttsRequest.Rate)
 		filePath := filepath.Join(s.OutputDir, filename)
 
 		result[i] = Paragraph{
@@ -123,7 +133,7 @@ func (s *TTSService) GenerateParagraphs(text string, novelID uint, chapterNo uin
 // Helper function to check if a string contains only dots
 func isOnlyDots(s string) bool {
 	for _, char := range s {
-		if char != '.' {
+		if char != '.' && char != '…' {
 			return false
 		}
 	}
@@ -131,12 +141,15 @@ func isOnlyDots(s string) bool {
 }
 
 // GenerateTTSMap generates a map of paragraphs to their respective TTS file URLs in parallel, preserving order.
-func (s *TTSService) GenerateTTSMap(text string, voice string, novelID uint, chapterNo uint, baseURL string) ([]Paragraph, error) {
-	os.MkdirAll(s.OutputDir, 0755)
+func (s *TTSService) GenerateTTSMap(ttsRequest *dtos.TTSRequest, baseURL string) ([]Paragraph, error) {
+	err := os.MkdirAll(s.OutputDir, 0755)
+	if err != nil {
+		return nil, types.WrapError(types.INTERNAL_SERVER_ERROR, "An error occurred while creating tts directory", err)
+	}
 
-	paragraphs := s.GenerateParagraphs(text, novelID, chapterNo, baseURL)
+	paragraphs := s.GenerateParagraphs(ttsRequest, baseURL)
 
-	err := s.GenerateTTSFile(paragraphs, voice)
+	err = s.GenerateTTSFile(paragraphs, ttsRequest.Voice, ttsRequest.Rate)
 
 	if err != nil {
 		return nil, err
@@ -149,15 +162,49 @@ func (s *TTSService) GetVoices() ([]edgetts.Voice, error) {
 	return edgetts.NewVoiceManager().ListVoices()
 }
 
-// scheduleCleanup schedules a cleanup task to remove the directory after a specified duration.
-func (s *TTSService) scheduleCleanup(dir string, duration time.Duration) {
-	timer := time.NewTimer(duration)
-	<-timer.C // Wait until timer expires
+// scheduleCleanup removes only the specific TTS files after a specified duration.
+func (s *TTSService) scheduleCleanup(paragraphs []Paragraph, initialDuration time.Duration, extension time.Duration) {
+	go func() {
+		deadline := time.Now().Add(initialDuration) // Set initial deadline
 
-	err := os.RemoveAll(dir)
-	if err != nil {
-		log.Printf("Failed to clean up directory: %v\n", err)
-	} else {
-		log.Printf("Directory %s cleaned up successfully after %v\n", dir, duration)
-	}
+		for {
+			time.Sleep(10 * time.Minute) // Check every 10 minutes
+
+			extend := false
+			for _, paragraph := range paragraphs {
+				fileInfo, err := os.Stat(paragraph.Filepath)
+				if err != nil {
+					if os.IsNotExist(err) {
+						continue // File already deleted, skip it
+					}
+					log.Printf("Error accessing file %s: %v", paragraph.Filepath, err)
+					continue
+				}
+
+				// Get last access time (platform-dependent)
+				atime := fileInfo.ModTime() // Linux/macOS: may need syscall to get exact atime
+
+				// Extend if the file was accessed after the deadline was set
+				if atime.After(deadline) {
+					deadline = time.Now().Add(extension)
+					extend = true
+					log.Printf("Extended cleanup for %s, new deadline: %v", paragraph.Filepath, deadline)
+				}
+			}
+
+			if !extend && time.Now().After(deadline) {
+				break // Exit loop if no files were accessed and time has passed
+			}
+		}
+
+		// Delete files after final deadline
+		for _, paragraph := range paragraphs {
+			err := os.Remove(paragraph.Filepath)
+			if err != nil && !os.IsNotExist(err) {
+				log.Printf("Failed to delete file %s: %v", paragraph.Filepath, err)
+			} else {
+				log.Printf("Deleted TTS file: %s", paragraph.Filepath)
+			}
+		}
+	}()
 }

@@ -5,6 +5,6 @@ export interface ReadingPreferences {
     tts: {
         autoplay: boolean,
         voice: string,
-        speed: number,
+        rate: number,
     }
 }

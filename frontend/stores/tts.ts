@@ -15,6 +15,31 @@ export const useTTSStore = defineStore('TTS', () => {
     const fetchingTTSVoices = ref<boolean>(false);
     const fetchingTTSVoicesError = ref<string | null>(null);
 
+    const currentTime = ref<number>(0);
+    const duration = ref<number>(0);
+    const audioPlayer = ref<HTMLAudioElement | null>(null);
+    const isPlaying = ref<boolean>(false);
+
+    const togglePlayback = () => {
+        if (audioPlayer.value) {
+            if (isPlaying.value) {
+                audioPlayer.value.pause();
+            } else {
+                audioPlayer.value.play();
+            }
+            isPlaying.value = !isPlaying.value;
+        }
+    };
+
+    // Update progress when the audio time changes
+    const updateProgress = () => {
+        if (audioPlayer.value) {
+            currentTime.value = audioPlayer.value.currentTime;
+            duration.value = audioPlayer.value.duration;
+        }
+    };
+
+
     const generateTTS = async (ttsRequest: TTSRequest) => {
         fetchingTTS.value = true;
         fetchingTTSError.value = null;
@@ -102,6 +127,12 @@ export const useTTSStore = defineStore('TTS', () => {
     };
 
     return {
+        isPlaying,
+        audioPlayer,
+        currentTime,
+        duration,
+        togglePlayback,
+        updateProgress,
         paragraphs,
         fetchingTTS,
         fetchingTTSError,

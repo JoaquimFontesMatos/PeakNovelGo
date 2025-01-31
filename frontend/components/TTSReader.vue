@@ -1,74 +1,113 @@
 <script setup lang="ts">
 import type { TTSRequest } from '~/models/TTSRequest';
+import type { Chapter } from '~/models/Chapter';
 
-const chapterStore = useChapterStore();
+const props = defineProps<{
+    novelTitle: string,
+    chapter: Chapter | null
+}>();
+
 const ttsStore = useTTSStore();
 const userStore = useUserStore();
+const bookmarkStore = useBookmarkStore();
+const chapterStore = useChapterStore();
 
-const { chapter } = storeToRefs(chapterStore);
 const { user } = storeToRefs(userStore);
+const { bookmark } = storeToRefs(bookmarkStore);
 const {
-    paragraphs, fetchingTTS, fetchingTTSError
+    audioPlayer, isPlaying, duration, paragraphs, fetchingTTS, fetchingTTSError
 } = storeToRefs(ttsStore);
+const { fetchingChapters } = storeToRefs(chapterStore);
 
 const currentParagraph = ref<number>(0);
-const audioPlayer = ref<HTMLAudioElement | null>(null);
-const isPlaying = ref<boolean>(false);
-const currentTime = ref<number>(0);
-const duration = ref<number>(0);
 
-// Play or pause the audio
-const togglePlayback = () => {
+// Clean up audio player event listeners
+const cleanupAudioPlayer = () => {
     if (audioPlayer.value) {
-        if (isPlaying.value) {
-            audioPlayer.value.pause();
-        } else {
-            audioPlayer.value.play();
-        }
-        isPlaying.value = !isPlaying.value;
+        audioPlayer.value.pause();
+        audioPlayer.value.currentTime = 0;
+        audioPlayer.value.src = '';
+        audioPlayer.value.removeEventListener('canplay', handleCanPlay);
+        audioPlayer.value.removeEventListener('timeupdate', ttsStore.updateProgress);
+        audioPlayer.value.removeEventListener('loadedmetadata', handleLoadedMetadata);
+        audioPlayer.value.removeEventListener('error', handleAudioError);
     }
 };
 
-// Update progress when the audio time changes
-const updateProgress = () => {
+// Handle audio playback when the audio is ready
+const handleCanPlay = () => {
     if (audioPlayer.value) {
-        currentTime.value = audioPlayer.value.currentTime;
-        duration.value = audioPlayer.value.duration;
+        audioPlayer.value.play();
+        isPlaying.value = true;
+    }
+};
+
+// Handle metadata loading
+const handleLoadedMetadata = () => {
+    if (audioPlayer.value) {
+        duration.value = audioPlayer.value.duration || 0;
+    }
+};
+
+// Handle audio errors
+const handleAudioError = async() => {
+    const errorCode = audioPlayer.value?.error?.code || 'unknown';
+    console.error(
+        'Error playing audio for paragraph ' + currentParagraph.value,
+        'Error Code: ' + errorCode
+    );
+
+    // Only skip if the error is unrecoverable
+    if (errorCode === 4) {
+        // Code 4: MEDIA_ERR_SRC_NOT_SUPPORTED
+        console.warn('Invalid source. Skipping paragraph...');
+        await playNextParagraph();
     }
 };
 
 // Play audio for the current paragraph
 const playAudio = () => {
-    if (audioPlayer.value) {
-        // Pause and reset the current audio
-        audioPlayer.value.pause();
-        audioPlayer.value.currentTime = 0;
+    if (!audioPlayer.value || !paragraphs.value[currentParagraph.value]) return ;
 
-        // Set the new audio source with a cache-busting query parameter
-        const url = paragraphs.value[currentParagraph.value].url + '?t=' + Date.now();
-        audioPlayer.value.src = url;
+    cleanupAudioPlayer(); // Clean up previous event listeners
 
-        // Wait for the audio to load before playing
-        audioPlayer.value.addEventListener('canplay', () => {
-            audioPlayer.value?.play();
-            isPlaying.value = true;
-        }, { once: true });
+    scrollToParagraph();
 
-        // Update progress when the audio time changes
-        audioPlayer.value.addEventListener('timeupdate', updateProgress);
+    // Set the new audio source with a cache-busting query parameter
+    audioPlayer.value.src = paragraphs.value[currentParagraph.value].url + '?t=' + Date.now();
 
-        // Update duration when the audio metadata is loaded
-        audioPlayer.value.addEventListener('loadedmetadata', () => {
-            duration.value = audioPlayer.value?.duration || 0;
-        });
+    // Add new event listeners
+    audioPlayer.value.addEventListener('canplay', handleCanPlay, { once: true });
+    audioPlayer.value.addEventListener('timeupdate', ttsStore.updateProgress);
+    audioPlayer.value.addEventListener('loadedmetadata', handleLoadedMetadata);
+    audioPlayer.value.addEventListener('error', handleAudioError);
+};
+
+const scrollToParagraph = () => {
+    const paragraphElement = document.getElementById('paragraph-' + currentParagraph.value);
+    if (paragraphElement) {
+        paragraphElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
 };
 
 // Move to the next paragraph when the current audio ends
-const playNextParagraph = () => {
+const playNextParagraph = async() => {
     if (currentParagraph.value < paragraphs.value.length - 1) {
         currentParagraph.value++;
-        playAudio();
+    } else {
+        // Stop playback if we've reached the end
+        isPlaying.value = false;
+
+        // Update user currentChapter
+        if (!bookmark.value || !props.chapter) return ;
+        bookmark.value.currentChapter = props.chapter.chapterNo + 1;
+
+        await bookmarkStore.updateBookmark(bookmark.value);
+
+        // Navigate to new current chapter
+        if (user.value && user.value.readingPreferences.tts.autoplay) {
+            await navigateTo('/novels/' + props.novelTitle + '/' + bookmark.value.currentChapter);
+        }
     }
 };
 
@@ -77,64 +116,48 @@ watch(currentParagraph, (newValue) => {
     playAudio();
 });
 
-// Fetch TTS data and start playing the first paragraph
-watchEffect(async() => {
-    if (chapter.value && user.value) {
-        const ttsRequest: TTSRequest = {
-            text: chapter.value.body,
-            novelId: chapter.value.novelId,
-            chapterNo: chapter.value.chapterNo,
-            voice: user.value.readingPreferences.tts.voice,
-        };
+// Watch for changes to the chapter prop
+watch(() => props.chapter, async(newChapter) => {
+    if (!newChapter || !user.value) return ;
+    // Reset state for the new chapter
+    currentParagraph.value = 0;
+    isPlaying.value = false;
+    cleanupAudioPlayer();
 
-        await ttsStore.generateTTS(ttsRequest);
+    const ttsRequest: TTSRequest = {
+        text: newChapter.body,
+        novelId: newChapter.novelId,
+        chapterNo: newChapter.chapterNo,
+        voice: user.value.readingPreferences.tts.voice,
+        rate: user.value.readingPreferences.tts.rate
+    };
 
-        // Start playing audio for the first paragraph
-        if (paragraphs.value.length > 0) {
-            currentParagraph.value = 0;
-            playAudio();
-        }
+    await ttsStore.generateTTS(ttsRequest);
+
+    // Start playing audio for the first paragraph
+    if (paragraphs.value.length > 0) {
+        playAudio();
     }
-});
+}, { immediate: true });
 </script>
 
 <template>
-    <div>
+    <LoadingBar v-show="fetchingTTS || fetchingChapters"/>
+    <div v-show="!fetchingTTS && paragraphs.length > 0">
         <!-- Audio element for playing paragraph audio -->
         <audio ref="audioPlayer" @ended="playNextParagraph"/>
-
-        <!-- Play/Pause Button -->
-        <div class="flex items-center gap-4 my-4">
-            <button @click="togglePlayback" class="p-2 bg-primary text-white rounded">
-                {{ isPlaying ? 'Pause' : 'Play' }}
-            </button>
-
-            <!-- Progress Display -->
-            <div class="flex-1">
-                <div class="w-full bg-gray-200 rounded h-2">
-                    <div
-                        class="bg-primary h-2 rounded"
-                        :style=" {
-                            width: `$ {(currentTime / duration) * 100}%`
-                        }"
-                    ></div>
-                </div>
-                <div class="text-sm text-gray-600 mt-1">
-                    {{ Math.floor(currentTime) }}s / {{ Math.floor(duration) }}s
-                </div>
-            </div>
-        </div>
 
         <!-- Paragraphs -->
         <div
             class="transition-colors"
             v-for="(paragraph, index) in paragraphs"
             :key="index"
-            :id="`paragraph-$ {index}`"
+            :id="'paragraph-' + index"
             :style=" {
                 opacity: 1 - Math.min(Math.abs(index - currentParagraph) / 5, 0.8)
             }"
             :class="index === currentParagraph ? 'text-primary p-[0.75rem] bg-primary-content' : 'text-secondary'"
+            @dblclick="currentParagraph = index"
         >
             <p class="font-bold font-mono my-9 md:text-lg lg:text-xl xl:text-2xl 2xl:text:3xl">
                 {{ paragraph.text }}
