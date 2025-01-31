@@ -1,3 +1,7 @@
+## v0.9.1 - 2025-01-31
+* Merge branch 'dev'
+* fix: added netlify.tml
+* chore: update release notes and changelog for v0.9.0
 ## v0.9.0 - 2025-01-31
 * Merge branch 'dev'
 * fix: fixed some auth bugs, and added rate and adjusted tts
