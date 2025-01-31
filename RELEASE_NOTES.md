@@ -1,3 +1,6 @@
+## v0.9.11 - 2025-01-31
+* fix
+* chore: update release notes and changelog for v0.9.10
 ## v0.9.10 - 2025-01-31
 * Merge remote-tracking branch 'origin/main'
 * fix
