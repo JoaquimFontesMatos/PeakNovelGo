@@ -51,7 +51,7 @@ func (n *NovelController) HandleImportNovel(ctx *gin.Context) {
 	}
 
 	// Specify the Python script and its module
-	cmd := exec.Command("python", "-m", "novel_updates_scraper.client", novelUpdatesID)
+	cmd := exec.Command(os.Getenv("PYTHON"), "-m", "novel_updates_scraper.client", novelUpdatesID)
 
 	// Capture the output of the Python script
 	output, err := cmd.Output()

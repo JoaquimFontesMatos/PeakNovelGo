@@ -35,8 +35,8 @@ RUN apt-get update && apt-get install -y \
 COPY --from=builder /app/backend/cmd/server/main /app/main
 
 # Copy Python requirements and install dependencies
-COPY backend/requirements.txt /app/novel_updates_scraper/requirements.txt
-RUN pip3 install -r /app/novel_updates_scraper/requirements.txt
+COPY backend/novel_updates_scraper/requirements.txt /app/requirements.txt
+RUN pip3 install -r /app/requirements.txt
 
 # Set the working directory
 WORKDIR /app
