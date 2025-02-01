@@ -1,7 +1,7 @@
-import type { Novel } from "~/models/Novel";
-import type { PaginatedServerResponse } from "~/models/PaginatedServerResponse";
+import type { Novel } from '~/models/Novel';
+import type { PaginatedServerResponse } from '~/models/PaginatedServerResponse';
 
-export const useNovelStore = defineStore("Novel", () => {
+export const useNovelStore = defineStore('Novel', () => {
   const runtimeConfig = useRuntimeConfig();
   const url = runtimeConfig.public.apiUrl;
 
@@ -76,14 +76,14 @@ export const useNovelStore = defineStore("Novel", () => {
   const fetchNovelsByTag = async (
     tag: string,
     page: number,
-    limit: number
+    limit: number,
   ): Promise<void> => {
     fetchingNovel.value = true;
     novelError.value = null;
     fetch(
       `${url}/novels/tags/${encodeURIComponent(
-        tag as string
-      )}?page=${page}&limit=${limit}`
+        tag as string,
+      )}?page=${page}&limit=${limit}`,
     )
       .then((response) => response.json())
       .then((data) => {
@@ -100,14 +100,14 @@ export const useNovelStore = defineStore("Novel", () => {
   const fetchNovelsByAuthor = async (
     author: string,
     page: number,
-    limit: number
+    limit: number,
   ): Promise<void> => {
     fetchingNovel.value = true;
     novelError.value = null;
     fetch(
       `${url}/novels/authors/${encodeURIComponent(
-        author as string
-      )}?page=${page}&limit=${limit}`
+        author as string,
+      )}?page=${page}&limit=${limit}`,
     )
       .then((response) => response.json())
       .then((data) => {
@@ -124,14 +124,14 @@ export const useNovelStore = defineStore("Novel", () => {
   const fetchNovelsByGenre = async (
     genre: string,
     page: number,
-    limit: number
+    limit: number,
   ): Promise<void> => {
     fetchingNovel.value = true;
     novelError.value = null;
     fetch(
       `${url}/novels/genres/${encodeURIComponent(
-        genre as string
-      )}?page=${page}&limit=${limit}`
+        genre as string,
+      )}?page=${page}&limit=${limit}`,
     )
       .then((response) => response.json())
       .then((data) => {
