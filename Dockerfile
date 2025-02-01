@@ -35,9 +35,15 @@ RUN apt-get update && apt-get install -y \
 # Copy the Go binary from the builder stage
 COPY --from=builder /app/backend/cmd/server/main /app/main
 
-# Copy Python requirements and install dependencies
+# Copy Python requirements and the entire Python module
+COPY backend/novel_updates_scraper /app/novel_updates_scraper
 COPY backend/novel_updates_scraper/requirements.txt /app/requirements.txt
+
+# Install Python dependencies
 RUN pip3 install -r /app/requirements.txt
+
+# Set PYTHONPATH so Python can locate the module
+ENV PYTHONPATH=/app
 
 # Set the working directory
 WORKDIR /app
