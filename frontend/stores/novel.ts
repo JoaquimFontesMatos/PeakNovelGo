@@ -60,7 +60,7 @@ export const useNovelStore = defineStore('Novel', () => {
   const fetchNovels = async (page: number, limit: number): Promise<void> => {
     fetchingNovel.value = true;
     novelError.value = null;
-    fetch(`${url}/novels?page=${page}&limit=${limit}`)
+    fetch(`${url}/novels/?page=${page}&limit=${limit}`)
       .then((response) => response.json())
       .then((data) => {
         paginatedNovelsData.value = data;
