@@ -1,3 +1,7 @@
+## v0.9.20 - 2025-02-01
+* Merge remote-tracking branch 'origin/main'
+* fix: forget this
+* chore: update release notes and changelog for v0.9.19
 ## v0.9.19 - 2025-02-01
 * Merge remote-tracking branch 'origin/main'
 * fix: fixed some invalid urls
