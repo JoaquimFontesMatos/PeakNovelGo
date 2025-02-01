@@ -1,3 +1,7 @@
+## v0.9.18 - 2025-02-01
+* Merge remote-tracking branch 'origin/main'
+* fix
+* chore: update release notes and changelog for v0.9.17
 ## v0.9.17 - 2025-01-31
 * Merge remote-tracking branch 'origin/main'
 * fix
