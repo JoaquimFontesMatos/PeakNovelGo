@@ -1,3 +1,8 @@
+## v0.10.0 - 2025-02-03
+* Merge remote-tracking branch 'origin/main'
+* fix: fixed the header responsiveness
+* feat: added responsivity and improved the auth store
+* chore: update release notes and changelog for v0.9.20
 ## v0.9.20 - 2025-02-01
 * Merge remote-tracking branch 'origin/main'
 * fix: forget this
