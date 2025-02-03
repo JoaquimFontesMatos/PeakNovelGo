@@ -2,7 +2,6 @@ package controllers
 
 import (
 	"errors"
-	"log"
 	"net/http"
 	"os"
 	"strconv"
@@ -32,22 +31,18 @@ func (ac *AuthController) Register(c *gin.Context) {
 
 	if err := validators.ValidateBody(c, &registerRequest); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-
-		log.Println(err)
 		return
 	}
 
 	// Call the user service to create a new user
 	if err := ac.UserService.RegisterUser(&registerRequest); err != nil {
-		log.Println(err)
-
-		var error *types.MyError
-		if errors.As(err, &error) {
-			switch error.Code {
+		var myError *types.MyError
+		if errors.As(err, &myError) {
+			switch myError.Code {
 			case types.VALIDATION_ERROR:
-				c.JSON(http.StatusBadRequest, gin.H{"error": error.Message})
+				c.JSON(http.StatusBadRequest, gin.H{"error": myError.Message})
 			case types.CONFLICT_ERROR:
-				c.JSON(http.StatusConflict, gin.H{"error": error.Message})
+				c.JSON(http.StatusConflict, gin.H{"error": myError.Message})
 			}
 			return
 		}
@@ -71,13 +66,13 @@ func (ac *AuthController) Login(c *gin.Context) {
 	// Validate credentials
 	user, err := ac.AuthService.ValidateCredentials(req.Email, req.Password)
 	if err != nil {
-		var error *types.MyError
-		if errors.As(err, &error) {
-			switch error.Code {
+		var myError *types.MyError
+		if errors.As(err, &myError) {
+			switch myError.Code {
 			case types.INTERNAL_SERVER_ERROR:
-				c.JSON(http.StatusInternalServerError, gin.H{"error": error.Message})
+				c.JSON(http.StatusInternalServerError, gin.H{"error": myError.Message})
 			case types.VALIDATION_ERROR:
-				c.JSON(http.StatusBadRequest, gin.H{"error": error.Message})
+				c.JSON(http.StatusBadRequest, gin.H{"error": myError.Message})
 			default:
 				c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid email or password"})
 			}
@@ -125,7 +120,7 @@ func (ac *AuthController) Login(c *gin.Context) {
 	})
 }
 
-func (c *AuthController) RefreshToken(ctx *gin.Context) {
+func (ac *AuthController) RefreshToken(ctx *gin.Context) {
 	refreshToken, err := ctx.Cookie("refreshToken")
 	if err != nil {
 		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "No refresh token provided"})
@@ -133,7 +128,7 @@ func (c *AuthController) RefreshToken(ctx *gin.Context) {
 	}
 
 	// Call the service to refresh the token
-	newAccessToken, newRefreshToken, user, err := c.AuthService.RefreshToken(refreshToken)
+	newAccessToken, newRefreshToken, user, err := ac.AuthService.RefreshToken(refreshToken)
 	if err != nil {
 		var userErr *types.MyError
 		if errors.As(err, &userErr) {

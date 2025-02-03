@@ -93,7 +93,7 @@ watchEffect(() => {
 </script>
 
 <template>
-  <main class="px-20 py-10">
+  <Container>
     <RouteTree
       :routes="[
         { path: '/', name: 'Home' },
@@ -330,7 +330,7 @@ watchEffect(() => {
         >
       </div>
     </div>
-  </main>
+  </Container>
 </template>
 
 <style scoped>

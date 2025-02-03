@@ -10,7 +10,7 @@ defineProps<{
       <div>
         <div
           v-if="index !== routes.length - 1"
-          class="text-xl text-secondary hover:text-accent-gold"
+          class="text-lg md:text-xl text-secondary hover:text-accent-gold"
         >
           <NuxtLink :to="path" class="hover:underline">
             {{ name }}
@@ -18,7 +18,7 @@ defineProps<{
           <span class="mx-2">/</span>
         </div>
         <div v-else class="h-full">
-          <span class="text-lg text-accent-gold"> {{ name }} </span>
+          <span class="md:text-md md:text-lg text-accent-gold">{{ name }}</span>
         </div>
       </div>
     </div>

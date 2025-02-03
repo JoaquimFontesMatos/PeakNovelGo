@@ -58,6 +58,7 @@ func (s *UserService) RegisterUser(userFields *dtos.RegisterRequest) error {
 		Bio:            userFields.Bio,
 		ProfilePicture: userFields.ProfilePicture,
 		DateOfBirth:    birthDate,
+		Roles:          "user",
 	}
 
 	// Validate the user input

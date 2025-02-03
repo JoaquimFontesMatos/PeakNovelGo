@@ -42,9 +42,6 @@ const handleClickHome = () => {
 
     <div class="flex flex-row justify-between gap-5 w-full">
       <div class="flex gap-5">
-        <NuxtLink class="hover:text-accent-gold hover:underline" to="/"
-        >Home</NuxtLink
-        >
         <NuxtLink class="hover:text-accent-gold hover:underline" to="/novels"
         >Novels</NuxtLink
         >

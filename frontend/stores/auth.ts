@@ -1,225 +1,230 @@
-import type { LoginForm, SignUpForm } from '~/veeSchemas/Forms';
-import type { LoginResponse } from '~/models/Response';
+import type { LoginForm, SignUpForm } from '~/schemas/Forms';
+import type { AuthSession } from '~/models/AuthSession';
 import type { User } from '~/models/User';
+import { AuthService } from '~/services/AuthService';
+import { AuthError } from '~/errors/AuthError';
+import { ProjectError } from '~/errors/ProjectError';
+import { UserError } from '~/errors/UserError';
+import type { SuccessServerResponse } from '~/models/SuccessServerResponse';
 
-export const useAuthStore = defineStore('Auth', () => {
-  const user: Ref<User | null> = ref<User | null>(null);
-  const accessToken: Ref<string | null> = ref<string | null>(null);
-  const runtimeConfig = useRuntimeConfig();
-  const url: string = runtimeConfig.public.apiUrl;
-  const loginError: Ref<string | null> = ref<string | null>(null);
-  const loadingLogin: Ref<boolean | null> = ref<boolean>(false);
-  const signUpError: Ref<string | null> = ref<string | null>(null);
+export const useAuthStore = defineStore('Auth',
+  () => {
+    // fetch the base url from the nuxt config
+    const runtimeConfig = useRuntimeConfig();
+    const url: string = runtimeConfig.public.apiUrl;
 
-  // Function to set the access token and user info
-  const setSession = (loginResponse: LoginResponse) => {
-    accessToken.value = loginResponse.accessToken;
-    user.value = loginResponse.user;
+    // Initialize auth service
+    const authService: AuthService = new AuthService(url);
 
-    if (import.meta.client) {
-      localStorage.setItem('user', JSON.stringify(loginResponse.user));
-      localStorage.setItem('accessToken', loginResponse.accessToken);
-    }
-  };
+    // Auth Session Info
+    const user: Ref<User | null> = ref<User | null>(null);
+    const accessToken: Ref<string | null> = ref<string | null>(null);
 
-  const clearSession = (): void => {
-    accessToken.value = null;
-    user.value = null;
+    // Handling Login Variables
+    const loginError: Ref<string | null> = ref<string | null>(null);
+    const loadingLogin: Ref<boolean> = ref<boolean>(false);
 
-    if (import.meta.client) {
-      localStorage.removeItem('user');
-      localStorage.removeItem('accessToken');
-    }
-  };
+    // Handling Sign Up Variables
+    const signUpError: Ref<string | null> = ref<string | null>(null);
+    const loadingSignUp: Ref<boolean> = ref<boolean>(false);
+    const signUpMessage: Ref<string | null> = ref<string | null>(null);
 
-  // Login function
-  const login = async (form: LoginForm): Promise<void> => {
-    loadingLogin.value = true;
-    try {
-      const response = await fetch(`${url}/auth/login`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(form),
-        credentials: 'include',
-      });
+    // Handling Logout Variables
+    const logoutError: Ref<string | null> = ref<string | null>(null);
+    const loadingLogout: Ref<boolean> = ref<boolean>(false);
 
-      if (response.status === 200) {
-        const loginResponse: LoginResponse = await response.json();
-        loginError.value = null;
-        setSession(loginResponse);
-      } else {
-        // Handle errors based on response status
-        const errorResponse = await response.json();
-        if (response.status === 400) {
-          loginError.value = errorResponse.error;
-        } else if (response.status === 401) {
-          loginError.value = errorResponse.error;
-        } else if (response.status === 500) {
-          loginError.value = errorResponse.error;
-        } else {
-          console.error('Unexpected error:', response.status);
-        }
+    // Handling Refresh Token Variables
+    const refreshTokenError: Ref<string | null> = ref<string | null>(null);
+
+    // Function to set the access token and user info
+    const setSession = (loginResponse: AuthSession) => {
+      accessToken.value = loginResponse.accessToken;
+      user.value = loginResponse.user;
+
+      if (import.meta.client) {
+        localStorage.setItem('user', JSON.stringify(loginResponse.user));
+        localStorage.setItem('accessToken', loginResponse.accessToken);
       }
-    } catch (error) {
-      console.error('Login error:', error);
-    } finally {
-      loadingLogin.value = false;
-    }
-  };
+    };
 
-  const scheduleTokenRefresh = (expiresIn: number) => {
-    setTimeout(async () => {
-      await refreshAccessToken();
-    }, expiresIn - 60 * 1000); // Refresh 1 minute before expiry
-  };
+    const clearSession = (): void => {
+      accessToken.value = null;
+      user.value = null;
 
-  const refreshAccessToken = async (): Promise<void> => {
-    try {
-      const response = await fetch(`${url}/auth/refresh-token`, {
-        method: 'POST',
-        credentials: 'include',
-      });
+      if (import.meta.client) {
+        localStorage.removeItem('user');
+        localStorage.removeItem('accessToken');
+      }
+    };
 
-      if (response.status === 200) {
-        const loginResponse: LoginResponse = await response.json();
+    // Login function
+    const login = async (form: LoginForm): Promise<void> => {
+      loadingLogin.value = true;
+      loginError.value = null;
+
+      try {
+        const loginResponse: AuthSession = await authService.login(form);
+
+        setSession(loginResponse);
+      } catch (error) {
+        if (error instanceof AuthError) {
+          loginError.value = error.message;
+          console.error('AuthError', error);
+        } else if (error instanceof ProjectError) {
+          loginError.value = error.message;
+          console.error('ProjectError:', error);
+        } else {
+          loginError.value = 'An unknown error occurred.';
+          console.error('Unexpected error:', error);
+        }
+        clearSession();
+      } finally {
+        loadingLogin.value = false;
+      }
+    };
+
+    const scheduleTokenRefresh = (expiresIn: number) => {
+      setTimeout(async () => {
+        await refreshAccessToken();
+      }, expiresIn - 60 * 1000); // Refresh 1 minute before expiry
+    };
+
+    const refreshAccessToken = async (): Promise<void> => {
+      refreshTokenError.value = null;
+
+      try {
+        const loginResponse: AuthSession = await authService.refreshAccessToken();
+
         setSession(loginResponse);
 
-        // Schedule the next refresh
         scheduleTokenRefresh(15 * 60 * 1000);
-      } else {
+      } catch (error) {
+        if (error instanceof AuthError) {
+          loginError.value = error.message;
+          console.error('AuthError', error);
+        } else if (error instanceof ProjectError) {
+          loginError.value = error.message;
+          console.error('ProjectError:', error);
+        } else {
+          loginError.value = 'An unknown error occurred.';
+          console.error('Unexpected error:', error);
+        }
         clearSession();
       }
-    } catch (error) {
-      console.error('Failed to refresh token:', error);
-      clearSession();
-    }
-  };
+    };
 
-  // Attach the access token to every request
-  const authorizedFetch = async (input: RequestInfo, init: RequestInit = {}) => {
-    if (!accessToken.value) {
-      await refreshAccessToken();
-    }
-
-    let response = await fetch(input, {
-      ...init,
-      headers: {
-        ...init.headers,
-        Authorization: `Bearer ${accessToken.value}`,
-      },
-    });
-
-    // If unauthorized, try refreshing the token and retrying
-    if (response.status === 401) {
-      await refreshAccessToken();
-
-      if (accessToken.value) {
-        response = await fetch(input, {
-          ...init,
-          headers: {
-            ...init.headers,
-            Authorization: `Bearer ${accessToken.value}`,
-          },
-        });
-      }
-    }
-
-    return response;
-  };
-
-  const signUp = async (form: SignUpForm) => {
-    try {
-      const registerData = {
-        username: form.username,
-        email: form.email,
-        password: form.password,
-        bio: 'Please edit me',
-        profilePicture: 'Please edit me',
-        dateOfBirth: form.dateOfBirth,
-      };
-
-      const response = await fetch(`${url}/auth/register`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(registerData),
-      });
-
-      if (response.status === 200) {
-        const data = await response.json();
-        user.value = data.user;
-      } else {
-        const errorResponse = await response.json();
-
-        signUpError.value = errorResponse.error;
-        console.log(response);
-      }
-    } catch (error) {
-      console.error('Sign-in error:', error);
-    }
-  };
-
-  // Logout function to clear session and notify backend
-  const logout = async () => {
-    try {
-      await fetch(`${url}/auth/logout`, {
-        method: 'POST',
-        credentials: 'include', // Send the refresh token cookie
-      });
-
-      clearSession();
-    } catch (error) {
-      console.error('Logout error:', error);
-    }
-  };
-
-  const deleteUser = async (id: number) => {
-    accessToken.value = null;
-
-    try {
-      await authorizedFetch(`${url}/user/${id}`, {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-    } catch (error) {
-      console.log('Delete User', error);
-    }
-  };
-
-  const initSession = async () => {
-    if (import.meta.client) {
-      const storedUser = localStorage.getItem('user');
-      const storedAccessToken = localStorage.getItem('accessToken');
-
-      if (storedUser) user.value = JSON.parse(storedUser);
-      if (storedAccessToken) accessToken.value = storedAccessToken;
-
+    // Attach the access token to every request
+    const authorizedFetch = async (input: RequestInfo, init: RequestInit = {}) => {
       if (!accessToken.value) {
-        // If no access token, try refreshing the session
         await refreshAccessToken();
       }
-    }
-  };
 
-  return {
-    user,
-    accessToken,
-    loginError,
-    loadingLogin,
-    initSession,
-    login,
-    signUp,
-    logout,
-    refreshAccessToken,
-    authorizedFetch,
-    deleteUser,
-  };
-});
+      let response = await fetch(input, {
+        ...init,
+        headers: {
+          ...init.headers,
+          Authorization: `Bearer ${accessToken.value}`,
+        },
+      });
+
+      // If unauthorized, try refreshing the token and retrying
+      if (response.status === 401) {
+        await refreshAccessToken();
+
+        if (accessToken.value) {
+          response = await fetch(input, {
+            ...init,
+            headers: {
+              ...init.headers,
+              Authorization: `Bearer ${accessToken.value}`,
+            },
+          });
+        }
+      }
+
+      return response;
+    };
+
+    const signUp = async (form: SignUpForm): Promise<void> => {
+      loadingSignUp.value = true;
+      signUpError.value = null;
+      signUpMessage.value = null;
+
+      try {
+        const successServerResponse: SuccessServerResponse = await authService.signUp(form);
+        signUpMessage.value = successServerResponse.message;
+      } catch (error) {
+        if (error instanceof UserError) {
+          signUpError.value = error.message;
+          console.error('UserError', error);
+        } else if (error instanceof ProjectError) {
+          signUpError.value = error.message;
+          console.error('ProjectError:', error);
+        } else {
+          signUpError.value = 'An unknown error occurred.';
+          console.error('Unexpected error:', error);
+        }
+      } finally {
+        loadingSignUp.value = false;
+      }
+    };
+
+    // Logout function to clear session and notify backend
+    const logout = async () => {
+      loadingLogout.value = true;
+      logoutError.value = null;
+
+      try {
+        await authService.logout();
+
+        clearSession();
+      } catch (error) {
+        if (error instanceof ProjectError) {
+          logoutError.value = error.message;
+          console.error('ProjectError:', error);
+        } else {
+          logoutError.value = 'An unknown error occurred.';
+          console.error('Unexpected error:', error);
+        }
+      } finally {
+        loadingLogout.value = false;
+      }
+    };
+
+    const initSession = async () => {
+      if (import.meta.client) {
+        const storedUser = localStorage.getItem('user');
+        const storedAccessToken = localStorage.getItem('accessToken');
+
+        if (storedUser) user.value = JSON.parse(storedUser);
+        if (storedAccessToken) accessToken.value = storedAccessToken;
+
+        if (!accessToken.value) {
+          // If no access token, try refreshing the session
+          await refreshAccessToken();
+        }
+      }
+    };
+
+    return {
+      user,
+      accessToken,
+      loginError,
+      loadingLogin,
+      signUpError,
+      loadingSignUp,
+      signUpMessage,
+      logoutError,
+      loadingLogout,
+      initSession,
+      login,
+      signUp,
+      logout,
+      refreshAccessToken,
+      authorizedFetch,
+    };
+  })
+;
 
 if (import.meta.hot) {
   import.meta.hot.accept(acceptHMRUpdate(useAuthStore, import.meta.hot));

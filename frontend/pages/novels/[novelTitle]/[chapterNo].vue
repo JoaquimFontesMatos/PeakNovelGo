@@ -89,7 +89,7 @@ const scrollProgress = computed(() => {
 </script>
 
 <template>
-  <main class="px-20 py-10">
+  <Container>
     <RouteTree
       :routes="[
         { path: '/', name: 'Home' },
@@ -198,5 +198,5 @@ const scrollProgress = computed(() => {
 
       <ReadingPreferencesForm/>
     </section>
-  </main>
+  </Container>
 </template>

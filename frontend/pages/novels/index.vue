@@ -2,21 +2,23 @@
 const currentPage = ref(1);
 const currentLimit = ref(10);
 
-onMounted(async () => {
+onMounted(async() => {
   await onPageChange(currentPage.value, currentLimit.value);
 });
 
-const { fetchingNovel, novelError, paginatedNovelsData } = storeToRefs(
-  useNovelStore()
-);
+const {
+    fetchingNovel, novelError, paginatedNovelsData
+  } = storeToRefs(
+    useNovelStore()
+  );
 
-const onPageChange = async (newPage: number, limit: number) => {
+const onPageChange = async(newPage: number, limit: number) => {
   if (
     newPage === currentPage.value &&
     limit === currentLimit.value &&
     paginatedNovelsData.value.page != 0
-  )
-    return;
+    )
+    return ;
   await useNovelStore().fetchNovels(newPage, limit);
   currentPage.value = newPage;
   currentLimit.value = limit;
@@ -24,7 +26,7 @@ const onPageChange = async (newPage: number, limit: number) => {
 </script>
 
 <template>
-  <main class="px-20 py-10">
+  <Container>
     <RouteTree
       :routes="[
         { path: '/', name: 'Home' },
@@ -32,9 +34,9 @@ const onPageChange = async (newPage: number, limit: number) => {
       ]"
     />
 
-    <VerticalSpacer />
+    <VerticalSpacer/>
 
-    <LoadingBar v-show="fetchingNovel" />
+    <LoadingBar v-show="fetchingNovel"/>
 
     <PaginatedNovelGallery
       v-show="!fetchingNovel"
@@ -42,5 +44,5 @@ const onPageChange = async (newPage: number, limit: number) => {
       :paginatedData="paginatedNovelsData"
       @page-change="onPageChange"
     />
-  </main>
+  </Container>
 </template>

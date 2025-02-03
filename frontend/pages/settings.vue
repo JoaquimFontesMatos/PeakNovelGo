@@ -5,7 +5,7 @@ definePageMeta({
 </script>
 
 <template>
-    <main class="px-20 py-10">
+    <Container>
         <ReadingPreferencesForm/>
-    </main>
+    </Container>
 </template>
