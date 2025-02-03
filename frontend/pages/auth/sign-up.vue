@@ -59,7 +59,7 @@ const toggleShowPassword = () => {
         class="w-full md:w-2/3 bg-secondary text-secondary-content rounded-lg shadow-lg p-4 md:p-8 flex flex-col items-center justify-center"
       >
         <h1 class="text-4xl font-bold text-center text-primary-content">
-          Sign-Up to our Website
+          Sign-up to PeakNovelGo
         </h1>
 
         <VerticalSpacer/>

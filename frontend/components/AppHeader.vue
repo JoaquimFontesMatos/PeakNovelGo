@@ -1,9 +1,28 @@
 <script setup lang="ts">
 const isTop = ref(true);
 const isMenuOpen = ref(false);
+const lastScrollY = ref(0);
+const isScrollingUp = ref(false);
+const isHeaderVisible = ref(true);
 
 const handleScroll = () => {
-  isTop.value = window.scrollY === 0;
+  const currentScrollY = window.scrollY;
+
+  // Check if we're at the top
+  isTop.value = currentScrollY === 0;
+
+  // Determine scroll direction
+  isScrollingUp.value = currentScrollY < lastScrollY.value;
+
+  // Always show header at top or when scrolling up
+  isHeaderVisible.value = isTop.value || isScrollingUp.value;
+
+  // Hide header only when scrolling down past a certain threshold (e.g., 100px)
+  if (!isTop.value && currentScrollY > 100 && !isScrollingUp.value) {
+    isHeaderVisible.value = false;
+  }
+
+  lastScrollY.value = currentScrollY;
 };
 
 const toggleMenu = () => {
@@ -51,12 +70,13 @@ watch(isMenuOpen, (val) => {
 <template>
   <header
     :class="[
-      'transition-colors duration-300 fixed z-20 top-0 pl-4 border-b-2 border-accent-gold h-14 flex items-center justify-between w-full',
+      'transition-all duration-300 fixed z-20 top-0 pl-4 border-b-2 border-accent-gold h-14 flex items-center justify-between w-full',
       isTop
       ? 'bg-transparent border-opacity-50'
-      : 'bg-primary bg-opacity-50 backdrop-blur-md',
+      : 'bg-primary bg-opacity-50 backdrop-blur-md', isHeaderVisible || isMenuOpen ? 'opacity-100 translate-y-0 pointer-events-auto'
+      : 'opacity-0 -translate-y-2 pointer-events-none'
     ]"
-  >
+    style="  will-change: transform, opacity;">
     <h1 @click="handleClickHome" class="text-2xl font-bold hover:cursor-pointer">PeakNovelGo</h1>
 
     <!-- Desktop Navigation -->
