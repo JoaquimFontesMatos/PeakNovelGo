@@ -51,12 +51,12 @@ func (n *NovelController) HandleImportNovel(ctx *gin.Context) {
 	}
 
 	// Specify the Python script and its module
-	cmd := exec.Command("python", "-m", "novel_updates_scraper.client", novelUpdatesID)
+	cmd := exec.Command(os.Getenv("PYTHON"), "-m", "novel_updates_scraper.client", novelUpdatesID)
 
 	// Capture the output of the Python script
 	output, err := cmd.Output()
 	if err != nil {
-		fmt.Println("Error:", err)
+		log.Println("Error:", err)
 		ctx.JSON(500, gin.H{"error": "Failed to execute Python script"})
 		return
 	}

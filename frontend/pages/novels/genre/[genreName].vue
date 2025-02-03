@@ -27,7 +27,7 @@ const onPageChange = async(newPage: number, limit: number) => {
 </script>
 
 <template>
-  <main class="px-20 py-10">
+  <Container>
     <RouteTree
       :routes="[
         { path: '/', name: 'Home' },
@@ -48,5 +48,5 @@ const onPageChange = async(newPage: number, limit: number) => {
       :paginatedData="paginatedNovelsDataByGenre"
       @page-change="onPageChange"
     />
-  </main>
+  </Container>
 </template>

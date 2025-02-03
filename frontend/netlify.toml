@@ -1,3 +1,6 @@
 [build]
-  command = 'nuxt generate'
-  publish = 'dist'
+publish = "dist"
+command = "npm run build"
+
+[context.production.environment]
+NITRO_PRESET = "netlify"

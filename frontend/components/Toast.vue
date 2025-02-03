@@ -4,12 +4,12 @@ const {toasts} = storeToRefs(toastStore)
 </script>
 
 <template>
-    <div class="fixed top-4 right-4 space-y-2 z-50">
+    <div class="fixed top-2 right-2 w-full md:top-4 md:right-4 space-y-2 z-50">
         <div
             v-for="toast in toasts"
             :key="toast.id"
             :class="[
-                'w-96 p-4 rounded shadow transition-opacity duration-300',
+                'float-right w-2/3 md:w-96 p-2 md:p-4 rounded shadow transition-opacity duration-300',
                 toast.type === 'error' ? 'bg-red-500 text-white' : 'bg-green-500 text-white',
             ]"
         >

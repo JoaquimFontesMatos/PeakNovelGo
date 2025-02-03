@@ -58,6 +58,21 @@ export const useUserStore = defineStore('User', () => {
             updatingUser.value = false;
         }
     };
+    
+    const deleteUser = async (id: number) => {
+        try {
+            await authStore.authorizedFetch(`${url}/user/${id}`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            });
+
+            authStore.clearSession();
+        } catch (error) {
+            console.log('Delete User', error);
+        }
+    };
 
     return { user, isReaderMode, updatingUser, updateUserError, updateUserFields, saveUserLocalStorage };
 });

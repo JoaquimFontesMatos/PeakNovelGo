@@ -1,3 +1,105 @@
+## v0.9.20 - 2025-02-01
+* Merge remote-tracking branch 'origin/main'
+* fix: forget this
+* chore: update release notes and changelog for v0.9.19
+## v0.9.19 - 2025-02-01
+* Merge remote-tracking branch 'origin/main'
+* fix: fixed some invalid urls
+* chore: update release notes and changelog for v0.9.18
+## v0.9.18 - 2025-02-01
+* Merge remote-tracking branch 'origin/main'
+* fix
+* chore: update release notes and changelog for v0.9.17
+## v0.9.17 - 2025-01-31
+* Merge remote-tracking branch 'origin/main'
+* fix
+* chore: update release notes and changelog for v0.9.16
+## v0.9.16 - 2025-01-31
+* Merge remote-tracking branch 'origin/main'
+* fix
+* chore: update release notes and changelog for v0.9.15
+## v0.9.15 - 2025-01-31
+* Merge remote-tracking branch 'origin/main'
+* fix
+* chore: update release notes and changelog for v0.9.14
+## v0.9.14 - 2025-01-31
+* Merge remote-tracking branch 'origin/main'
+* fix
+* chore: update release notes and changelog for v0.9.13
+## v0.9.13 - 2025-01-31
+* Merge remote-tracking branch 'origin/main'
+* fix
+* chore: update release notes and changelog for v0.9.12
+## v0.9.12 - 2025-01-31
+* Merge remote-tracking branch 'origin/main'
+* fix: fixed some hardcoded urls
+* chore: update release notes and changelog for v0.9.11
+## v0.9.11 - 2025-01-31
+* fix
+* chore: update release notes and changelog for v0.9.10
+## v0.9.10 - 2025-01-31
+* Merge remote-tracking branch 'origin/main'
+* fix
+* chore: update release notes and changelog for v0.9.9
+## v0.9.9 - 2025-01-31
+* Merge remote-tracking branch 'origin/main'
+* fix
+* chore: update release notes and changelog for v0.9.8
+## v0.9.8 - 2025-01-31
+* Merge remote-tracking branch 'origin/main'
+* fix
+* chore: update release notes and changelog for v0.9.7
+## v0.9.7 - 2025-01-31
+* Merge remote-tracking branch 'origin/main'
+* fix
+* chore: update release notes and changelog for v0.9.6
+## v0.9.6 - 2025-01-31
+* Merge remote-tracking branch 'origin/main'
+* fix
+* chore: update release notes and changelog for v0.9.5
+## v0.9.5 - 2025-01-31
+* Merge remote-tracking branch 'origin/main'
+* fix
+* chore: update release notes and changelog for v0.9.4
+## v0.9.4 - 2025-01-31
+* Merge remote-tracking branch 'origin/main'
+* fix
+* chore: update release notes and changelog for v0.9.3
+## v0.9.3 - 2025-01-31
+* fix
+* chore: update release notes and changelog for v0.9.2
+## v0.9.2 - 2025-01-31
+* Merge remote-tracking branch 'origin/main'
+* fix
+* chore: update release notes and changelog for v0.9.1
+## v0.9.1 - 2025-01-31
+* Merge branch 'dev'
+* fix: added netlify.tml
+* chore: update release notes and changelog for v0.9.0
+## v0.9.0 - 2025-01-31
+* Merge branch 'dev'
+* fix: fixed some auth bugs, and added rate and adjusted tts
+* feat: added basic tts suport in frontend
+* feat: added bookmark support in frontend
+* feat: added login
+* feat: added loading animations
+* feat: added novel import from novel updates id
+* fix: fixed pagination
+* feat: added a numbered paginator
+* feat: started the frontend
+* fix: fixed and optimized tts generation
+* feat: added an initial version of tts
+* fix: fixed some failing tests
+* feat: added enums to errors to make them more streamlined
+* feat: streamlined error handling
+* feat: added bookmarked novels
+* feat: fixed the routes and getters for novel by tag, author or genre
+* feat: added chapter import optimizations and several getters
+* feat: added chapter and novel importer
+* feat: divided the models into different files and added a few new models
+* fix: temp
+* fix: fixed the api folder structure and made it more clean
+* chore: update release notes and changelog for v0.8.11
 ## v0.8.11 - 2025-01-04
 * Merge pull request #9 from JoaquimFontesMatos/JoaquimFontesMatos-patch-1
 * Update tests.yml

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import {loginFormSchema, type LoginForm} from "~/veeSchemas/Forms";
+import {loginFormSchema, type LoginForm} from "~/schemas/Forms";
 
 // Use the Vee-Validate form hook
 const {handleSubmit} = useForm<LoginForm>({
@@ -7,7 +7,9 @@ const {handleSubmit} = useForm<LoginForm>({
 });
 
 const {value: email, errorMessage: emailError} = useField("email");
-const {value: password, errorMessage: passwordError} = useField("password");
+const {
+  value: password, errorMessage: passwordError
+} = useField("password");
 
 // Reactive object for handling form data
 const authStore = useAuthStore();
@@ -19,7 +21,7 @@ const toggleShowPassword = () => {
   showPassword.value = !showPassword.value;
 };
 
-const onSubmit = handleSubmit(async (values: LoginForm) => {
+const onSubmit = handleSubmit(async(values: LoginForm) => {
   await authStore.login(values);
 
   if (loginError.value === null) {
@@ -33,11 +35,11 @@ const handleEnterSignUp = () => {
 </script>
 
 <template>
-  <main class="my-10 bg-gradient-to-r from-primary to-secondary px-20 py-10">
+  <main class="my-10 bg-gradient-to-r from-primary to-secondary px-5 py-2.5 md:px-20 md:py-10">
     <div class="flex flex-col justify-center gap-10 md:flex-row">
       <!-- Login Section -->
       <section
-        class="flex w-full flex-col items-center justify-center rounded-lg bg-secondary p-8 text-secondary-content shadow-lg md:w-2/3"
+        class="flex w-full flex-col items-center justify-center rounded-lg bg-secondary p-4 md:p-8 text-secondary-content shadow-lg md:w-2/3"
       >
         <h1 class="text-center text-4xl font-bold text-primary-content">
           Login to Your Account
@@ -47,7 +49,7 @@ const handleEnterSignUp = () => {
 
         <!-- Email Input -->
 
-        <div class="w-2/3">
+        <div class="w-full md:w-2/3">
           <label for="email" class="block  after:content-['*'] after:text-sm after:text-error">
             Email
           </label>
@@ -67,7 +69,7 @@ const handleEnterSignUp = () => {
         <SmallVerticalSpacer/>
 
         <!-- Password Input -->
-        <div class="w-2/3">
+        <div class="w-full md:w-2/3">
           <label for="password" class="block after:content-['*'] after:text-sm after:text-error">
             Password
           </label>
@@ -94,7 +96,7 @@ const handleEnterSignUp = () => {
           </div>
           <!-- Error Message -->
           <span v-if=" passwordError" class="mt-1 text-sm text-red-500">
-              {{ passwordError }}
+            {{ passwordError }}
           </span>
         </div>
 
@@ -116,13 +118,12 @@ const handleEnterSignUp = () => {
 
         <ErrorAlert v-if="loginError !== null && !loadingLogin">
           {{ loginError }}
-        </ErrorAlert
-        >
+        </ErrorAlert>
       </section>
 
       <!-- Sign Up Section -->
       <section
-        class="flex w-full flex-col items-center justify-center rounded-lg bg-accent-gold p-8 text-primary shadow-lg md:w-1/3"
+        class="flex w-full flex-col items-center justify-center rounded-lg bg-accent-gold p-4 md:p-8 text-primary shadow-lg md:w-1/3"
       >
         <h1 class="text-center text-3xl font-bold">New Here?</h1>
 
@@ -133,7 +134,7 @@ const handleEnterSignUp = () => {
         <SmallVerticalSpacer/>
 
         <!-- Sign Up Button -->
-        <Button @click="handleEnterSignUp" class="w-full"> Sign-up</Button>
+        <Button @click="handleEnterSignUp" class="w-full">Sign-up</Button>
       </section>
     </div>
   </main>

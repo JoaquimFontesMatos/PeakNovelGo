@@ -86,10 +86,14 @@ const scrollProgress = computed(() => {
   }
   return 0; // Return a default value on the server-side
 });
+
+/**
+ * TODO: add slider in the settings menu so i can increase height
+ */
 </script>
 
 <template>
-  <main class="px-20 py-10">
+  <Container>
     <RouteTree
       :routes="[
         { path: '/', name: 'Home' },
@@ -198,5 +202,5 @@ const scrollProgress = computed(() => {
 
       <ReadingPreferencesForm/>
     </section>
-  </main>
+  </Container>
 </template>

@@ -35,14 +35,16 @@ func NewNovelRepository(db *gorm.DB) *NovelRepository {
 //   - CONFLICT_ERROR if the novel already exists
 //   - INTERNAL_SERVER_ERROR if the novel could not be created
 func (n *NovelRepository) CreateNovel(novel models.Novel) (*models.Novel, error) {
+	n.db.Logger = n.db.Logger.LogMode(logger.Silent)
+
 	if IsNovelCreated := n.isNovelCreated(novel); IsNovelCreated {
 		return nil, types.WrapError("CONFLICT_ERROR", "Novel already exists", nil)
 	}
 
 	// Initialize slices for the new relationships
-	newTags := []models.Tag{}
-	newAuthors := []models.Author{}
-	newGenres := []models.Genre{}
+	var newTags []models.Tag
+	var newAuthors []models.Author
+	var newGenres []models.Genre
 
 	// Process tags
 	for _, tag := range novel.Tags {
