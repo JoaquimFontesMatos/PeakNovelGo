@@ -17,23 +17,21 @@ defineProps<{
   >
 
   <div v-else-if="paginatedData && paginatedData.data.length > 0">
-    <ul v-auto-animate class="grid grid-cols-2 gap-10 justify-center">
+    <ul v-auto-animate class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 md:gap-10 justify-center">
       <li
         v-for="novel in paginatedData.data"
         :key="novel.novelUpdatesId"
         class="bg-secondary h-full rounded-md border-2 border-transparent transition-all duration-150 hover:border-accent-gold hover:scale-[1.01] hover:brightness-105 hover:drop-shadow-md"
       >
         <NuxtLink :to="'/novels/' + novel.novelUpdatesId">
-          <div class="flex flex-row text-secondary-content w-full h-full">
-            <div>
-              <img
-                :src="novel.coverUrl"
-                alt="Cover Image"
-                class="h-[9rem] w-[6rem] object-cover rounded-s-md"
-              />
-            </div>
-            <div class="grow p-4">
-              <h1>{{ novel.title }}</h1>
+          <div class="flex flex-row text-secondary-content w-full h-24 md:h-[9rem]">
+            <img
+              :src="novel.coverUrl"
+              alt="Cover Image"
+              class="h-full w-1/3 object-cover rounded-s-md"
+            />
+            <div class="float-right w-2/3 p-4 line-clamp-3 md:line-clamp-5">
+              <p>{{ novel.title }}</p>
             </div>
           </div>
         </NuxtLink>

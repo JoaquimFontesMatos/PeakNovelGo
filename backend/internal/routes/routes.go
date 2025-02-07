@@ -13,7 +13,8 @@ func SetupRoutes(r *gin.Engine,
 	authController *controllers.AuthController,
 	userController *controllers.UserController,
 	novelController *controllers.NovelController,
-	ttsController *controllers.TTSController) {
+	ttsController *controllers.TTSController,
+	logController *controllers.LogController) {
 
 	r.Use(func(c *gin.Context) {
 		c.Writer.Header().Set("Access-Control-Allow-Origin", os.Getenv("FRONTEND_URL"))
@@ -30,6 +31,13 @@ func SetupRoutes(r *gin.Engine,
 	r.Static("/tts-files", "./tts-files")
 
 	r.StaticFile("/", "./static/index.html")
+
+	log := r.Group("/log")
+	{
+		log.POST("/", logController.SaveLog)
+		log.GET("/", logController.GetLogs)
+		log.GET("/:level", logController.GetLogsByLevel)
+	}
 
 	auth := r.Group("/auth")
 	{
@@ -60,7 +68,7 @@ func SetupRoutes(r *gin.Engine,
 		novel.GET("/:novel_id", novelController.GetNovelByID)
 		novel.GET("/title/:title", novelController.GetNovelByUpdatesID)
 
-		chapters := r.Group("/novels/chapters")
+		chapters := novel.Group("/chapters")
 		{
 			chapters.POST("/:novel_id", middleware.AuthMiddleware(), novelController.HandleImportChaptersZip)
 			chapters.GET("/:novel_id", novelController.GetChaptersByNovelID)
@@ -69,7 +77,7 @@ func SetupRoutes(r *gin.Engine,
 			chapters.GET("/novel/:novel_title/chapters", novelController.GetChaptersByNovelUpdatesID)
 		}
 
-		bookmarked := r.Group("/novels/bookmarked")
+		bookmarked := novel.Group("/bookmarked")
 		{
 			bookmarked.POST("/", middleware.AuthMiddleware(), novelController.CreateBookmarkedNovel)
 			bookmarked.PUT("/", middleware.AuthMiddleware(), novelController.UpdateBookmarkedNovel)
@@ -78,7 +86,7 @@ func SetupRoutes(r *gin.Engine,
 			bookmarked.DELETE("/user/:user_id/novel/:novel_id", middleware.AuthMiddleware(), novelController.UnbookmarkNovel)
 		}
 
-		tts := r.Group("/novels/tts")
+		tts := novel.Group("/tts")
 		{
 			tts.POST("/", middleware.AuthMiddleware(), ttsController.GenerateTTS)
 			tts.GET("/voices", middleware.AuthMiddleware(), ttsController.GetVoices)

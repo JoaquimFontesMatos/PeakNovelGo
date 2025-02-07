@@ -27,22 +27,25 @@ export default defineNuxtConfig({
     ],
     '@nuxt/icon',
     '@nuxt/fonts',
+    '@nuxtjs/color-mode',
   ],
   fonts: {
     defaults: {
       weights: [400],
       styles: ['normal', 'italic'],
     },
-    families: [
-      { name: 'Montserratt' },
-      { name: 'Noto Sans' },
-      { name: 'Raleway' },
-    ],
+    families: [{ name: 'Montserratt' }, { name: 'Noto Sans' }, { name: 'Raleway' }],
   },
   runtimeConfig: {
     // Keys within public are also exposed client-side
     public: {
-      apiUrl: process.env.API_URL,
+      apiUrl: process.env.NUXT_PUBLIC_API_URL || 'http://localhost:80',
+      runMode: process.env.NUXT_PUBLIC_RUN_MODE || 'development',
     },
+  },
+  colorMode: {
+    classSuffix: '',
+    preference: 'dark',
+    fallback: 'dark',
   },
 });

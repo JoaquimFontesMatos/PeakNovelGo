@@ -67,5 +67,8 @@ const (
 	GENRE_NOT_FOUND_ERROR       ErrorType = "GENRE_NOT_FOUND_ERROR"
 	TAG_NOT_FOUND_ERROR         ErrorType = "TAG_NOT_FOUND_ERROR"
 	NOVEL_NOT_FOUND_ERROR       ErrorType = "NOVEL_NOT_FOUND_ERROR"
+	LOG_NOT_FOUND_ERROR         ErrorType = "LOG_NOT_FOUND_ERROR"
+	LOG_LEVEL_NOT_FOUND_ERROR   ErrorType = "LOG_LEVEL_NOT_FOUND_ERROR"
+	NO_LOGS_ERROR               ErrorType = "NO_LOGS_ERROR"
 	// Add more types as needed
 )

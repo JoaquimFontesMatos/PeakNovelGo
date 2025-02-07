@@ -1,5 +1,9 @@
 import * as yup from 'yup';
+import type { InferType } from 'yup';
 
-export const SuccessServerResponseSchema = yup.object({
+const SuccessServerResponseSchema = yup.object({
     message: yup.string().required(),
 });
+
+type SuccessServerResponse = InferType<typeof SuccessServerResponseSchema>;
+export { type SuccessServerResponse, SuccessServerResponseSchema };

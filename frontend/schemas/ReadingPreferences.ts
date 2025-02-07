@@ -1,4 +1,5 @@
 import * as yup from 'yup';
+import type { InferType } from 'yup';
 
 // Define the Yup schema for the TTS part of ReadingPreferences
 const TtsSchema = yup.object({
@@ -15,4 +16,7 @@ const ReadingPreferencesSchema = yup.object({
     tts: TtsSchema.required('TTS settings are required'),
 });
 
-export { TtsSchema, ReadingPreferencesSchema };
+type Tts = InferType<typeof TtsSchema>;
+type ReadingPreferences = InferType<typeof ReadingPreferencesSchema>;
+
+export { type ReadingPreferences, type Tts, TtsSchema, ReadingPreferencesSchema };

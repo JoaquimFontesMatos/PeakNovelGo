@@ -14,5 +14,13 @@
         "Unbookmark",
         "unbookmarked"
     ],
-    "vue3snippets.enable-compile-vue-file-on-did-save-code": false
+    "vue3snippets.enable-compile-vue-file-on-did-save-code": false,
+    "terminal-keeper.theme": "inkwell",
+    "terminal-keeper.active": "peaknovelgo",
+    "terminal-keeper.activateOnStartup": false,
+    "terminal-keeper.keepExistingTerminals": true,
+    "terminal-keeper.noClear": false,
+    "terminal-keeper.killProcess": false,
+    "terminal-keeper.wslSupport": false,
+    "terminal-keeper.quickRun": true
 }

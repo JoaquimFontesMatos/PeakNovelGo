@@ -1,14 +1,30 @@
 <script setup lang="ts">
-onMounted(async() => {
-  await useAuthStore().initSession();
+import { onMounted } from 'vue';
+import { setupErrorHandling } from '~/errors/ErrorHandler';
+import { logger } from '~/config';
+
+const authStore = useAuthStore();
+const { user } = storeToRefs(authStore);
+const colorMode = useColorMode();
+
+onMounted(async () => {
+  await authStore.initSession();
+
+  if (!user.value || user.value.readingPreferences.theme === undefined || !user.value.readingPreferences.theme) return;
+
+  colorMode.preference = user.value.readingPreferences.theme;
+
+  if (typeof window !== 'undefined') {
+    setupErrorHandling(logger);
+  }
 });
 </script>
 <template>
   <div>
-    <AppHeader class="fixed top-0 left-0 w-full"/>
-    <VerticalSpacer/>
-    <div class="min-h-svh"><slot/></div>
-    <AppFooter/>
-    <Toast/>
+    <AppHeader />
+    <VerticalSpacer />
+    <div class="min-h-svh"><slot /></div>
+    <AppFooter />
+    <Toast />
   </div>
 </template>

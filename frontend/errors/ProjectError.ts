@@ -5,6 +5,8 @@ type ErrorName =
     | 'CREATE_NOVEL_ERROR'
     | 'UPDATE_NOVEL_ERROR'
     | 'NETWORK_ERROR'
+    | 'VALIDATION_ERROR'
+    | 'INVALID_RESPONSE_ERROR'
 
 export class ProjectError extends ErrorBase<ErrorName> {
 }

@@ -1,7 +1,8 @@
 import * as yup from 'yup';
 import { ReadingPreferencesSchema } from '~/schemas/ReadingPreferences';
+import type { InferType } from 'yup';
 
-export const UserSchema = yup.object({
+const UserSchema = yup.object({
     ID: yup.number().required('ID is required'),
     CreatedAt: yup.string().required('Creation date is required'),
     UpdatedAt: yup.string().required('Updated date is required'),
@@ -18,3 +19,6 @@ export const UserSchema = yup.object({
     preferredLanguage: yup.string().nullable().notRequired(),
     readingPreferences: ReadingPreferencesSchema.required('Reading preferences are required'),
 });
+
+type User = InferType<typeof UserSchema>;
+export { type User, UserSchema };

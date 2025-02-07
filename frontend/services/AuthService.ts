@@ -2,13 +2,10 @@ import type { LoginForm, SignUpForm } from '~/schemas/Forms';
 import { AuthError } from '~/errors/AuthError';
 import { ProjectError } from '~/errors/ProjectError';
 import { parseJSONPromise } from '~/utils/JsonParser';
-import { AuthSessionSchema } from '~/schemas/AuthSession';
-import { ErrorServerResponseSchema } from '~/schemas/ErrorServerResponse';
-import type { AuthSession } from '~/models/AuthSession';
-import type { ErrorServerResponse } from '~/models/ErrorServerResponse';
+import { type AuthSession, AuthSessionSchema } from '~/schemas/AuthSession';
+import { type ErrorServerResponse, ErrorServerResponseSchema } from '~/schemas/ErrorServerResponse';
 import { UserError } from '~/errors/UserError';
-import type { SuccessServerResponse } from '~/models/SuccessServerResponse';
-import { SuccessServerResponseSchema } from '~/schemas/SuccessServerResponse';
+import { type SuccessServerResponse, SuccessServerResponseSchema } from '~/schemas/SuccessServerResponse';
 
 export class AuthService {
     private readonly baseUrl: string;
@@ -240,9 +237,12 @@ export class AuthService {
         }
     };
 
-    async logout(): Promise<void> {
+    async logout(): Promise<SuccessServerResponse> {
+        let response;
+        let errorMessage = 'An unexpected error occurred';
+
         try {
-            await fetch(`${this.baseUrl}/auth/logout`, {
+            response = await fetch(`${this.baseUrl}/auth/logout`, {
                 method: 'POST',
                 credentials: 'include',
             });
@@ -253,7 +253,46 @@ export class AuthService {
                 cause: error,
             });
         }
+
+        const parsedResponse = await parseJSONPromise(response);
+
+        if (!response.ok) {
+            try {
+                const validatedResponse: ErrorServerResponse = await ErrorServerResponseSchema.validate(parsedResponse);
+                errorMessage = validatedResponse.error;
+            } catch (validationError) {
+                console.log(validationError);
+                // If validation fails, keep the default error message.
+                // Optionally, you could log validationError for debugging.
+            }
+
+            switch (response.status) {
+                case 401:
+                    throw new AuthError({
+                        name: 'UNAUTHORIZED_ERROR',
+                        message: errorMessage,
+                        cause: response,
+                    });
+                default:
+                    throw new ProjectError({
+                        name: 'INTERNAL_SERVER_ERROR',
+                        message: errorMessage,
+                        cause: response,
+                    });
+            }
+        }
+
+        try {
+            const validatedResponse: SuccessServerResponse = await SuccessServerResponseSchema.validate(parsedResponse);
+
+            return validatedResponse as SuccessServerResponse;
+        } catch (validationError) {
+            console.log(validationError);
+            throw new ProjectError({
+                name: 'VALIDATION_ERROR',
+                message: 'Received malformed sucess data',
+                cause: validationError,
+            });
+        }
     }
-
-
 }

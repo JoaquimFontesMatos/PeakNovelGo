@@ -1,12 +1,15 @@
 <script setup lang="ts">
 const userStore = useUserStore()
-
 const {user} = storeToRefs(userStore)
-
+const colorMode = useColorMode()
 const handleChangeReadingPreferences = async() => {
     if (user.value) {
         const fields = {
             readingPreferences: JSON.stringify(user.value.readingPreferences),
+        }
+
+        if (user.value.readingPreferences.theme !== undefined && user.value.readingPreferences.theme) {
+            colorMode.preference = user.value.readingPreferences.theme;
         }
 
         await userStore.updateUserFields(fields)
@@ -17,9 +20,9 @@ const handleChangeReadingPreferences = async() => {
 </script>
 
 <template>
-    <div v-if="user" class="form-container space-y-6 p-4 bg-secondary rounded-lg shadow-lg">
+    <div v-if="user" class="form-container space-y-6 rounded-lg bg-secondary p-4 shadow-lg">
         <fieldset class="border-t border-accent-gold-dark pt-4">
-            <legend class="text-xl font-semibold text-primary-content ml-3.5 px-3.5">Reading Preferences</legend>
+            <legend class="ml-3.5 px-3.5 text-xl font-semibold text-primary-content">Reading Preferences</legend>
             <!-- Atomic Reading -->
             <div class="form-group flex items-center space-x-2">
                 <input
@@ -65,12 +68,26 @@ const handleChangeReadingPreferences = async() => {
             >
                 <option value="dark">dark</option>
                 <option value="light">light</option>
+                <option value="cyberpunk">cyberpunk</option>
+                <option value="forest">forest</option>
+                <option value="heaven">heaven</option>
+                <option value="deep-blue">deep-blue</option>
+                <option value="purple-dusk">purple-dusk</option>
+                <option value="crimson-night">crimson-night</option>
+                <option value="cyber-green">cyber-green</option>
+                <option value="warm-amber">Warm Amber</option>
+                <option value="midnight-indigo">midnight-indigo</option>
+                <option value="neon-pink">neon-pink</option>
+                <option value="emerald-twilight">emerald-twilight</option>
+                <option value="smoky-quartz">smoky-quartz</option>
+                <option value="obsidian-flame">obsidian-flame</option>
+                <option value="velvet-noir">velvet-noir</option>
             </select>
         </div>
 
         <!-- Text-to-Speech Section -->
         <fieldset class="border-t border-accent-gold-dark pt-4">
-            <legend class="text-lg font-semibold text-primary-content ml-3.5 px-3.5">Text-to-Speech</legend>
+            <legend class="ml-3.5 px-3.5 text-lg font-semibold text-primary-content">Text-to-Speech</legend>
             <div class="mt-2 space-y-4">
                 <!-- Autoplay -->
                 <div class="form-group flex items-center space-x-2">
