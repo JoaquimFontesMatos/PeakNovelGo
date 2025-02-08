@@ -1,43 +1,44 @@
-import * as yup from "yup";
+import { z } from 'zod';
 
-export const loginFormSchema = yup.object({
-  email: yup
+// LoginForm schema
+export const loginFormSchema = z.object({
+  email: z
     .string()
-    .required("Email is required")
-    .email("Please enter a valid email address")
-    .max(255, "Email must be at most 255 characters long"),
-  password: yup
+    .nonempty({ message: 'Email is required' })
+    .email({ message: 'Please enter a valid email address' })
+    .max(255, { message: 'Email must be at most 255 characters long' }),
+  password: z
     .string()
-    .required("Password is required")
-    .min(8, "Password must be at least 8 characters long")
-    .max(72, "Password must be at most 72 characters long"),
+    .nonempty({ message: 'Password is required' })
+    .min(8, { message: 'Password must be at least 8 characters long' })
+    .max(72, { message: 'Password must be at most 72 characters long' }),
 });
 
-export type LoginForm = yup.InferType<typeof loginFormSchema>;
+export type LoginForm = z.infer<typeof loginFormSchema>;
 
-export const signUpFormSchema = yup.object({
-  email: yup
+// SignUpForm schema
+export const signUpFormSchema = z.object({
+  email: z
     .string()
-    .required("Email is required")
-    .email("Please enter a valid email address")
-    .max(255, "Email must be at most 255 characters long"),
-  password: yup
+    .nonempty({ message: 'Email is required' })
+    .email({ message: 'Please enter a valid email address' })
+    .max(255, { message: 'Email must be at most 255 characters long' }),
+  password: z
     .string()
-    .required("Password is required")
-    .min(8, "Password must be at least 8 characters long")
-    .max(72, "Password must be at most 72 characters long"),
-  username: yup
+    .nonempty({ message: 'Password is required' })
+    .min(8, { message: 'Password must be at least 8 characters long' })
+    .max(72, { message: 'Password must be at most 72 characters long' }),
+  username: z
     .string()
-    .required("Username is required")
-    .min(3, "Username must be at least 3 characters long")
-    .max(255, "Username must be at most 255 characters long"),
-  dateOfBirth: yup
+    .nonempty({ message: 'Username is required' })
+    .min(3, { message: 'Username must be at least 3 characters long' })
+    .max(255, { message: 'Username must be at most 255 characters long' }),
+  dateOfBirth: z
     .string()
-    .required("Date of Birth is required")
-    .matches(
-      /^\d{4}-\d{2}-\d{2}$/,
-      "Date of Birth must be in the format YYYY-MM-DD"
-    ),
+    .nonempty({ message: 'Date of Birth is required' })
+    .regex(/^\d{4}-\d{2}-\d{2}$/, {
+      message: 'Date of Birth must be in the format YYYY-MM-DD',
+    }),
 });
 
-export type SignUpForm = yup.InferType<typeof signUpFormSchema>;
+export type SignUpForm = z.infer<typeof signUpFormSchema>;

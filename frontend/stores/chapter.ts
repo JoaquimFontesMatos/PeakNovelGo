@@ -1,74 +1,51 @@
-import type { Chapter } from '~/models/Chapter';
-import type { PaginatedServerResponse } from '~/models/PaginatedServerResponse';
+import type { Chapter, ChapterSchema } from '~/schemas/Chapter';
+import type { PaginatedServerResponse } from '~/schemas/PaginatedServerResponse';
+import { ChapterService } from '~/services/ChapterService';
 
 export const useChapterStore = defineStore('Chapter', () => {
   const runtimeConfig = useRuntimeConfig();
   const url = runtimeConfig.public.apiUrl;
 
-  const paginatedChapterData =
-    shallowRef<PaginatedServerResponse<Chapter> | null>(null);
+  const chapterService = new ChapterService(url);
+
+  const paginatedChapterData = shallowRef<PaginatedServerResponse<typeof ChapterSchema> | null>(null);
   const chapter: Ref<Chapter | null> = ref<Chapter | null>(null);
   const fetchingChapters = ref(true);
-  const chapterError = ref<string | null>(null);
 
   const fetchChapter = async (novelUpdatesId: string, chaptNo: number) => {
     fetchingChapters.value = true;
-    chapterError.value = null;
 
     try {
-      const response = await fetch(url + '/novels/chapters/novel/' + novelUpdatesId + '/chapter/' + chaptNo, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-      if (response.status === 200) {
-        chapter.value = await response.json();
-      } else {
-        chapter.value = null;
-        const errorResponse = await response.json();
-
-        chapterError.value = errorResponse.error;
-      }
+      chapter.value = await chapterService.fetchChapter(novelUpdatesId, chaptNo);
     } catch (error) {
-      console.error('Unbookmarking Novel Error');
-      chapterError.value = 'An unexpected error occurred. Please try again later.';
+      handleError(error, { novelUpdatesId: novelUpdatesId, chapterNo: chaptNo, location: 'chapter.ts -> fetchChapter' });
       chapter.value = null;
+      throw error;
     } finally {
       fetchingChapters.value = false;
     }
   };
 
-  const fetchChapters = async (
-    novelUpdatesId: string,
-    page: number,
-    limit: number,
-  ): Promise<void> => {
+  const fetchChapters = async (novelUpdatesId: string, page: number, limit: number): Promise<void> => {
     fetchingChapters.value = true;
-    chapterError.value = null;
-    fetch(
-      `${url}/novels/chapters/novel/${novelUpdatesId}/chapters?page=${page}&limit=${limit}`,
-    )
-      .then((response) => response.json())
-      .then((data) => {
-        paginatedChapterData.value = data;
-      })
-      .catch((error) => {
-        paginatedChapterData.value = null;
-        chapterError.value = error;
-      })
-      .finally(() => {
-        fetchingChapters.value = false;
-      });
+
+    try {
+      paginatedChapterData.value = await chapterService.fetchChapters(novelUpdatesId, page, limit);
+    } catch (error) {
+      handleError(error, { novelUpdatesId: novelUpdatesId, page: page, limit: limit, location: 'chapter.ts -> fetchChapters' });
+      paginatedChapterData.value = null;
+      throw error;
+    } finally {
+      fetchingChapters.value = false;
+    }
   };
 
   return {
     chapter,
+    fetchingChapters,
+    paginatedChapterData,
     fetchChapter,
     fetchChapters,
-    fetchingChapters,
-    chapterError,
-    paginatedChapterData,
   };
 });
 

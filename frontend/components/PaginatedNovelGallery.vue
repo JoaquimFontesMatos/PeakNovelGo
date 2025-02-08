@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { PaginatedServerResponse } from "~/models/PaginatedServerResponse";
 import NumberedPaginator from "./NumberedPaginator.vue";
-import type { Novel } from "~/models/Novel";
+import type { Novel } from "~/schemas/Novel";
 
 defineProps<{
   errorMessage: string | null;

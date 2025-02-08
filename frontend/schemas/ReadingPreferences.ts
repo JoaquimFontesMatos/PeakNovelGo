@@ -1,22 +1,21 @@
-import * as yup from 'yup';
-import type { InferType } from 'yup';
+import { z } from 'zod';
 
-// Define the Yup schema for the TTS part of ReadingPreferences
-const TtsSchema = yup.object({
-    autoplay: yup.boolean().nullable().notRequired(),
-    voice: yup.string().nullable().notRequired(),
-    rate: yup.number().nullable().notRequired(),
+// Define the Zod schema for the TTS part of ReadingPreferences
+const TtsSchema = z.object({
+  autoplay: z.boolean().nullable().optional(),
+  voice: z.string().nullable().optional(),
+  rate: z.number().nullable().optional(),
 });
 
-// Define the Yup schema for ReadingPreferences
-const ReadingPreferencesSchema = yup.object({
-    atomicReading: yup.boolean().nullable().notRequired(),
-    font: yup.string().nullable().notRequired(),
-    theme: yup.string().nullable().notRequired(),
-    tts: TtsSchema.required('TTS settings are required'),
+// Define the Zod schema for ReadingPreferences
+const ReadingPreferencesSchema = z.object({
+  atomicReading: z.boolean().nullable().optional(),
+  font: z.string().nullable().optional(),
+  theme: z.string().nullable().optional(),
+  tts: TtsSchema,
 });
 
-type Tts = InferType<typeof TtsSchema>;
-type ReadingPreferences = InferType<typeof ReadingPreferencesSchema>;
+type Tts = z.infer<typeof TtsSchema>;
+type ReadingPreferences = z.infer<typeof ReadingPreferencesSchema>;
 
 export { type ReadingPreferences, type Tts, TtsSchema, ReadingPreferencesSchema };

@@ -1,9 +1,8 @@
-import * as yup from 'yup';
-import type { InferType } from 'yup';
+import { z } from 'zod';
 
-const SuccessServerResponseSchema = yup.object({
-    message: yup.string().required(),
+const SuccessServerResponseSchema = z.object({
+  message: z.string().nonempty('Message is required'),
 });
 
-type SuccessServerResponse = InferType<typeof SuccessServerResponseSchema>;
+type SuccessServerResponse = z.infer<typeof SuccessServerResponseSchema>;
 export { type SuccessServerResponse, SuccessServerResponseSchema };

@@ -1,4 +1,4 @@
-import type { LogEntry, LogLevel } from '~/models/LogEntry';
+import type { LogEntry, LogLevel } from '~/schemas/LogEntry';
 
 export class Logger {
   private transports: Array<(entry: LogEntry) => void> = [];
@@ -36,9 +36,9 @@ export class Logger {
 
     if (level === 'debug') {
       console.log(entry);
+    } else {
+      this.sendToTransports(entry);
     }
-    // Send to transports (console, file, external service, etc.)
-    this.sendToTransports(entry);
   }
 
   public addTransport(transport: (entry: LogEntry) => void): void {

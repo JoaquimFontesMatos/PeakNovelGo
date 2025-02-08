@@ -1,7 +1,7 @@
-import type { User } from '~/models/User';
-import type { Novel } from '~/models/Novel';
-import type { Paragraph } from '~/models/Paragraph';
-import type { Chapter } from '~/models/Chapter';
+import type { User } from '~/schemas/User';
+import type { Novel } from '~/schemas/Novel';
+import type { Paragraph } from '~/schemas/Paragraph';
+import type { Chapter } from '~/schemas/Chapter';
 
 type Role = 'admin' | 'moderator' | 'user';
 

@@ -1,250 +1,153 @@
-import type { BookmarkedNovel } from '~/models/BookmarkedNovel';
-import type { PaginatedServerResponse } from '~/models/PaginatedServerResponse';
 import type { ShallowRef } from 'vue';
+import { AuthError } from '~/errors/AuthError';
+import type { BookmarkedNovel, BookmarkedNovelSchema } from '~/schemas/BookmarkedNovel';
+import type { PaginatedServerResponse } from '~/schemas/PaginatedServerResponse';
+import { BookmarkService } from '~/services/BookmarkService';
 
 export const useBookmarkStore = defineStore('Bookmark', () => {
-    const runtimeConfig = useRuntimeConfig();
-    const url: string = runtimeConfig.public.apiUrl;
-    const authStore = useAuthStore();
+  const runtimeConfig = useRuntimeConfig();
+  const url: string = runtimeConfig.public.apiUrl;
 
-    const { user } = storeToRefs(authStore);
+  const bookmarkService = new BookmarkService(url);
 
-    const bookmark: Ref<BookmarkedNovel | null> = ref<BookmarkedNovel | null>(null);
-    const paginatedBookmarkedNovels: ShallowRef<PaginatedServerResponse<BookmarkedNovel> | null> =
-        shallowRef<PaginatedServerResponse<BookmarkedNovel> | null>(null);
-    const fetchingBookmarkedNovel: Ref<boolean | null> = ref<boolean>(true);
-    const bookmarkedNovelError: Ref<string | null> = ref<string | null>(null);
-    const bookmarkNovelError: Ref<string | null> = ref<string | null>(null);
-    const bookmarkingNovel: Ref<boolean | null> = ref<boolean>(false);
-    const updateBookmarkError: Ref<string | null> = ref<string | null>(null);
-    const updatingBookmark: Ref<boolean | null> = ref<boolean>(false);
+  const authStore = useAuthStore();
 
-    const bookmarkNovel = async (novelId: number): Promise<void> => {
-        bookmarkingNovel.value = true;
-        bookmarkNovelError.value = null;
+  const { user } = storeToRefs(authStore);
 
+  const bookmark: Ref<BookmarkedNovel | null> = ref<BookmarkedNovel | null>(null);
+  const paginatedBookmarkedNovels: ShallowRef<PaginatedServerResponse<typeof BookmarkedNovelSchema> | null> = shallowRef<PaginatedServerResponse<
+    typeof BookmarkedNovelSchema
+  > | null>(null);
+  const fetchingBookmarkedNovel: Ref<boolean | null> = ref<boolean>(true);
+  const bookmarkingNovel: Ref<boolean | null> = ref<boolean>(false);
+  const updatingBookmark: Ref<boolean | null> = ref<boolean>(false);
+  const unbookmarkMessage: Ref<string | null> = ref<string | null>(null);
 
-        if (user.value === null) {
-            bookmarkingNovel.value = false;
-            bookmarkNovelError.value = 'You\'re not logged in!';
-            bookmark.value = null;
-            return;
-        }
+  const bookmarkNovel = async (novelId: number): Promise<void> => {
+    bookmarkingNovel.value = true;
 
-        const createBookmarkedNovel = {
-            novelId: novelId,
-            userId: user.value.ID,
-            score: 0,
-            status: 'Plan to Read',
-            currentChapter: 1,
-        };
+    try {
+      if (user.value === null) {
+        throw new AuthError({
+          name: 'UNAUTHORIZED_ERROR',
+          message: "You're not logged in!",
+          cause: 'User tried to bookmark novel without being logged in.',
+        });
+      }
 
-        try {
-            const response: Response | undefined = await authStore.authorizedFetch(`${url}/novels/bookmarked`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(createBookmarkedNovel),
-            });
+      bookmark.value = await bookmarkService.bookmarkNovel(novelId, user.value.ID);
+    } catch (error) {
+      handleError(error, { user: user, novelId: novelId, location: 'bookmark.ts -> bookmarkNovel' });
+      bookmark.value = null;
+      throw error;
+    } finally {
+      bookmarkingNovel.value = false;
+    }
+  };
 
-            if (response === undefined) {
-                bookmark.value = null;
-                bookmarkingNovel.value = false;
-                return;
-            }
-            if (response.status === 200) {
-                bookmark.value = await response.json();
-            } else {
-                const errorResponse = await response.json();
+  const updateBookmark = async (updatedBookmark: BookmarkedNovel): Promise<void> => {
+    updatingBookmark.value = true;
 
-                bookmarkNovelError.value = errorResponse.error;
-                bookmark.value = null;
-            }
-        } catch (error) {
-            console.error('Bookmarking Novel error:', error);
-            bookmark.value = null;
-        } finally {
-            bookmarkingNovel.value = false;
-        }
-    };
+    try {
+      if (user.value === null) {
+        throw new AuthError({
+          name: 'UNAUTHORIZED_ERROR',
+          message: "You're not logged in!",
+          cause: 'User tried to update bookmark without being logged in.',
+        });
+      }
 
-    const updateBookmark = async (updatedBookmark: BookmarkedNovel): Promise<void> => {
-        updatingBookmark.value = true;
-        updateBookmarkError.value = null;
+      bookmark.value = await bookmarkService.updateBookmark(updatedBookmark);
+    } catch (error) {
+      handleError(error, { user: user, updatedBookmark: updatedBookmark, location: 'bookmark.ts -> updateBookmark' });
+      throw error;
+    } finally {
+      updatingBookmark.value = false;
+    }
+  };
 
-        try {
-            const response: Response | undefined = await authStore.authorizedFetch(
-                `${url}/novels/bookmarked`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(updatedBookmark),
-                });
+  const unbookmarkNovel = async (novelId: number): Promise<void> => {
+    bookmarkingNovel.value = true;
+    unbookmarkMessage.value = null;
 
-            if (response === undefined) {
-                updatingBookmark.value = false;
-                return;
-            }
+    try {
+      if (user.value === null) {
+        throw new AuthError({
+          name: 'UNAUTHORIZED_ERROR',
+          message: "You're not logged in!",
+          cause: 'User tried to unbookmark without being logged in.',
+        });
+      }
 
-            if (response.status === 200) {
-                bookmark.value = await response.json();
-            } else {
-                const errorResponse = await response.json();
+      const message = await bookmarkService.unbookmarkNovel(novelId, user.value.ID);
+      unbookmarkMessage.value = message.message;
+      bookmark.value = null;
+    } catch (error) {
+      handleError(error, { user: user, novelId: novelId, location: 'bookmark.ts -> unbookmarkNovel' });
+      throw error;
+    } finally {
+      bookmarkingNovel.value = false;
+    }
+  };
 
-                updateBookmarkError.value = errorResponse.error;
-            }
-        } catch (error) {
-            console.error('Update bookmark error:', error);
-        } finally {
-            updatingBookmark.value = false;
-        }
-    };
+  const fetchBookmarkedNovelByUser = async (novelId: string): Promise<void> => {
+    fetchingBookmarkedNovel.value = true;
 
-    const unbookmarkNovel = async (novelId: number): Promise<void> => {
-        bookmarkingNovel.value = true;
-        bookmarkNovelError.value = null;
+    try {
+      if (user.value === null) {
+        throw new AuthError({
+          name: 'UNAUTHORIZED_ERROR',
+          message: "You're not logged in!",
+          cause: 'User tried to fetch bookmark without being logged in.',
+        });
+      }
 
-        if (user.value === null) {
-            fetchingBookmarkedNovel.value = false;
-            bookmarkNovelError.value = 'You\'re not logged in!';
-            return;
-        }
+      bookmark.value = await bookmarkService.fetchBookmarkedNovelByUser(novelId, user.value.ID);
+    } catch (error) {
+      handleError(error, { user: user, novelId: novelId, location: 'bookmark.ts -> fetchBookmarkedNovelByUser' });
+      bookmark.value = null;
+      throw error;
+    } finally {
+      fetchingBookmarkedNovel.value = false;
+    }
+  };
 
-        try {
-            const response = await authStore.authorizedFetch(
-                `${url}/novels/bookmarked/user/${user.value.ID}/novel/${novelId}`, {
-                    method: 'DELETE',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                },
-            );
+  const fetchBookmarkedNovelsByUser = async (page: number, limit: number): Promise<void> => {
+    fetchingBookmarkedNovel.value = true;
 
-            if (response === undefined) {
-                fetchingBookmarkedNovel.value = false;
-                return;
-            }
+    try {
+      if (user.value === null) {
+        throw new AuthError({
+          name: 'UNAUTHORIZED_ERROR',
+          message: "You're not logged in!",
+          cause: 'User tried to fetch bookmarks without being logged in.',
+        });
+      }
 
-            if (response.status === 200) {
-                bookmark.value = null;
-            } else {
-                const errorResponse = await response.json();
+      paginatedBookmarkedNovels.value = await bookmarkService.fetchBookmarkedNovelsByUser(user.value.ID, page, limit);
+    } catch (error) {
+      paginatedBookmarkedNovels.value = null;
+      handleError(error, { user: user, page: page, limit: limit, location: 'bookmark.ts -> fetchBookmarkedNovelsByUser' });
+      throw error;
+    } finally {
+      fetchingBookmarkedNovel.value = false;
+    }
+  };
 
-                updateBookmarkError.value = errorResponse.error;
-            }
-        } catch (error) {
-            console.error('Unbookmarking Novel Error');
-        } finally {
-            bookmarkingNovel.value = false;
-        }
-    };
-
-    const fetchBookmarkedNovelByUser = async (novelId: string): Promise<void> => {
-        fetchingBookmarkedNovel.value = true;
-        bookmarkedNovelError.value = null;
-
-        try {
-            if (user.value === null) {
-                fetchingBookmarkedNovel.value = false;
-                bookmarkedNovelError.value = 'You\'re not logged in!';
-
-                bookmark.value = null;
-
-                return;
-            }
-
-            const response = await authStore.authorizedFetch(`${url}/novels/bookmarked/user/${user.value.ID}/novel/${novelId}`, {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-            });
-            if (response === undefined) {
-                bookmark.value = null;
-                bookmarkedNovelError.value = 'An unexpected error occurred. Please try again later.';
-
-                fetchingBookmarkedNovel.value = false;
-
-                return;
-            }
-
-            if (response.status === 200) {
-                bookmark.value = await response.json();
-            } else {
-                bookmark.value = null;
-                const errorResponse = await response.json();
-
-                bookmarkedNovelError.value = errorResponse.error;
-            }
-        } catch (error) {
-            console.error('Unbookmarking Novel Error');
-            bookmarkedNovelError.value = 'An unexpected error occurred. Please try again later.';
-            bookmark.value = null;
-        } finally {
-            fetchingBookmarkedNovel.value = false;
-        }
-    };
-
-    const fetchBookmarkedNovelsByUser = async (
-        page: number,
-        limit: number,
-    ): Promise<void> => {
-        fetchingBookmarkedNovel.value = true;
-        bookmarkedNovelError.value = null;
-
-        try {
-            if (user.value === null) {
-                fetchingBookmarkedNovel.value = false;
-                bookmarkedNovelError.value = 'You\'re not logged in!';
-                paginatedBookmarkedNovels.value = null;
-                return;
-            }
-
-            const response: Response | undefined = await authStore.authorizedFetch(
-                `${url}/novels/bookmarked/user/${user.value.ID}?page=${page}&limit=${limit}`, {
-                    method: 'GET',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                },
-            );
-
-            if (response === undefined) {
-                paginatedBookmarkedNovels.value = null;
-            }
-
-            if (response.status === 200) {
-                paginatedBookmarkedNovels.value = await response.json();
-            } else {
-                paginatedBookmarkedNovels.value = null;
-            }
-        } catch (error) {
-            console.error('Unbookmarking Novel Error');
-            paginatedBookmarkedNovels.value = null;
-        } finally {
-            fetchingBookmarkedNovel.value = false;
-        }
-    };
-
-    return {
-        bookmark,
-        paginatedBookmarkedNovels,
-        fetchingBookmarkedNovel,
-        bookmarkedNovelError,
-        bookmarkNovelError,
-        bookmarkingNovel,
-        updateBookmarkError,
-        updatingBookmark,
-        bookmarkNovel,
-        unbookmarkNovel,
-        updateBookmark,
-        fetchBookmarkedNovelByUser,
-        fetchBookmarkedNovelsByUser,
-    };
+  return {
+    bookmark,
+    paginatedBookmarkedNovels,
+    fetchingBookmarkedNovel,
+    bookmarkingNovel,
+    updatingBookmark,
+    bookmarkNovel,
+    unbookmarkNovel,
+    updateBookmark,
+    fetchBookmarkedNovelByUser,
+    fetchBookmarkedNovelsByUser,
+  };
 });
 
 if (import.meta.hot) {
-    import.meta.hot.accept(acceptHMRUpdate(useBookmarkStore, import.meta.hot));
+  import.meta.hot.accept(acceptHMRUpdate(useBookmarkStore, import.meta.hot));
 }
