@@ -29,7 +29,8 @@ export class AuthService {
       });
     } catch (error) {
       throw new ProjectError({
-        name: 'NETWORK_ERROR',
+        name: 'ProjectError',
+        type: 'NETWORK_ERROR',
         message: 'Network request failed',
         cause: error,
       });
@@ -50,19 +51,22 @@ export class AuthService {
       switch (response.status) {
         case 400:
           throw new AuthError({
-            name: 'INVALID_CREDENTIALS_ERROR',
+            name: 'AuthError',
+            type: 'INVALID_CREDENTIALS_ERROR',
             message: errorMessage,
             cause: response,
           });
         case 401:
           throw new AuthError({
-            name: 'UNAUTHORIZED_ERROR',
+            name: 'AuthError',
+            type: 'UNAUTHORIZED_ERROR',
             message: errorMessage,
             cause: response,
           });
         default:
           throw new ProjectError({
-            name: 'INTERNAL_SERVER_ERROR',
+            name: 'ProjectError',
+            type: 'INTERNAL_SERVER_ERROR',
             message: errorMessage,
             cause: response,
           });
@@ -75,7 +79,8 @@ export class AuthService {
       return validatedAuthSessionResponse;
     } catch (validationError) {
       throw new AuthError({
-        name: 'INVALID_SESSION_DATA',
+        name: 'AuthError',
+        type: 'INVALID_SESSION_DATA',
         message: 'Received malformed authentication data',
         cause: validationError,
       });
@@ -105,7 +110,8 @@ export class AuthService {
       });
     } catch (error) {
       throw new ProjectError({
-        name: 'NETWORK_ERROR',
+        name: 'ProjectError',
+        type: 'NETWORK_ERROR',
         message: 'Network request failed',
         cause: error,
       });
@@ -126,19 +132,22 @@ export class AuthService {
       switch (response.status) {
         case 400:
           throw new UserError({
-            name: 'INVALID_USER_DATA',
+            name: 'UserError',
+            type: 'INVALID_USER_DATA',
             message: errorMessage,
             cause: response,
           });
         case 409:
           throw new UserError({
-            name: 'USER_CONFLICT_ERROR',
+            name: 'UserError',
+            type: 'USER_CONFLICT_ERROR',
             message: errorMessage,
             cause: response,
           });
         default:
           throw new ProjectError({
-            name: 'INTERNAL_SERVER_ERROR',
+            name: 'ProjectError',
+            type: 'INTERNAL_SERVER_ERROR',
             message: errorMessage,
             cause: response,
           });
@@ -152,7 +161,8 @@ export class AuthService {
     } catch (validationError) {
       console.log(validationError);
       throw new UserError({
-        name: 'INVALID_USER_DATA',
+        name: 'UserError',
+        type: 'INVALID_USER_DATA',
         message: 'Received malformed user data',
         cause: validationError,
       });
@@ -170,7 +180,8 @@ export class AuthService {
       });
     } catch (error) {
       throw new ProjectError({
-        name: 'NETWORK_ERROR',
+        name: 'ProjectError',
+        type: 'NETWORK_ERROR',
         message: 'Network request failed',
         cause: error,
       });
@@ -191,31 +202,36 @@ export class AuthService {
       switch (response.status) {
         case 400:
           throw new AuthError({
-            name: 'INVALID_CREDENTIALS_ERROR',
+            name: 'AuthError',
+            type: 'INVALID_CREDENTIALS_ERROR',
             message: errorMessage,
             cause: response,
           });
         case 401:
           throw new AuthError({
-            name: 'UNAUTHORIZED_ERROR',
+            name: 'AuthError',
+            type: 'UNAUTHORIZED_ERROR',
             message: errorMessage,
             cause: response,
           });
         case 403:
           throw new UserError({
-            name: 'USER_DEACTIVATED_ERROR',
+            name: 'UserError',
+            type: 'USER_DEACTIVATED_ERROR',
             message: errorMessage,
             cause: response,
           });
         case 404:
           throw new UserError({
-            name: 'USER_NOT_FOUND_ERROR',
+            name: 'UserError',
+            type: 'USER_NOT_FOUND_ERROR',
             message: errorMessage,
             cause: response,
           });
         default:
           throw new ProjectError({
-            name: 'INTERNAL_SERVER_ERROR',
+            name: 'ProjectError',
+            type: 'INTERNAL_SERVER_ERROR',
             message: errorMessage,
             cause: response,
           });
@@ -229,7 +245,8 @@ export class AuthService {
     } catch (validationError) {
       console.log(validationError);
       throw new AuthError({
-        name: 'INVALID_SESSION_DATA',
+        name: 'AuthError',
+        type: 'INVALID_SESSION_DATA',
         message: 'Received malformed session data',
         cause: validationError,
       });
@@ -247,7 +264,8 @@ export class AuthService {
       });
     } catch (error) {
       throw new ProjectError({
-        name: 'NETWORK_ERROR',
+        name: 'ProjectError',
+        type: 'NETWORK_ERROR',
         message: 'Network request failed',
         cause: error,
       });
@@ -268,13 +286,15 @@ export class AuthService {
       switch (response.status) {
         case 401:
           throw new AuthError({
-            name: 'UNAUTHORIZED_ERROR',
+            name: 'AuthError',
+            type: 'UNAUTHORIZED_ERROR',
             message: errorMessage,
             cause: response,
           });
         default:
           throw new ProjectError({
-            name: 'INTERNAL_SERVER_ERROR',
+            name: 'ProjectError',
+            type: 'INTERNAL_SERVER_ERROR',
             message: errorMessage,
             cause: response,
           });
@@ -288,7 +308,8 @@ export class AuthService {
     } catch (validationError) {
       console.log(validationError);
       throw new ProjectError({
-        name: 'VALIDATION_ERROR',
+        name: 'ProjectError',
+        type: 'VALIDATION_ERROR',
         message: 'Received malformed success data',
         cause: validationError,
       });

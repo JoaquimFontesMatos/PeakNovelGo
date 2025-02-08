@@ -1,9 +1,7 @@
 import { ErrorBase } from '~/errors/ErrorBase';
 
-type ErrorName =
-    | 'GET_TTS_ERROR'
-    | 'CREATE_TTS_ERROR'
-    | 'UPDATE_TTS_ERROR'
+type TtsErrorName = 'GET_TTS_ERROR' | 'CREATE_TTS_ERROR' | 'UPDATE_TTS_ERROR';
 
-export class TtsError extends ErrorBase<ErrorName> {
-}
+class TtsError extends ErrorBase<'TtsError', TtsErrorName> {}
+
+export { TtsError, type TtsErrorName };

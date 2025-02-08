@@ -22,5 +22,6 @@ const LogEntrySchema = z.object({
 });
 
 type LogEntry = z.infer<typeof LogEntrySchema>;
+type LogLevel = z.infer<typeof LogLevelSchema>;
 
-export { type LogEntry, LogEntrySchema };
+export { type LogEntry, type LogLevel, LogEntrySchema, LogLevelSchema };

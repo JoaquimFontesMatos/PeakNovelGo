@@ -1,7 +1,7 @@
 import { AuthError } from '~/errors/AuthError';
 import type { Paragraph } from '~/schemas/Paragraph';
 import type { TTSRequest } from '~/schemas/TTSRequest';
-import { TtsService } from '~/services/TTSService';
+import { TtsService } from '~/services/TtsService';
 
 export const useTTSStore = defineStore('TTS', () => {
   const authStore = useAuthStore();
@@ -47,7 +47,8 @@ export const useTTSStore = defineStore('TTS', () => {
     try {
       if (user.value === null) {
         throw new AuthError({
-          name: 'UNAUTHORIZED_ERROR',
+          name: 'AuthError',
+          type: 'UNAUTHORIZED_ERROR',
           message: "You're not logged in!",
           cause: 'User tried to generate TTS without being logged in.',
         });
@@ -68,7 +69,8 @@ export const useTTSStore = defineStore('TTS', () => {
     try {
       if (user.value === null) {
         throw new AuthError({
-          name: 'UNAUTHORIZED_ERROR',
+          name: 'AuthError',
+          type: 'UNAUTHORIZED_ERROR',
           message: "You're not logged in!",
           cause: 'User tried to fetch TTS voices without being logged in.',
         });

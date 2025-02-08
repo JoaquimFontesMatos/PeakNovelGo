@@ -34,7 +34,8 @@ export const useUserStore = defineStore('User', () => {
     try {
       if (!authStore.isUserLoggedIn()) {
         throw new AuthError({
-          name: 'INVALID_SESSION_DATA',
+          name: 'AuthError',
+          type: 'UNAUTHORIZED_ERROR',
           message: "You're not logged in!",
           cause: 'User tried to update user fields without being logged in.',
         });
@@ -58,7 +59,8 @@ export const useUserStore = defineStore('User', () => {
     try {
       if (!authStore.isUserLoggedIn()) {
         throw new AuthError({
-          name: 'INVALID_SESSION_DATA',
+          name: 'AuthError',
+          type: 'UNAUTHORIZED_ERROR',
           message: "You're not logged in!",
           cause: 'User tried to update user fields without being logged in.',
         });

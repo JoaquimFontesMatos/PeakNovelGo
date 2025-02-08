@@ -36,7 +36,8 @@ export class BookmarkService {
       });
     } catch (error) {
       throw new ProjectError({
-        name: 'NETWORK_ERROR',
+        name: 'ProjectError',
+        type: 'NETWORK_ERROR',
         message: 'Network request failed',
         cause: error,
       });
@@ -57,19 +58,22 @@ export class BookmarkService {
       switch (response.status) {
         case 400:
           throw new ProjectError({
-            name: 'VALIDATION_ERROR',
+            name: 'ProjectError',
+            type: 'VALIDATION_ERROR',
             message: errorMessage,
             cause: response,
           });
         case 404:
           throw new BookmarkError({
-            name: 'BOOKMARK_NOT_FOUND',
+            name: 'BookmarkError',
+            type: 'BOOKMARK_NOT_FOUND',
             message: errorMessage,
             cause: response,
           });
         default:
           throw new ProjectError({
-            name: 'INTERNAL_SERVER_ERROR',
+            name: 'ProjectError',
+            type: 'INTERNAL_SERVER_ERROR',
             message: errorMessage,
             cause: response,
           });
@@ -82,7 +86,8 @@ export class BookmarkService {
       return successResponse;
     } catch (validationError) {
       throw new ProjectError({
-        name: 'VALIDATION_ERROR',
+        name: 'ProjectError',
+        type: 'VALIDATION_ERROR',
         message: 'Received malformed bookmark data',
         cause: validationError,
       });
@@ -103,7 +108,8 @@ export class BookmarkService {
       });
     } catch (error) {
       throw new ProjectError({
-        name: 'NETWORK_ERROR',
+        name: 'ProjectError',
+        type: 'NETWORK_ERROR',
         message: 'Network request failed',
         cause: error,
       });
@@ -124,19 +130,22 @@ export class BookmarkService {
       switch (response.status) {
         case 400:
           throw new ProjectError({
-            name: 'VALIDATION_ERROR',
+            name: 'ProjectError',
+            type: 'VALIDATION_ERROR',
             message: errorMessage,
             cause: response,
           });
         case 404:
           throw new BookmarkError({
-            name: 'BOOKMARK_NOT_FOUND',
+            name: 'BookmarkError',
+            type: 'BOOKMARK_NOT_FOUND',
             message: errorMessage,
             cause: response,
           });
         default:
           throw new ProjectError({
-            name: 'INTERNAL_SERVER_ERROR',
+            name: 'ProjectError',
+            type: 'INTERNAL_SERVER_ERROR',
             message: errorMessage,
             cause: response,
           });
@@ -149,7 +158,8 @@ export class BookmarkService {
       return successResponse;
     } catch (validationError) {
       throw new ProjectError({
-        name: 'VALIDATION_ERROR',
+        name: 'ProjectError',
+        type: 'VALIDATION_ERROR',
         message: 'Received malformed bookmark data',
         cause: validationError,
       });
@@ -169,7 +179,8 @@ export class BookmarkService {
       });
     } catch (error) {
       throw new ProjectError({
-        name: 'NETWORK_ERROR',
+        name: 'ProjectError',
+        type: 'NETWORK_ERROR',
         message: 'Network request failed',
         cause: error,
       });
@@ -190,19 +201,22 @@ export class BookmarkService {
       switch (response.status) {
         case 400:
           throw new ProjectError({
-            name: 'VALIDATION_ERROR',
+            name: 'ProjectError',
+            type: 'VALIDATION_ERROR',
             message: errorMessage,
             cause: response,
           });
         case 404:
           throw new BookmarkError({
-            name: 'BOOKMARK_NOT_FOUND',
+            name: 'BookmarkError',
+            type: 'BOOKMARK_NOT_FOUND',
             message: errorMessage,
             cause: response,
           });
         default:
           throw new ProjectError({
-            name: 'INTERNAL_SERVER_ERROR',
+            name: 'ProjectError',
+            type: 'INTERNAL_SERVER_ERROR',
             message: errorMessage,
             cause: response,
           });
@@ -215,7 +229,8 @@ export class BookmarkService {
       return successResponse;
     } catch (validationError) {
       throw new ProjectError({
-        name: 'VALIDATION_ERROR',
+        name: 'ProjectError',
+        type: 'VALIDATION_ERROR',
         message: 'Received malformed response data',
         cause: validationError,
       });
@@ -235,7 +250,8 @@ export class BookmarkService {
       });
     } catch (error) {
       throw new ProjectError({
-        name: 'NETWORK_ERROR',
+        name: 'ProjectError',
+        type: 'NETWORK_ERROR',
         message: 'Network request failed',
         cause: error,
       });
@@ -256,19 +272,22 @@ export class BookmarkService {
       switch (response.status) {
         case 400:
           throw new ProjectError({
-            name: 'VALIDATION_ERROR',
+            name: 'ProjectError',
+            type: 'VALIDATION_ERROR',
             message: errorMessage,
             cause: response,
           });
         case 404:
           throw new BookmarkError({
-            name: 'BOOKMARK_NOT_FOUND',
+            name: 'BookmarkError',
+            type: 'BOOKMARK_NOT_FOUND',
             message: errorMessage,
             cause: response,
           });
         default:
           throw new ProjectError({
-            name: 'INTERNAL_SERVER_ERROR',
+            name: 'ProjectError',
+            type: 'INTERNAL_SERVER_ERROR',
             message: errorMessage,
             cause: response,
           });
@@ -281,7 +300,8 @@ export class BookmarkService {
       return successResponse;
     } catch (validationError) {
       throw new ProjectError({
-        name: 'VALIDATION_ERROR',
+        name: 'ProjectError',
+        type: 'VALIDATION_ERROR',
         message: 'Received malformed bookmark data',
         cause: validationError,
       });
@@ -301,7 +321,8 @@ export class BookmarkService {
       });
     } catch (error) {
       throw new ProjectError({
-        name: 'NETWORK_ERROR',
+        name: 'ProjectError',
+        type: 'NETWORK_ERROR',
         message: 'Network request failed',
         cause: error,
       });
@@ -322,19 +343,22 @@ export class BookmarkService {
       switch (response.status) {
         case 400:
           throw new ProjectError({
-            name: 'VALIDATION_ERROR',
+            name: 'ProjectError',
+            type: 'VALIDATION_ERROR',
             message: errorMessage,
             cause: response,
           });
         case 404:
           throw new BookmarkError({
-            name: 'BOOKMARK_NOT_FOUND',
+            name: 'BookmarkError',
+            type: 'BOOKMARK_NOT_FOUND',
             message: errorMessage,
             cause: response,
           });
         default:
           throw new ProjectError({
-            name: 'INTERNAL_SERVER_ERROR',
+            name: 'ProjectError',
+            type: 'INTERNAL_SERVER_ERROR',
             message: errorMessage,
             cause: response,
           });
@@ -347,7 +371,8 @@ export class BookmarkService {
       return successResponse;
     } catch (validationError) {
       throw new ProjectError({
-        name: 'VALIDATION_ERROR',
+        name: 'ProjectError',
+        type: 'VALIDATION_ERROR',
         message: 'Received malformed bookmark data',
         cause: validationError,
       });

@@ -27,7 +27,8 @@ export class UserService {
       });
     } catch (error) {
       throw new ProjectError({
-        name: 'NETWORK_ERROR',
+        name: 'ProjectError',
+        type: 'NETWORK_ERROR',
         message: 'Network request failed',
         cause: error,
       });
@@ -48,31 +49,36 @@ export class UserService {
       switch (response.status) {
         case 400:
           throw new ProjectError({
-            name: 'VALIDATION_ERROR',
+            name: 'ProjectError',
+            type: 'VALIDATION_ERROR',
             message: errorMessage,
             cause: response,
           });
         case 401:
           throw new AuthError({
-            name: 'UNAUTHORIZED_ERROR',
+            name: 'AuthError',
+            type: 'UNAUTHORIZED_ERROR',
             message: errorMessage,
             cause: response,
           });
         case 403:
           throw new UserError({
-            name: 'USER_DEACTIVATED_ERROR',
+            name: 'UserError',
+            type: 'USER_DEACTIVATED_ERROR',
             message: errorMessage,
             cause: response,
           });
         case 404:
           throw new UserError({
-            name: 'USER_NOT_FOUND_ERROR',
+            name: 'UserError',
+            type: 'USER_NOT_FOUND_ERROR',
             message: errorMessage,
             cause: response,
           });
         default:
           throw new ProjectError({
-            name: 'INTERNAL_SERVER_ERROR',
+            name: 'ProjectError',
+            type: 'INTERNAL_SERVER_ERROR',
             message: errorMessage,
             cause: response,
           });
@@ -86,7 +92,8 @@ export class UserService {
     } catch (validationError) {
       console.log(validationError);
       throw new ProjectError({
-        name: 'INVALID_RESPONSE_ERROR',
+        name: 'ProjectError',
+        type: 'INVALID_RESPONSE_ERROR',
         message: 'Received malformed data',
         cause: validationError,
       });
@@ -106,7 +113,8 @@ export class UserService {
       });
     } catch (error) {
       throw new ProjectError({
-        name: 'NETWORK_ERROR',
+        name: 'ProjectError',
+        type: 'NETWORK_ERROR',
         message: 'Network request failed',
         cause: error,
       });
@@ -127,31 +135,36 @@ export class UserService {
       switch (response.status) {
         case 400:
           throw new ProjectError({
-            name: 'VALIDATION_ERROR',
+            name: 'ProjectError',
+            type: 'VALIDATION_ERROR',
             message: errorMessage,
             cause: response,
           });
         case 401:
           throw new AuthError({
-            name: 'UNAUTHORIZED_ERROR',
+            name: 'AuthError',
+            type: 'UNAUTHORIZED_ERROR',
             message: errorMessage,
             cause: response,
           });
         case 403:
           throw new UserError({
-            name: 'USER_DEACTIVATED_ERROR',
+            name: 'UserError',
+            type: 'USER_DEACTIVATED_ERROR',
             message: errorMessage,
             cause: response,
           });
         case 404:
           throw new UserError({
-            name: 'USER_NOT_FOUND_ERROR',
+            name: 'UserError',
+            type: 'USER_NOT_FOUND_ERROR',
             message: errorMessage,
             cause: response,
           });
         default:
           throw new ProjectError({
-            name: 'INTERNAL_SERVER_ERROR',
+            name: 'ProjectError',
+            type: 'INTERNAL_SERVER_ERROR',
             message: errorMessage,
             cause: response,
           });
@@ -165,7 +178,8 @@ export class UserService {
     } catch (validationError) {
       console.log(validationError);
       throw new ProjectError({
-        name: 'INVALID_RESPONSE_ERROR',
+        name: 'ProjectError',
+        type: 'INVALID_RESPONSE_ERROR',
         message: 'Received malformed data',
         cause: validationError,
       });

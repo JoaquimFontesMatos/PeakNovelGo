@@ -1,5 +1,5 @@
-import { FileTransport } from './errors/FileTransport';
-import { Logger } from './errors/Logger';
+import { FileTransport } from './errors/handling/FileTransport';
+import { Logger } from './errors/handling/Logger';
 
 // config.ts
 

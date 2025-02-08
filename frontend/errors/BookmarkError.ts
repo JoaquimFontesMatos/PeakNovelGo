@@ -1,9 +1,7 @@
 import { ErrorBase } from '~/errors/ErrorBase';
 
-type ErrorName =
-    | 'CREATE_BOOKMARK_ERROR'
-    | 'UPDATE_BOOKMARK_ERROR'
-    | 'BOOKMARK_NOT_FOUND'
+type BookmarkErrorName = 'CREATE_BOOKMARK_ERROR' | 'UPDATE_BOOKMARK_ERROR' | 'BOOKMARK_NOT_FOUND';
 
-export class BookmarkError extends ErrorBase<ErrorName> {
-}
+class BookmarkError extends ErrorBase<'BookmarkError', BookmarkErrorName> {}
+
+export { BookmarkError, type BookmarkErrorName };
