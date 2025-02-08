@@ -47,7 +47,6 @@ export const useTTSStore = defineStore('TTS', () => {
     try {
       if (user.value === null) {
         throw new AuthError({
-          name: 'AuthError',
           type: 'UNAUTHORIZED_ERROR',
           message: "You're not logged in!",
           cause: 'User tried to generate TTS without being logged in.',
@@ -69,7 +68,6 @@ export const useTTSStore = defineStore('TTS', () => {
     try {
       if (user.value === null) {
         throw new AuthError({
-          name: 'AuthError',
           type: 'UNAUTHORIZED_ERROR',
           message: "You're not logged in!",
           cause: 'User tried to fetch TTS voices without being logged in.',

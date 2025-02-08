@@ -27,7 +27,6 @@ export class TtsService {
       });
     } catch (error) {
       throw new ProjectError({
-        name: 'ProjectError',
         type: 'NETWORK_ERROR',
         message: 'Network request failed',
         cause: error,
@@ -49,21 +48,18 @@ export class TtsService {
       switch (response.status) {
         case 400:
           throw new ProjectError({
-            name: 'ProjectError',
             type: 'VALIDATION_ERROR',
             message: errorMessage,
             cause: response,
           });
         case 401:
           throw new AuthError({
-            name: 'AuthError',
             type: 'UNAUTHORIZED_ERROR',
             message: errorMessage,
             cause: response,
           });
         default:
           throw new ProjectError({
-            name: 'ProjectError',
             type: 'INTERNAL_SERVER_ERROR',
             message: errorMessage,
             cause: response,
@@ -77,7 +73,6 @@ export class TtsService {
       return validatedParagraphsResponse;
     } catch (validationError) {
       throw new ProjectError({
-        name: 'ProjectError',
         type: 'VALIDATION_ERROR',
         message: 'Received malformed paragraphs data',
         cause: validationError,
@@ -98,7 +93,6 @@ export class TtsService {
       });
     } catch (error) {
       throw new ProjectError({
-        name: 'ProjectError',
         type: 'NETWORK_ERROR',
         message: 'Network request failed',
         cause: error,
@@ -120,21 +114,18 @@ export class TtsService {
       switch (response.status) {
         case 400:
           throw new ProjectError({
-            name: 'ProjectError',
             type: 'VALIDATION_ERROR',
             message: errorMessage,
             cause: response,
           });
         case 401:
           throw new AuthError({
-            name: 'AuthError',
             type: 'UNAUTHORIZED_ERROR',
             message: errorMessage,
             cause: response,
           });
         default:
           throw new ProjectError({
-            name: 'ProjectError',
             type: 'INTERNAL_SERVER_ERROR',
             message: errorMessage,
             cause: response,
@@ -148,7 +139,6 @@ export class TtsService {
       return validatedParagraphsResponse;
     } catch (validationError) {
       throw new ProjectError({
-        name: 'ProjectError',
         type: 'VALIDATION_ERROR',
         message: 'Received malformed paragraphs data',
         cause: validationError,

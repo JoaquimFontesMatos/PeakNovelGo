@@ -1,4 +1,4 @@
-import type { Toast, ToastIcon, ToastType } from "~/schemas/Toast";
+import { ToastIconMap, type Toast, type ToastIcon, type ToastType } from '~/schemas/Toast';
 
 export const useToastStore = defineStore('Toast', () => {
   const toasts = ref<Toast[]>([]);
@@ -6,8 +6,10 @@ export const useToastStore = defineStore('Toast', () => {
 
   const addToast = (message: string, type: ToastType, icon?: ToastIcon) => {
     const id = ++toastId.value;
-    icon = icon || 'none';
-    toasts.value.push({ id, message, type, icon });
+
+    const iconValue = icon && ToastIconMap[icon] ? ToastIconMap[icon] : ToastIconMap['none'];
+
+    toasts.value.push({ id, message, type, icon: iconValue });
 
     // Remove the toast after 3 seconds
     setTimeout(() => {

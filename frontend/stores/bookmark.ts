@@ -29,8 +29,7 @@ export const useBookmarkStore = defineStore('Bookmark', () => {
     try {
       if (user.value === null) {
         throw new AuthError({
-          name: "AuthError",
-          type: "UNAUTHORIZED_ERROR",
+          type: 'UNAUTHORIZED_ERROR',
           message: "You're not logged in!",
           cause: 'User tried to bookmark novel without being logged in.',
         });
@@ -52,8 +51,7 @@ export const useBookmarkStore = defineStore('Bookmark', () => {
     try {
       if (user.value === null) {
         throw new AuthError({
-          name: "AuthError",
-          type: "UNAUTHORIZED_ERROR",
+          type: 'UNAUTHORIZED_ERROR',
           message: "You're not logged in!",
           cause: 'User tried to update bookmark without being logged in.',
         });
@@ -75,8 +73,7 @@ export const useBookmarkStore = defineStore('Bookmark', () => {
     try {
       if (user.value === null) {
         throw new AuthError({
-          name: "AuthError",
-          type: "UNAUTHORIZED_ERROR",
+          type: 'UNAUTHORIZED_ERROR',
           message: "You're not logged in!",
           cause: 'User tried to unbookmark without being logged in.',
         });
@@ -99,8 +96,7 @@ export const useBookmarkStore = defineStore('Bookmark', () => {
     try {
       if (user.value === null) {
         throw new AuthError({
-          name: "AuthError",
-          type: "UNAUTHORIZED_ERROR",
+          type: 'UNAUTHORIZED_ERROR',
           message: "You're not logged in!",
           cause: 'User tried to fetch bookmark without being logged in.',
         });
@@ -122,8 +118,7 @@ export const useBookmarkStore = defineStore('Bookmark', () => {
     try {
       if (user.value === null) {
         throw new AuthError({
-          name: "AuthError",
-          type: "UNAUTHORIZED_ERROR",
+          type: 'UNAUTHORIZED_ERROR',
           message: "You're not logged in!",
           cause: 'User tried to fetch bookmarks without being logged in.',
         });

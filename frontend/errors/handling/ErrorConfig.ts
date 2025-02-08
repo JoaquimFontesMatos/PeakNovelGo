@@ -153,7 +153,7 @@ export const errorConfig: ErrorConfig = {
       showToast: true,
       showDialog: false,
       log: true,
-      icon: 'project',
+      icon: 'network',
       toastType: 'error',
       formatMessage: error => `Project Error: ${error.message}`,
     },

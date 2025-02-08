@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { ToastIconMap } from '~/schemas/Toast';
+
 const toastStore = useToastStore();
 const { toasts } = storeToRefs(toastStore);
 </script>
@@ -15,24 +17,9 @@ const { toasts } = storeToRefs(toastStore);
     >
       <button class="float-right" type="button" @click="toastStore.removeToast(toast.id)">
         <Icon name="fluent:dismiss-24-filled" class="text-primary" :size="'1.5em'" />
-        <!-- Show Icon -->
       </button>
       <div class="flex flex-row gap-2">
-        <Icon v-if="toast.icon === 'user'" name="fluent:person-24-filled" class="stroke-primary stroke-1 text-accent-gold-dark" :size="'2em'" :mode="'svg'" />
-        <Icon
-          v-else-if="toast.icon === 'project'"
-          name="fluent:network-check-24-filled"
-          class="stroke-primary stroke-1 text-accent-gold-dark"
-          :size="'2em'"
-          :mode="'svg'"
-        />
-        <Icon
-          v-else-if="toast.icon === 'auth'"
-          name="fluent:shield-lock-24-filled"
-          class="stroke-primary stroke-1 text-accent-gold-dark"
-          :size="'2em'"
-          :mode="'svg'"
-        />
+        <Icon v-if="toast.icon !== 'none'" :name="toast.icon" class="stroke-primary stroke-1 text-accent-gold-dark" :size="'2em'" :mode="'svg'" />
         <p>{{ toast.message }}</p>
       </div>
     </div>

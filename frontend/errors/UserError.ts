@@ -9,6 +9,10 @@ type UserErrorName =
   | 'USER_CONFLICT_ERROR'
   | 'USER_NOT_FOUND_ERROR';
 
-class UserError extends ErrorBase<'UserError', UserErrorName> {}
+class UserError extends ErrorBase<'UserError', UserErrorName> {
+  constructor(params: { type: UserErrorName; message: string; cause?: unknown }) {
+    super({ name: 'UserError', type: params.type, message: params.message, cause: params.cause });
+  }
+}
 
 export { UserError, type UserErrorName };

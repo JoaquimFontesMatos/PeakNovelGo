@@ -24,7 +24,6 @@ export class ChapterService {
       });
     } catch (error) {
       throw new ProjectError({
-        name: 'ProjectError',
         type: 'NETWORK_ERROR',
         message: 'Network request failed',
         cause: error,
@@ -46,21 +45,18 @@ export class ChapterService {
       switch (response.status) {
         case 400:
           throw new ProjectError({
-            name: 'ProjectError',
             type: 'VALIDATION_ERROR',
             message: errorMessage,
             cause: response,
           });
         case 404:
           throw new ChapterError({
-            name: 'ChapterError',
             type: 'NO_CHAPTER_FOUND',
             message: errorMessage,
             cause: response,
           });
         default:
           throw new ProjectError({
-            name: 'ProjectError',
             type: 'INTERNAL_SERVER_ERROR',
             message: errorMessage,
             cause: response,
@@ -74,7 +70,6 @@ export class ChapterService {
       return successResponse;
     } catch (validationError) {
       throw new ProjectError({
-        name: 'ProjectError',
         type: 'VALIDATION_ERROR',
         message: 'Received malformed chapter data',
         cause: validationError,
@@ -95,7 +90,6 @@ export class ChapterService {
       });
     } catch (error) {
       throw new ProjectError({
-        name: 'ProjectError',
         type: 'NETWORK_ERROR',
         message: 'Network request failed',
         cause: error,
@@ -117,21 +111,18 @@ export class ChapterService {
       switch (response.status) {
         case 400:
           throw new ProjectError({
-            name: 'ProjectError',
             type: 'VALIDATION_ERROR',
             message: errorMessage,
             cause: response,
           });
         case 404:
           throw new ChapterError({
-            name: 'ChapterError',
             type: 'NO_CHAPTER_FOUND',
             message: errorMessage,
             cause: response,
           });
         default:
           throw new ProjectError({
-            name: 'ProjectError',
             type: 'INTERNAL_SERVER_ERROR',
             message: errorMessage,
             cause: response,
@@ -145,7 +136,6 @@ export class ChapterService {
       return successResponse;
     } catch (validationError) {
       throw new ProjectError({
-        name: 'ProjectError',
         type: 'VALIDATION_ERROR',
         message: 'Received malformed chapter data',
         cause: validationError,
