@@ -1,5 +1,4 @@
-// FileTransport.ts
-import type { LogEntry } from '~/models/LogEntry';
+import type { LogEntry } from '~/schemas/LogEntry';
 
 export class FileTransport {
   private url: string;
@@ -8,7 +7,6 @@ export class FileTransport {
     this.url = url;
   }
 
-  // Example: Client-side error logging function
   public async log(entry: LogEntry): Promise<void> {
     try {
       if (this.url === '') return;

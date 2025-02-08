@@ -3,24 +3,19 @@ const { tagName } = useRoute().params;
 const currentPage = ref(1);
 const currentLimit = ref(10);
 
-onMounted(async() => {
-  await onPageChange(currentPage.value, currentLimit.value);
+onMounted(async () => {
+  try {
+    await onPageChange(currentPage.value, currentLimit.value);
+  } catch {}
 });
 
-const {
-    fetchingNovel, novelError, paginatedNovelsDataByTag
-  } = storeToRefs(
-    useNovelStore()
-  );
+const { fetchingNovel, paginatedNovelsDataByTag } = storeToRefs(useNovelStore());
 
-const onPageChange = async(newPage: number, limit: number) => {
-  if (
-    newPage === currentPage.value &&
-    limit === currentLimit.value &&
-    paginatedNovelsDataByTag.value.page != 0
-    )
-    return ;
-  await useNovelStore().fetchNovelsByTag(tagName as string, newPage, limit);
+const onPageChange = async (newPage: number, limit: number) => {
+  if (newPage === currentPage.value && limit === currentLimit.value && paginatedNovelsDataByTag.value && paginatedNovelsDataByTag.value.page != 0) return;
+  try {
+    await useNovelStore().fetchNovelsByTag(tagName as string, newPage, limit);
+  } catch {}
   currentPage.value = newPage;
   currentLimit.value = limit;
 };
@@ -39,13 +34,13 @@ const onPageChange = async(newPage: number, limit: number) => {
       ]"
     />
 
-    <VerticalSpacer/>
+    <VerticalSpacer />
 
-    <LoadingBar v-show="fetchingNovel"/>
+    <LoadingBar v-show="fetchingNovel" />
 
     <PaginatedNovelGallery
       v-show="!fetchingNovel"
-      :errorMessage="novelError"
+      :errorMessage="paginatedNovelsDataByTag === null ? 'No Novels Found' : null"
       :paginatedData="paginatedNovelsDataByTag"
       @page-change="onPageChange"
     />

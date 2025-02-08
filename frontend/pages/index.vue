@@ -1,15 +1,24 @@
 <template>
   <div class="home-page">
-
     <Container>
       <section class="featured-novels py-12">
         <h2 class="mb-6 text-3xl font-bold text-primary-content">Featured Novels</h2>
-        <PaginatedNovelGallery v-show="!fetchingNovel" :errorMessage="novelError" :paginatedData="paginatedNovelsData" @page-change="onPageChange" />
+        <PaginatedNovelGallery
+          v-show="!fetchingNovel"
+          :errorMessage="paginatedNovelsData === null ? 'No Novels Found' : null"
+          :paginatedData="paginatedNovelsData"
+          @page-change="onPageChange"
+        />
       </section>
 
       <section class="recently-updated py-12">
         <h2 class="mb-6 text-3xl font-bold text-primary-content">Recently Updated</h2>
-        <PaginatedNovelGallery v-show="!fetchingNovel" :errorMessage="novelError" :paginatedData="paginatedNovelsData" @page-change="onPageChange" />
+        <PaginatedNovelGallery
+          v-show="!fetchingNovel"
+          :errorMessage="paginatedNovelsData === null ? 'No Novels Found' : null"
+          :paginatedData="paginatedNovelsData"
+          @page-change="onPageChange"
+        />
       </section>
 
       <section class="popular-tags py-12">
@@ -28,15 +37,18 @@
 
       <section class="top-rated py-12">
         <h2 class="mb-6 text-3xl font-bold text-primary-content">Top Rated</h2>
-        <PaginatedNovelGallery v-show="!fetchingNovel" :errorMessage="novelError" :paginatedData="paginatedNovelsData" @page-change="onPageChange" />
+        <PaginatedNovelGallery
+          v-show="!fetchingNovel"
+          :errorMessage="paginatedNovelsData === null ? 'No Novels Found' : null"
+          :paginatedData="paginatedNovelsData"
+          @page-change="onPageChange"
+        />
       </section>
     </Container>
   </div>
 </template>
 
 <script setup lang="ts">
-import { string } from 'yup';
-
 const currentPage = ref(1);
 const currentLimit = ref(10);
 
@@ -53,11 +65,14 @@ onMounted(async () => {
   // topRatedNovels.value = await fetchTopRatedNovels();
 });
 
-const { fetchingNovel, novelError, paginatedNovelsData } = storeToRefs(useNovelStore());
+const { fetchingNovel, paginatedNovelsData } = storeToRefs(useNovelStore());
 
 const onPageChange = async (newPage: number, limit: number) => {
-  if (newPage === currentPage.value && limit === currentLimit.value && paginatedNovelsData.value.page != 0) return;
-  await useNovelStore().fetchNovels(newPage, limit);
+  if (newPage === currentPage.value && limit === currentLimit.value && paginatedNovelsData.value && paginatedNovelsData.value.page != 0) return;
+
+  try {
+    await useNovelStore().fetchNovels(newPage, limit);
+  } catch {}
   currentPage.value = newPage;
   currentLimit.value = limit;
 };

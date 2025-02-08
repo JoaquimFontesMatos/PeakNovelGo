@@ -3,79 +3,80 @@ import { useScroll } from '@vueuse/core';
 
 const { novelTitle, chapterNo } = useRoute().params;
 
-const chapterStore = useChapterStore()
-const ttsStore = useTTSStore()
-const bookmarkStore = useBookmarkStore()
-const userStore = useUserStore()
-const currentChapter = ref(0)
+const chapterStore = useChapterStore();
+const ttsStore = useTTSStore();
+const bookmarkStore = useBookmarkStore();
+const userStore = useUserStore();
+const authStore = useAuthStore();
+const currentChapter = ref(0);
 
-const {
-  chapter, fetchingChapters, chapterError, paginatedChapterData
-} = storeToRefs(chapterStore)
+const { chapter, fetchingChapters, paginatedChapterData } = storeToRefs(chapterStore);
 
-const {
-  bookmark, fetchingBookmarkedNovel, bookmarkedNovelError, updateBookmarkError, updatingBookmark
-} = storeToRefs(bookmarkStore)
+const { bookmark, fetchingBookmarkedNovel, updatingBookmark } = storeToRefs(bookmarkStore);
 
-const {user, isReaderMode} = storeToRefs(userStore)
+const { user, isReaderMode } = storeToRefs(userStore);
 
-const {
-  currentTime, isPlaying, duration, audioPlayer
-} = storeToRefs(ttsStore)
+const { currentTime, isPlaying, duration, audioPlayer } = storeToRefs(ttsStore);
 
-const fetchBookmark = async(novelId: string): Promise<void> => {
-  await useBookmarkStore().fetchBookmarkedNovelByUser(novelId)
-}
+const fetchBookmark = async (novelId: string): Promise<void> => {
+  try {
+    await useBookmarkStore().fetchBookmarkedNovelByUser(novelId);
+  } catch {}
+};
 
-const goToPreviousChapter = async(): Promise<void> => {
-  if (!bookmark.value)return ;
+const goToPreviousChapter = async (): Promise<void> => {
+  if (!bookmark.value) return;
 
-  console.log(currentChapter.value + "->" + bookmark.value.currentChapter)
+  bookmark.value.currentChapter = currentChapter.value - 1;
 
-  bookmark.value.currentChapter = currentChapter.value - 1
+  try {
+    if (authStore.isUserLoggedIn()) {
+      await bookmarkStore.updateBookmark(bookmark.value);
+    }
+  } catch {}
 
-  await bookmarkStore.updateBookmark(bookmark.value)
+  navigateTo((('/novels/' + novelTitle) as string) + '/' + bookmark.value.currentChapter);
+};
 
-  navigateTo('/novels/' + novelTitle as string + '/' + (bookmark.value.currentChapter))
-}
+const goToNextChapter = async (): Promise<void> => {
+  if (!bookmark.value) return;
+  bookmark.value.currentChapter = currentChapter.value + 1;
 
-const goToNextChapter = async(): Promise<void> => {
-  if (!bookmark.value)return ;
-  bookmark.value.currentChapter = currentChapter.value + 1
+  try {
+    if (authStore.isUserLoggedIn()) {
+      await bookmarkStore.updateBookmark(bookmark.value);
+    }
+  } catch {}
 
-  await bookmarkStore.updateBookmark(bookmark.value)
+  navigateTo((('/novels/' + novelTitle) as string) + '/' + bookmark.value.currentChapter);
+};
 
-  navigateTo('/novels/' + novelTitle as string + '/' + (bookmark.value.currentChapter))
-}
-
-watchEffect(async() => {
-  const novelUpdatesId = novelTitle as string
-  const chapterNum = parseInt(chapterNo as string)
+watchEffect(async () => {
+  const novelUpdatesId = novelTitle as string;
+  const chapterNum = parseInt(chapterNo as string);
 
   if (chapterNum === undefined || chapterNum === 0) {
-    chapterError.value = "Invalid chapter number"
-    return ;
+    return;
   }
 
-  currentChapter.value = chapterNum
+  currentChapter.value = chapterNum;
 
-  await chapterStore.fetchChapter(novelUpdatesId, currentChapter.value)
-})
+  try {
+    chapterStore.fetchChapter(novelUpdatesId, currentChapter.value);
+  } catch {}
 
-watchEffect(async() => {
-    await Promise.all([
-      fetchBookmark(novelTitle as string),
-    ]);
+  if (authStore.isUserLoggedIn()) {
+    await fetchBookmark(novelTitle as string);
   }
-);
+});
 
 /**
  * Manage the reading prefs
  */
-const drawerOpen = ref<boolean>(false)
+const drawerOpen = ref<boolean>(false);
 
 // Use the useScroll function to track scroll position reactively
-const { y } = useScroll(window)
+const { y } = useScroll(window);
 
 const scrollProgress = computed(() => {
   if (import.meta.client) {
@@ -109,98 +110,98 @@ const scrollProgress = computed(() => {
       ]"
     />
 
-    <VerticalSpacer/>
+    <VerticalSpacer />
 
-    <LoadingBar v-show="fetchingChapters"/>
+    <LoadingBar v-show="fetchingChapters" />
     <div
-      class="h-[2px] md:h-1 fixed top-0 left-0 w-full z-50 bg-accent-gold-dark origin-left transition-transform duration-500"
-      :style=" {
-        transform: 'scaleX(' + scrollProgress + ')'
+      class="fixed left-0 top-0 z-50 h-[2px] w-full origin-left bg-accent-gold-dark transition-transform duration-500 md:h-1"
+      :style="{
+        transform: 'scaleX(' + scrollProgress + ')',
       }"
     />
     <section v-if="isReaderMode" v-show="!fetchingChapters" @click="drawerOpen = !drawerOpen">
-      <div v-if=" chapter">
+      <div v-if="chapter">
         <div>
-          <div
-            class="mb-4 bg-secondary text-secondary-content rounded-md border-accent-gold-dark border-[0.5px] px-4 py-2"
-          >
+          <div class="mb-4 rounded-md border-[0.5px] border-accent-gold-dark bg-secondary px-4 py-2 text-secondary-content">
             <h1>Chapter {{ chapter.chapterNo }}</h1>
           </div>
-          <p :class="user ? user.readingPreferences.font : ''"
-             v-html="user && user.readingPreferences.atomicReading ? convertLineBreaksToHtml(toBionicText(chapter.body)) : convertLineBreaksToHtml(chapter.body)"/>
+          <p
+            :class="user ? user.readingPreferences.font : ''"
+            v-html="user && user.readingPreferences.atomicReading ? convertLineBreaksToHtml(toBionicText(chapter.body)) : convertLineBreaksToHtml(chapter.body)"
+          />
         </div>
 
-        <VerticalSpacer/>
-        <Button @click="goToPreviousChapter" :disabled="currentChapter === 1">
-          << Previous Chapter
-        </Button>
+        <VerticalSpacer />
+        <Button @click="goToPreviousChapter" :disabled="currentChapter === 1"> << Previous Chapter </Button>
 
-        <Button @click="goToNextChapter" :disabled="currentChapter && paginatedChapterData && currentChapter === paginatedChapterData.total ">
+        <Button @click="goToNextChapter" :disabled="currentChapter && paginatedChapterData && currentChapter === paginatedChapterData.total">
           Next Chapter >>
         </Button>
       </div>
 
-      <ErrorAlert v-else>Error: {{ chapterError }}</ErrorAlert>
+      <ErrorAlert v-else>Error: {{ chapter === null ? 'Invalid Chapter Number' : null }}</ErrorAlert>
     </section>
     <section v-else v-show="!fetchingChapters" @click="drawerOpen = !drawerOpen">
-      <TTSReader :novel-title="novelTitle as string" :chapter="chapter"/>
+      <TTSReader :novel-title="novelTitle as string" :chapter="chapter" />
     </section>
 
-    <section :class="drawerOpen ? 'h-1/3 md:w-1/3 md:h-full py-4' : 'h-0 w-0 m-0 shadow-none border-none backdrop-filter-none'"
-             class="w-full fixed bottom-0 left-0 md:bottom-0 md:left-2/3 shadow-md px-4 overflow-y-scroll bg-primary-100/10 backdrop-blur-sm select-none z-50 transition-all">
-      <div class="form-container p-4 bg-secondary rounded-lg shadow-lg w-full flex items-center justify-between">
-        <button @click="goToPreviousChapter" :disabled="currentChapter === 1" class="flex items-center transition-colors bg-primary/80 rounded-lg p-1 disabled:cursor-not-allowed disabled:bg-bg-primary/20 hover:bg-primary/40 disabled:text-gray-300">
-          <Icon name="fluent:previous-28-filled" class="text-accent-gold-dark "/>
+    <section
+      :class="drawerOpen ? 'h-1/3 md:w-1/3 md:h-full py-4' : 'h-0 w-0 m-0 shadow-none border-none backdrop-filter-none'"
+      class="bg-primary-100/10 fixed bottom-0 left-0 z-50 w-full select-none overflow-y-scroll px-4 shadow-md backdrop-blur-sm transition-all md:bottom-0 md:left-2/3"
+    >
+      <div class="form-container flex w-full items-center justify-between rounded-lg bg-secondary p-4 shadow-lg">
+        <button
+          @click="goToPreviousChapter"
+          :disabled="currentChapter === 1"
+          class="bg-primary/80 disabled:bg-bg-primary/20 hover:bg-primary/40 flex items-center rounded-lg p-1 transition-colors disabled:cursor-not-allowed disabled:text-gray-300"
+        >
+          <Icon name="fluent:previous-28-filled" class="text-accent-gold-dark" />
         </button>
 
-        <div class="form-group flex items-center space-x-2">
-          <input
-            id="readerMode"
-            name="readerMode"
-            type="checkbox"
-            v-model="isReaderMode"
-            @change="isReaderMode ? audioPlayer = null : console.log('')"
-          />
+        <div v-if="authStore.isUserLoggedIn()" class="form-group flex items-center space-x-2">
+          <input id="readerMode" name="readerMode" type="checkbox" v-model="isReaderMode" @change="isReaderMode ? (audioPlayer = null) : console.log('')" />
           <label for="readerMode" class="text-sm font-medium text-secondary-content">Reader Mode</label>
         </div>
 
-        <button @click="goToNextChapter" :disabled="currentChapter === paginatedChapterData?.total" class="flex items-center transition-colors bg-primary/80 rounded-lg p-1 disabled:cursor-not-allowed disabled:bg-bg-primary/20 hover:bg-primary/40 disabled:text-gray-300">
-          <Icon name="fluent:next-28-filled" class="text-accent-gold-dark"/>
+        <button
+          @click="goToNextChapter"
+          :disabled="currentChapter === paginatedChapterData?.total"
+          class="bg-primary/80 disabled:bg-bg-primary/20 hover:bg-primary/40 flex items-center rounded-lg p-1 transition-colors disabled:cursor-not-allowed disabled:text-gray-300"
+        >
+          <Icon name="fluent:next-28-filled" class="text-accent-gold-dark" />
         </button>
       </div>
 
       <!-- Play/Pause Button -->
-      <SmallVerticalSpacer v-if="audioPlayer"/>
+      <SmallVerticalSpacer v-if="audioPlayer" />
 
-      <div v-if="audioPlayer" class="form-container space-y-6 p-4 bg-secondary rounded-lg shadow-lg">
-        <fieldset class="border-t border-accent-gold-dark pt-4 flex items-center gap-4">
-          <legend class="text-lg font-semibold text-primary-content ml-3.5 px-3.5">Audio Controls</legend>
+      <div v-if="audioPlayer" class="form-container space-y-6 rounded-lg bg-secondary p-4 shadow-lg">
+        <fieldset class="flex items-center gap-4 border-t border-accent-gold-dark pt-4">
+          <legend class="ml-3.5 px-3.5 text-lg font-semibold text-primary-content">Audio Controls</legend>
           <!-- Atomic Reading -->
-          <button @click="ttsStore.togglePlayback" class="p-2 bg-primary/80 text-white rounded flex items-center">
-            <Icon v-if="isPlaying" name="fluent:pause-28-filled" class="text-accent-gold-dark"/>
-            <Icon v-else name="fluent:play-28-filled" class="text-accent-gold-dark"/>
+          <button @click="ttsStore.togglePlayback" class="bg-primary/80 flex items-center rounded p-2 text-white">
+            <Icon v-if="isPlaying" name="fluent:pause-28-filled" class="text-accent-gold-dark" />
+            <Icon v-else name="fluent:play-28-filled" class="text-accent-gold-dark" />
           </button>
 
           <!-- Progress Display -->
           <div class="flex-1">
-            <div class="w-full bg-gray-200 rounded h-2">
+            <div class="h-2 w-full rounded bg-gray-200">
               <div
-                class="bg-accent-gold-dark h-2 rounded"
-                :style=" {
-                  width: (currentTime / duration) * 100 + '%'
+                class="h-2 rounded bg-accent-gold-dark"
+                :style="{
+                  width: (currentTime / duration) * 100 + '%',
                 }"
               />
             </div>
-            <div class="text-sm text-gray-600 mt-1">
-              {{ Math.floor(currentTime) }}s / {{ Math.floor(duration) }}s
-            </div>
+            <div class="mt-1 text-sm text-gray-600">{{ Math.floor(currentTime) }}s / {{ Math.floor(duration) }}s</div>
           </div>
         </fieldset>
       </div>
 
-      <SmallVerticalSpacer/>
+      <SmallVerticalSpacer />
 
-      <ReadingPreferencesForm/>
+      <ReadingPreferencesForm v-if="authStore.isUserLoggedIn()" />
     </section>
   </Container>
 </template>
