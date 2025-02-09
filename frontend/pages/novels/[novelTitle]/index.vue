@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import LoginGuard from '~/components/LoginGuard.vue';
+
 const { novelTitle } = useRoute().params;
 
 function openNovelUpdatesUrl(url: string) {
@@ -186,49 +188,53 @@ watchEffect(async () => {
               alt="Novel Updates Logo"
             />
           </div>
-          <div class="buttons" v-if="authStore.isUserLoggedIn()">
-            <LoadingBar v-show="bookmarkingNovel || fetchingBookmarkedNovel" />
+          <div class="buttons">
+            <div v-if="authStore.isUserLoggedIn()">
+              <LoadingBar v-show="bookmarkingNovel || fetchingBookmarkedNovel" />
 
-            <div v-if="!bookmarkingNovel && bookmark" class="w-full justify-center">
-              <div class="flex flex-wrap gap-3.5">
-                <div class="flex grow flex-col gap-3.5">
-                  <label for="status" class="Status"> Status </label>
-                  <select id="status" name="status" v-model="bookmark.status" @change="updateBookmark()" class="">
-                    <option value="Unfollow">Unfollow</option>
-                    <option value="Reading">Reading</option>
-                    <option value="Completed">Completed</option>
-                    <option value="On-Hold">On-Hold</option>
-                    <option value="Dropped">Dropped</option>
-                    <option value="Plan to Read">Plan to Read</option>
-                  </select>
-                </div>
+              <div v-if="!bookmarkingNovel && bookmark" class="w-full justify-center">
+                <div class="flex flex-wrap gap-3.5">
+                  <div class="flex grow flex-col gap-3.5">
+                    <label for="status" class="Status"> Status </label>
+                    <select id="status" name="status" v-model="bookmark.status" @change="updateBookmark()" class="">
+                      <option value="Unfollow">Unfollow</option>
+                      <option value="Reading">Reading</option>
+                      <option value="Completed">Completed</option>
+                      <option value="On-Hold">On-Hold</option>
+                      <option value="Dropped">Dropped</option>
+                      <option value="Plan to Read">Plan to Read</option>
+                    </select>
+                  </div>
 
-                <div class="flex grow flex-col gap-3.5">
-                  <label for="rating" class="block"> Rating </label>
-                  <div class="flex flex-row gap-1">
-                    <Icon
-                      v-for="index in 5"
-                      :key="index"
-                      @click="setScore(index)"
-                      :class="index <= bookmark.score ? 'text-accent-gold-dark' : ''"
-                      name="fluent:star-12-filled"
-                    />
+                  <div class="flex grow flex-col gap-3.5">
+                    <label for="rating" class="block"> Rating </label>
+                    <div class="flex flex-row gap-1">
+                      <Icon
+                        v-for="index in 5"
+                        :key="index"
+                        @click="setScore(index)"
+                        :class="index <= bookmark.score ? 'text-accent-gold-dark' : ''"
+                        name="fluent:star-12-filled"
+                      />
+                    </div>
                   </div>
                 </div>
+                <SmallVerticalSpacer />
               </div>
-              <SmallVerticalSpacer />
             </div>
 
             <VerticalSpacer />
 
             <div v-show="!bookmarkingNovel">
-              <button
-                v-if="!isBookmarked"
-                @click="bookmarkNovel(novel.ID)"
-                class="active:bg-gradient- flex w-min content-center justify-center rounded-full p-3 hover:bg-secondary hover:text-accent-gold-light hover:transition-colors active:bg-primary active:transition-colors"
-              >
-                <Icon name="fluent:bookmark-16-regular" class="text-accent-gold-dark" :size="'1.5em'" />
-              </button>
+              <LoginGuard v-slot="{ handleClick }">
+                <button
+                  v-if="!isBookmarked && novel?.ID"
+                  @click="handleClick($event, () => bookmarkNovel(novel!.ID))"
+                  class="active:bg-gradient- flex w-min content-center justify-center rounded-full p-3 hover:bg-secondary hover:text-accent-gold-light hover:transition-colors active:bg-primary active:transition-colors"
+                >
+                  <Icon name="fluent:bookmark-16-regular" class="text-accent-gold-dark" :size="'1.5em'" />
+                </button>
+              </LoginGuard>
             </div>
             <LoadingIndicator v-show="fetchingChapters" />
             <section v-show="!fetchingChapters">

@@ -49,14 +49,14 @@ export class AuthService {
 
       switch (response.status) {
         case 400:
-          throw new AuthError({
-            type: 'INVALID_CREDENTIALS_ERROR',
+          throw new ProjectError({
+            type: 'VALIDATION_ERROR',
             message: errorMessage,
             cause: response,
           });
         case 401:
           throw new AuthError({
-            type: 'UNAUTHORIZED_ERROR',
+            type: 'INVALID_CREDENTIALS_ERROR',
             message: errorMessage,
             cause: response,
           });
