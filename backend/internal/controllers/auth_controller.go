@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"errors"
+	"log"
 	"net/http"
 	"os"
 	"strconv"
@@ -215,6 +216,7 @@ func (ac *AuthController) VerifyEmail(c *gin.Context) {
 	token := c.Query("token") // Extract the token from query parameters
 
 	if err := ac.UserService.VerifyEmail(token); err != nil {
+		log.Println(err.Error())
 		var userErr *types.MyError
 		if errors.As(err, &userErr) {
 			switch userErr.Code {

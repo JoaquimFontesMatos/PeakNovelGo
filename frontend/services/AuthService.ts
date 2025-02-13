@@ -236,6 +236,82 @@ export class AuthService {
     }
   }
 
+  async verifyToken(token: string): Promise<SuccessServerResponse> {
+    let response;
+    let errorMessage = 'An unexpected error occurred';
+
+    try {
+      response = await fetch(`${this.baseUrl}/auth/verify-email?token=${token}`, {
+        method: 'GET',
+      });
+    } catch (error) {
+      throw new ProjectError({
+        type: 'NETWORK_ERROR',
+        message: 'Network request failed',
+        cause: error,
+      });
+    }
+
+    const parsedResponse = await parseJSONPromise(response);
+
+    if (!response.ok) {
+      try {
+        const validatedResponse: ErrorServerResponse = ErrorServerResponseSchema.parse(parsedResponse);
+        errorMessage = validatedResponse.error;
+      } catch (validationError) {
+        console.log(validationError);
+        // If validation fails, keep the default error message.
+        // Optionally, you could log validationError for debugging.
+      }
+
+      switch (response.status) {
+        case 400:
+          throw new AuthError({
+            type: 'INVALID_CREDENTIALS_ERROR',
+            message: errorMessage,
+            cause: response,
+          });
+        case 401:
+          throw new AuthError({
+            type: 'UNAUTHORIZED_ERROR',
+            message: errorMessage,
+            cause: response,
+          });
+        case 403:
+          throw new UserError({
+            type: 'USER_DEACTIVATED_ERROR',
+            message: errorMessage,
+            cause: response,
+          });
+        case 404:
+          throw new UserError({
+            type: 'USER_NOT_FOUND_ERROR',
+            message: errorMessage,
+            cause: response,
+          });
+        default:
+          throw new ProjectError({
+            type: 'INTERNAL_SERVER_ERROR',
+            message: errorMessage,
+            cause: response,
+          });
+      }
+    }
+
+    try {
+      const validatedSuccessResponse = SuccessServerResponseSchema.parse(parsedResponse);
+
+      return validatedSuccessResponse;
+    } catch (validationError) {
+      console.log(validationError);
+      throw new AuthError({
+        type: 'INVALID_SESSION_DATA',
+        message: 'Received malformed message data',
+        cause: validationError,
+      });
+    }
+  }
+
   async logout(): Promise<SuccessServerResponse> {
     let response;
     let errorMessage = 'An unexpected error occurred';

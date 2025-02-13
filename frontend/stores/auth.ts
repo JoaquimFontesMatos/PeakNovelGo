@@ -27,6 +27,10 @@ export const useAuthStore = defineStore('Auth', () => {
   const loadingLogout: Ref<boolean> = ref<boolean>(false);
   const logoutMessage: Ref<string | null> = ref<string | null>(null);
 
+  // Handling Verify Token Variables
+  const loadingVerifyToken: Ref<boolean> = ref<boolean>(false);
+  const verifyTokenMessage: Ref<string | null> = ref<string | null>(null);
+
   // Function to set the access token and user info
   const setSession = (loginResponse: AuthSession) => {
     accessToken.value = loginResponse.accessToken;
@@ -86,6 +90,21 @@ export const useAuthStore = defineStore('Auth', () => {
       handleError(error, { user: user, accessToken: accessToken, location: 'auth.ts -> refreshAccessToken' });
       clearSession();
       throw error;
+    }
+  };
+
+  const verifyToken = async (token: string): Promise<void> => {
+    loadingVerifyToken.value = true;
+    verifyTokenMessage.value = null;
+    try {
+      const message: SuccessServerResponse = await authService.verifyToken(token);
+      verifyTokenMessage.value = message.message;
+    } catch (error) {
+      handleError(error, { user: user, token: token, location: 'auth.ts -> verifyToken' });
+      clearSession();
+      throw error;
+    } finally {
+      loadingVerifyToken.value = false;
     }
   };
 
@@ -175,12 +194,15 @@ export const useAuthStore = defineStore('Auth', () => {
     loadingSignUp,
     signUpMessage,
     loadingLogout,
+    loadingVerifyToken,
+    verifyTokenMessage,
     initSession,
     login,
     signUp,
     logout,
     refreshAccessToken,
     authorizedFetch,
+    verifyToken,
     clearSession,
     isUserLoggedIn,
   };
