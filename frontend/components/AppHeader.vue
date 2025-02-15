@@ -30,23 +30,23 @@ const toggleMenu = () => {
 };
 
 onMounted(() => {
-  window.addEventListener("scroll", handleScroll);
+  window.addEventListener('scroll', handleScroll);
   handleScroll();
 });
 
 onUnmounted(() => {
-  window.removeEventListener("scroll", handleScroll);
+  window.removeEventListener('scroll', handleScroll);
 });
 
 const { user } = storeToRefs(useAuthStore());
 
-const handleLogout = async() => {
+const handleLogout = async () => {
   await useAuthStore().logout();
-  navigateTo("/");
+  navigateTo('/');
 };
 
 const handleClickHome = () => {
-  navigateTo("/");
+  navigateTo('/');
   isMenuOpen.value = false;
 };
 
@@ -58,7 +58,7 @@ const clickOutside = (event: MouseEvent) => {
   }
 };
 
-watch(isMenuOpen, (val) => {
+watch(isMenuOpen, val => {
   if (val) {
     window.addEventListener('click', clickOutside);
   } else {
@@ -71,50 +71,37 @@ watch(isMenuOpen, (val) => {
   <header
     :class="[
       'transition-all duration-300 fixed z-20 top-0 pl-4 border-b-2 border-accent-gold h-14 flex items-center justify-between w-full',
-      isTop
-      ? 'bg-transparent border-opacity-50'
-      : 'bg-primary bg-opacity-50 backdrop-blur-md', isHeaderVisible || isMenuOpen ? 'opacity-100 translate-y-0 pointer-events-auto'
-      : 'opacity-0 -translate-y-2 pointer-events-none'
+      isTop ? 'bg-transparent border-opacity-50' : 'bg-primary bg-opacity-50 backdrop-blur-md',
+      isHeaderVisible || isMenuOpen ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 -translate-y-2 pointer-events-none',
     ]"
-    style="  will-change: transform, opacity;">
-    <h1 @click="handleClickHome" class="text-2xl font-bold hover:cursor-pointer">PeakNovelGo</h1>
+    style="will-change: transform, opacity"
+  >
+    <div @click="handleClickHome()" class="flex items-center gap-2 cursor-pointer">
+      <img src="/android-chrome-512x512.png" alt="PeakNovelGo Logo" class="w-10 h-10 cursor-pointer hover:scale-105 brightness-105" />
+      <h1 class="text-2xl font-bold hover:cursor-pointer hidden sm:block">PeakNovelGo</h1>
+    </div>
 
     <!-- Desktop Navigation -->
     <div class="hidden md:flex flex-1 justify-end items-center gap-5 pr-4">
       <div class="flex gap-5">
         <NuxtLink class="hover:text-accent-gold hover:underline" to="/novels">Novels</NuxtLink>
-        <NuxtLink v-if="user" class="hover:text-accent-gold hover:underline" to="/settings">
-          Settings
-        </NuxtLink>
+        <NuxtLink v-if="user" class="hover:text-accent-gold hover:underline" to="/settings"> Settings </NuxtLink>
       </div>
 
       <div v-if="!user" class="flex gap-5">
         <NuxtLink class="hover:text-accent-gold hover:underline" to="/auth/login">Login</NuxtLink>
-        <NuxtLink class="hover:text-accent-gold hover:underline" to="/auth/sign-up">
-          Register
-        </NuxtLink>
+        <NuxtLink class="hover:text-accent-gold hover:underline" to="/auth/sign-up"> Register </NuxtLink>
       </div>
       <div v-else class="flex gap-5 items-center">
         <p class="hidden sm:block">Hello, {{ user.username }}</p>
-        <p
-          @click="handleLogout()"
-          class="hover:text-accent-gold hover:underline cursor-pointer"
-        >
-          Logout
-        </p>
+        <p @click="handleLogout()" class="hover:text-accent-gold hover:underline cursor-pointer">Logout</p>
       </div>
     </div>
 
     <!-- Mobile Hamburger -->
-    <button
-      @click="toggleMenu"
-      class="md:hidden p-2 mr-4 focus:outline-none hamburger"
-      aria-label="Toggle menu"
-    >
-      <Icon name="fluent:line-horizontal-3-20-filled" class="w-6 h-6"
-            :class="isMenuOpen ? 'hidden' : 'block'"/>
-      <Icon name="fluent:dismiss-20-filled" class="w-6 h-6"
-            :class="isMenuOpen ? 'block' : 'hidden'"/>
+    <button @click="toggleMenu()" class="md:hidden p-2 mr-4 focus:outline-none hamburger" aria-label="Toggle menu">
+      <Icon name="fluent:line-horizontal-3-20-filled" class="w-6 h-6" :class="isMenuOpen ? 'hidden' : 'block'" />
+      <Icon name="fluent:dismiss-20-filled" class="w-6 h-6" :class="isMenuOpen ? 'block' : 'hidden'" />
     </button>
   </header>
 
@@ -124,47 +111,17 @@ watch(isMenuOpen, (val) => {
     :class="isMenuOpen ? 'translate-x-0' : 'translate-x-full'"
   >
     <div class="flex flex-col p-4 space-y-4">
-      <NuxtLink
-        @click="isMenuOpen = false"
-        class="hover:text-accent-gold hover:underline"
-        to="/novels"
-      >
-        Novels
-      </NuxtLink>
-      <NuxtLink
-        v-if="user"
-        @click="isMenuOpen = false"
-        class="hover:text-accent-gold hover:underline"
-        to="/settings"
-      >
-        Settings
-      </NuxtLink>
+      <NuxtLink @click="isMenuOpen = false" class="hover:text-accent-gold hover:underline" to="/novels"> Novels </NuxtLink>
+      <NuxtLink v-if="user" @click="isMenuOpen = false" class="hover:text-accent-gold hover:underline" to="/settings"> Settings </NuxtLink>
 
       <template v-if="!user">
-        <NuxtLink
-          @click="isMenuOpen = false"
-          class="hover:text-accent-gold hover:underline"
-          to="/auth/login"
-        >
-          Login
-        </NuxtLink>
-        <NuxtLink
-          @click="isMenuOpen = false"
-          class="hover:text-accent-gold hover:underline"
-          to="/auth/sign-up"
-        >
-          Register
-        </NuxtLink>
+        <NuxtLink @click="isMenuOpen = false" class="hover:text-accent-gold hover:underline" to="/auth/login"> Login </NuxtLink>
+        <NuxtLink @click="isMenuOpen = false" class="hover:text-accent-gold hover:underline" to="/auth/sign-up"> Register </NuxtLink>
       </template>
 
       <template v-else>
         <p class="pt-4">Hello, {{ user.username }}</p>
-        <p
-          @click="handleLogout()"
-          class="hover:text-accent-gold hover:underline cursor-pointer"
-        >
-          Logout
-        </p>
+        <p @click="handleLogout()" class="hover:text-accent-gold hover:underline cursor-pointer">Logout</p>
       </template>
     </div>
   </div>

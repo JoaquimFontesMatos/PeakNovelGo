@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import type { PaginatedServerResponse } from "~/models/PaginatedServerResponse";
+import type { PaginatedServerResponse } from "~/schemas/PaginatedServerResponse";
 import NumberedPaginator from "./NumberedPaginator.vue";
-import type { Novel } from "~/schemas/Novel";
+import type { NovelSchema } from "~/schemas/Novel";
 
 defineProps<{
   errorMessage: string | null;
-  paginatedData: PaginatedServerResponse<Novel> | null;
+  paginatedData: PaginatedServerResponse<typeof NovelSchema> | null;
   onPageChange: (newPage: number, limit: number) => Promise<void>;
 }>();
 </script>
