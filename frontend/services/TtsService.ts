@@ -1,16 +1,21 @@
 import { AuthError } from '~/errors/AuthError';
 import { ProjectError } from '~/errors/ProjectError';
+import type { HttpClient } from '~/interfaces/HttpClient';
+import type { ResponseParser } from '~/interfaces/ResponseParser';
+import type { TtsService } from '~/interfaces/services/TtsService';
 import { ErrorServerResponseSchema } from '~/schemas/ErrorServerResponse';
 import { ParagraphsSchema, type Paragraph } from '~/schemas/Paragraph';
 import type { TTSRequest } from '~/schemas/TTSRequest';
 
-export class TtsService {
+export class BaseTtsService implements TtsService {
   private readonly baseUrl: string;
-  private authStore;
+  private readonly httpClient: HttpClient;
+  private readonly responseParser: ResponseParser;
 
-  constructor(baseUrl: string) {
+  constructor(baseUrl: string, httpClient: HttpClient, responseParser: ResponseParser) {
     this.baseUrl = baseUrl;
-    this.authStore = useAuthStore();
+    this.httpClient = httpClient;
+    this.responseParser = responseParser;
   }
 
   async generateTTS(ttsRequest: TTSRequest): Promise<Paragraph[]> {
@@ -18,7 +23,7 @@ export class TtsService {
     let errorMessage = 'An unexpected error occurred';
 
     try {
-      response = await this.authStore.authorizedFetch(this.baseUrl + '/novels/tts', {
+      response = await this.httpClient.authorizedRequest(this.baseUrl + '/novels/tts', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -33,11 +38,11 @@ export class TtsService {
       });
     }
 
-    const parsedResponse = await parseJSONPromise(response);
+    const parsedResponse = await this.responseParser.parseJSON(response);
 
     if (!response.ok) {
       try {
-        const validatedResponse = ErrorServerResponseSchema.parse(parsedResponse);
+        const validatedResponse = this.responseParser.validateSchema(ErrorServerResponseSchema, parsedResponse);
         errorMessage = validatedResponse.error;
       } catch (validationError) {
         console.log(validationError);
@@ -68,7 +73,7 @@ export class TtsService {
     }
 
     try {
-      const validatedParagraphsResponse = ParagraphsSchema.parse(parsedResponse);
+      const validatedParagraphsResponse = this.responseParser.validateSchema(ParagraphsSchema, parsedResponse);
 
       return validatedParagraphsResponse;
     } catch (validationError) {
@@ -85,7 +90,7 @@ export class TtsService {
     let errorMessage = 'An unexpected error occurred';
 
     try {
-      response = await this.authStore.authorizedFetch(this.baseUrl + '/novels/tts/voices', {
+      response = await this.httpClient.authorizedRequest(this.baseUrl + '/novels/tts/voices', {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -99,11 +104,11 @@ export class TtsService {
       });
     }
 
-    const parsedResponse = await parseJSONPromise(response);
+    const parsedResponse = await this.responseParser.parseJSON(response);
 
     if (!response.ok) {
       try {
-        const validatedResponse = ErrorServerResponseSchema.parse(parsedResponse);
+        const validatedResponse = this.responseParser.validateSchema(ErrorServerResponseSchema, parsedResponse);
         errorMessage = validatedResponse.error;
       } catch (validationError) {
         console.log(validationError);
@@ -134,7 +139,7 @@ export class TtsService {
     }
 
     try {
-      const validatedParagraphsResponse = ParagraphsSchema.parse(parsedResponse);
+      const validatedParagraphsResponse = this.responseParser.validateSchema(ParagraphsSchema, parsedResponse);
 
       return validatedParagraphsResponse;
     } catch (validationError) {

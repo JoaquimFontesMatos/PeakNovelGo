@@ -1,14 +1,24 @@
 import { AuthError } from '~/errors/AuthError';
+import type { ErrorHandler } from '~/interfaces/ErrorHandler';
+import type { HttpClient } from '~/interfaces/HttpClient';
+import type { ResponseParser } from '~/interfaces/ResponseParser';
+import type { TtsService } from '~/interfaces/services/TtsService';
 import type { Paragraph } from '~/schemas/Paragraph';
 import type { TTSRequest } from '~/schemas/TTSRequest';
-import { TtsService } from '~/services/TtsService';
+import { BaseTtsService } from '~/services/TtsService';
 
 export const useTTSStore = defineStore('TTS', () => {
   const authStore = useAuthStore();
   const runtimeConfig = useRuntimeConfig();
   const url: string = runtimeConfig.public.apiUrl;
 
-  const ttsService: TtsService = new TtsService(url);
+  // Initialize tts service
+  const httpClient: HttpClient = new FetchHttpClient();
+  const responseParser: ResponseParser = new ZodResponseParser();
+  const ttsService: TtsService = new BaseTtsService(url, httpClient, responseParser);
+
+  // Initialize error handler
+  const errorHandler: ErrorHandler = new BaseErrorHandler();
 
   const { user } = storeToRefs(authStore);
 
@@ -55,7 +65,7 @@ export const useTTSStore = defineStore('TTS', () => {
 
       paragraphs.value = await ttsService.generateTTS(ttsRequest);
     } catch (error) {
-      handleError(error, { user: user, ttsRequest: ttsRequest, location: 'tts.ts -> generateTTS' });
+      errorHandler.handleError(error, { user: user, ttsRequest: ttsRequest, location: 'tts.ts -> generateTTS' });
       throw error;
     } finally {
       fetchingTTS.value = false;
@@ -77,7 +87,7 @@ export const useTTSStore = defineStore('TTS', () => {
       const voices = await ttsService.fetchTTSVoices();
       console.log(voices);
     } catch (error) {
-      handleError(error, { user: user, location: 'tts.ts -> fetchTTSVoices' });
+      errorHandler.handleError(error, { user: user, location: 'tts.ts -> fetchTTSVoices' });
       throw error;
     } finally {
       fetchingTTS.value = false;

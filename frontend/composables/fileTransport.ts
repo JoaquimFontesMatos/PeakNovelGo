@@ -1,6 +1,7 @@
+import type { FileTransport } from '~/interfaces/FileTransport';
 import type { LogEntry } from '~/schemas/LogEntry';
 
-export class FileTransport {
+export class BaseFileTransport implements FileTransport {
   private url: string;
 
   constructor(url: string) {

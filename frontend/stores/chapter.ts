@@ -1,12 +1,22 @@
+import type { ErrorHandler } from '~/interfaces/ErrorHandler';
+import type { HttpClient } from '~/interfaces/HttpClient';
+import type { ResponseParser } from '~/interfaces/ResponseParser';
+import type { ChapterService } from '~/interfaces/services/ChapterService';
 import type { Chapter, ChapterSchema } from '~/schemas/Chapter';
 import type { PaginatedServerResponse } from '~/schemas/PaginatedServerResponse';
-import { ChapterService } from '~/services/ChapterService';
+import { BaseChapterService } from '~/services/ChapterService';
 
 export const useChapterStore = defineStore('Chapter', () => {
   const runtimeConfig = useRuntimeConfig();
   const url = runtimeConfig.public.apiUrl;
 
-  const chapterService = new ChapterService(url);
+  // Initialize chapter service
+  const httpClient: HttpClient = new FetchHttpClient();
+  const responseParser: ResponseParser = new ZodResponseParser();
+  const chapterService: ChapterService = new BaseChapterService(url, httpClient, responseParser);
+
+  // Initialize error handler
+  const errorHandler: ErrorHandler = new BaseErrorHandler();
 
   const paginatedChapterData = shallowRef<PaginatedServerResponse<typeof ChapterSchema> | null>(null);
   const chapter: Ref<Chapter | null> = ref<Chapter | null>(null);
@@ -18,7 +28,7 @@ export const useChapterStore = defineStore('Chapter', () => {
     try {
       chapter.value = await chapterService.fetchChapter(novelUpdatesId, chaptNo);
     } catch (error) {
-      handleError(error, { novelUpdatesId: novelUpdatesId, chapterNo: chaptNo, location: 'chapter.ts -> fetchChapter' });
+      errorHandler.handleError(error, { novelUpdatesId: novelUpdatesId, chapterNo: chaptNo, location: 'chapter.ts -> fetchChapter' });
       chapter.value = null;
       throw error;
     } finally {
@@ -32,7 +42,7 @@ export const useChapterStore = defineStore('Chapter', () => {
     try {
       paginatedChapterData.value = await chapterService.fetchChapters(novelUpdatesId, page, limit);
     } catch (error) {
-      handleError(error, { novelUpdatesId: novelUpdatesId, page: page, limit: limit, location: 'chapter.ts -> fetchChapters' });
+      errorHandler.handleError(error, { novelUpdatesId: novelUpdatesId, page: page, limit: limit, location: 'chapter.ts -> fetchChapters' });
       paginatedChapterData.value = null;
       throw error;
     } finally {

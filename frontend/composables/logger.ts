@@ -1,6 +1,7 @@
+import type { Logger } from '~/interfaces/Logger';
 import type { LogEntry, LogLevel } from '~/schemas/LogEntry';
 
-export class Logger {
+export class BaseLogger implements Logger {
   private transports: Array<(entry: LogEntry) => void> = [];
 
   private readonly levelPriority: Record<LogLevel, number> = {

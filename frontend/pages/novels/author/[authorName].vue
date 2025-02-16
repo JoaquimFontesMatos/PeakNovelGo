@@ -1,5 +1,5 @@
 <script setup lang="ts">
-const { authorName } = useRoute().params;
+const { authorName } = useRoute().params as { authorName: string };
 const currentPage = ref(1);
 const currentLimit = ref(10);
 

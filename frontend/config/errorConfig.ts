@@ -1,6 +1,6 @@
-import { ErrorBase, type ErrorNames } from '../ErrorBase';
 import type { ToastIcon, ToastType } from '~/schemas/Toast';
 import { logger } from '~/config';
+import type { ErrorBase, ErrorNames } from '~/errors/ErrorBase';
 
 // Define a structured type-safe configuration
 type ErrorConfig = {

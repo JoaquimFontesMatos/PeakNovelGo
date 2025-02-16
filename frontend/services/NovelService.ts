@@ -1,14 +1,21 @@
 import { NovelError } from '~/errors/NovelError';
 import { ProjectError } from '~/errors/ProjectError';
+import type { HttpClient } from '~/interfaces/HttpClient';
+import type { ResponseParser } from '~/interfaces/ResponseParser';
+import type { NovelService } from '~/interfaces/services/NovelService';
 import { ErrorServerResponseSchema } from '~/schemas/ErrorServerResponse';
 import { NovelSchema, PaginatedNovelsSchema, type Novel } from '~/schemas/Novel';
 import type { PaginatedServerResponse } from '~/schemas/PaginatedServerResponse';
 
-export class NovelService {
+export class BaseNovelService implements NovelService {
   private readonly baseUrl: string;
+  private readonly httpClient: HttpClient;
+  private readonly responseParser: ResponseParser;
 
-  constructor(baseUrl: string) {
+  constructor(baseUrl: string, httpClient: HttpClient, responseParser: ResponseParser) {
     this.baseUrl = baseUrl;
+    this.httpClient = httpClient;
+    this.responseParser = responseParser;
   }
 
   async fetchNovel(novelUpdatesId: string): Promise<Novel> {
@@ -16,7 +23,7 @@ export class NovelService {
     let errorMessage = 'An unexpected error occurred';
 
     try {
-      response = await fetch(this.baseUrl + '/novels/title/' + novelUpdatesId, {
+      response = await this.httpClient.request(this.baseUrl + '/novels/title/' + novelUpdatesId, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -30,11 +37,11 @@ export class NovelService {
       });
     }
 
-    const parsedResponse = await parseJSONPromise(response);
+    const parsedResponse = await this.responseParser.parseJSON(response);
 
     if (!response.ok) {
       try {
-        const validatedResponse = ErrorServerResponseSchema.parse(parsedResponse);
+        const validatedResponse = this.responseParser.validateSchema(ErrorServerResponseSchema, parsedResponse);
         errorMessage = validatedResponse.error;
       } catch (validationError) {
         console.log(validationError);
@@ -65,7 +72,7 @@ export class NovelService {
     }
 
     try {
-      const successResponse = NovelSchema.parse(parsedResponse);
+      const successResponse = this.responseParser.validateSchema(NovelSchema, parsedResponse);
 
       return successResponse;
     } catch (validationError) {
@@ -82,7 +89,7 @@ export class NovelService {
     let errorMessage = 'An unexpected error occurred';
 
     try {
-      response = await fetch(this.baseUrl + '/novels/?page=' + page + '&limit=' + limit, {
+      response = await this.httpClient.request(this.baseUrl + '/novels/?page=' + page + '&limit=' + limit, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -96,11 +103,11 @@ export class NovelService {
       });
     }
 
-    const parsedResponse = await parseJSONPromise(response);
+    const parsedResponse = await this.responseParser.parseJSON(response);
 
     if (!response.ok) {
       try {
-        const validatedResponse = ErrorServerResponseSchema.parse(parsedResponse);
+        const validatedResponse = this.responseParser.validateSchema(ErrorServerResponseSchema, parsedResponse);
         errorMessage = validatedResponse.error;
       } catch (validationError) {
         console.log(validationError);
@@ -131,7 +138,7 @@ export class NovelService {
     }
 
     try {
-      const successResponse = PaginatedNovelsSchema.parse(parsedResponse);
+      const successResponse = this.responseParser.validateSchema(PaginatedNovelsSchema, parsedResponse);
 
       return successResponse;
     } catch (validationError) {
@@ -148,7 +155,7 @@ export class NovelService {
     let errorMessage = 'An unexpected error occurred';
 
     try {
-      response = await fetch(this.baseUrl + '/novels/tags/' + tag + '/?page=' + page + '&limit=' + limit, {
+      response = await this.httpClient.request(this.baseUrl + '/novels/tags/' + tag + '/?page=' + page + '&limit=' + limit, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -162,7 +169,7 @@ export class NovelService {
       });
     }
 
-    const parsedResponse = await parseJSONPromise(response);
+    const parsedResponse = await this.responseParser.parseJSON(response);
 
     if (!response.ok) {
       try {
@@ -197,7 +204,7 @@ export class NovelService {
     }
 
     try {
-      const successResponse = PaginatedNovelsSchema.parse(parsedResponse);
+      const successResponse = this.responseParser.validateSchema(PaginatedNovelsSchema, parsedResponse);
 
       return successResponse;
     } catch (validationError) {
@@ -214,7 +221,7 @@ export class NovelService {
     let errorMessage = 'An unexpected error occurred';
 
     try {
-      response = await fetch(this.baseUrl + '/novels/genres/' + genre + '/?page=' + page + '&limit=' + limit, {
+      response = await this.httpClient.request(this.baseUrl + '/novels/genres/' + genre + '/?page=' + page + '&limit=' + limit, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -228,7 +235,7 @@ export class NovelService {
       });
     }
 
-    const parsedResponse = await parseJSONPromise(response);
+    const parsedResponse = await this.responseParser.parseJSON(response);
 
     if (!response.ok) {
       try {
@@ -263,7 +270,7 @@ export class NovelService {
     }
 
     try {
-      const successResponse = PaginatedNovelsSchema.parse(parsedResponse);
+      const successResponse = this.responseParser.validateSchema(PaginatedNovelsSchema, parsedResponse);
 
       return successResponse;
     } catch (validationError) {
@@ -294,7 +301,7 @@ export class NovelService {
       });
     }
 
-    const parsedResponse = await parseJSONPromise(response);
+    const parsedResponse = await this.responseParser.parseJSON(response);
 
     if (!response.ok) {
       try {
@@ -329,7 +336,7 @@ export class NovelService {
     }
 
     try {
-      const successResponse = PaginatedNovelsSchema.parse(parsedResponse);
+      const successResponse = this.responseParser.validateSchema(PaginatedNovelsSchema, parsedResponse);
 
       return successResponse;
     } catch (validationError) {

@@ -1,35 +1,32 @@
 import type { LoginForm, SignUpForm } from '~/schemas/Forms';
-import { AuthService } from '~/services/AuthService';
 import type { SuccessServerResponse } from '~/schemas/SuccessServerResponse';
 import type { AuthSession } from '~/schemas/AuthSession';
 import type { User } from '~/schemas/User';
+import type { ErrorHandler } from '~/interfaces/ErrorHandler';
+import type { AuthService } from '~/interfaces/services/AuthService';
 
 export const useAuthStore = defineStore('Auth', () => {
-  // fetch the base url from the nuxt config
-  const runtimeConfig = useRuntimeConfig();
-  const url: string = runtimeConfig.public.apiUrl;
-
-  // Initialize auth service
-  const authService: AuthService = new AuthService(url);
+  // Inject dependencies using Nuxt's DI system
+  const { $authService: AuthService, $errorHandler: ErrorHandler } = useNuxtApp();
 
   // Auth Session Info
-  const user: Ref<User | null> = ref<User | null>(null);
-  const accessToken: Ref<string | null> = ref<string | null>(null);
+  const user = useState<User | null>('user', () => null);
+  const accessToken = useState<string | null>('accessToken', () => null);
 
   // Handling Login Variables
-  const loadingLogin: Ref<boolean> = ref<boolean>(false);
+  const loadingLogin = useState<boolean>('loadingLogin', () => false);
 
   // Handling Sign Up Variables
-  const loadingSignUp: Ref<boolean> = ref<boolean>(false);
-  const signUpMessage: Ref<string | null> = ref<string | null>(null);
+  const loadingSignUp = useState<boolean>('loadingSignUp', () => false);
+  const signUpMessage = useState<string | null>('signUpMessage', () => null);
 
   // Handling Logout Variables
-  const loadingLogout: Ref<boolean> = ref<boolean>(false);
+  const loadingLogout = useState<boolean>('loadingLogout', () => false);
   const logoutMessage: Ref<string | null> = ref<string | null>(null);
 
   // Handling Verify Token Variables
-  const loadingVerifyToken: Ref<boolean> = ref<boolean>(false);
-  const verifyTokenMessage: Ref<string | null> = ref<string | null>(null);
+  const loadingVerifyToken = useState<boolean>('loadingVerifyToken', () => false);
+  const verifyTokenMessage = useState<string | null>('verifyTokenMessage', () => null);
 
   // Function to set the access token and user info
   const setSession = (loginResponse: AuthSession) => {
@@ -61,11 +58,11 @@ export const useAuthStore = defineStore('Auth', () => {
     loadingLogin.value = true;
 
     try {
-      const loginResponse: AuthSession = await authService.login(form);
+      const loginResponse: AuthSession = await $authService.login(form);
 
       setSession(loginResponse);
     } catch (error) {
-      handleError(error, { userEmail: form.email, location: 'auth.ts -> login' });
+      $errorHandler.handleError(error, { userEmail: form.email, location: 'auth.ts -> login' });
       clearSession();
       throw error;
     } finally {
@@ -81,13 +78,13 @@ export const useAuthStore = defineStore('Auth', () => {
 
   const refreshAccessToken = async (): Promise<void> => {
     try {
-      const loginResponse: AuthSession = await authService.refreshAccessToken();
+      const loginResponse: AuthSession = await $authService.refreshAccessToken();
 
       setSession(loginResponse);
 
       scheduleTokenRefresh(15 * 60 * 1000);
     } catch (error) {
-      handleError(error, { user: user, accessToken: accessToken, location: 'auth.ts -> refreshAccessToken' });
+      $errorHandler.handleError(error, { user: user, accessToken: accessToken, location: 'auth.ts -> refreshAccessToken' });
       clearSession();
       throw error;
     }
@@ -97,10 +94,10 @@ export const useAuthStore = defineStore('Auth', () => {
     loadingVerifyToken.value = true;
     verifyTokenMessage.value = null;
     try {
-      const message: SuccessServerResponse = await authService.verifyToken(token);
+      const message: SuccessServerResponse = await $authService.verifyToken(token);
       verifyTokenMessage.value = message.message;
     } catch (error) {
-      handleError(error, { user: user, token: token, location: 'auth.ts -> verifyToken' });
+      $errorHandler.handleError(error, { user: user, token: token, location: 'auth.ts -> verifyToken' });
       clearSession();
       throw error;
     } finally {
@@ -108,47 +105,15 @@ export const useAuthStore = defineStore('Auth', () => {
     }
   };
 
-  // Attach the access token to every request
-  const authorizedFetch = async (input: RequestInfo, init: RequestInit = {}) => {
-    if (!accessToken.value) {
-      await refreshAccessToken();
-    }
-
-    let response = await fetch(input, {
-      ...init,
-      headers: {
-        ...init.headers,
-        Authorization: `Bearer ${accessToken.value}`,
-      },
-    });
-
-    // If unauthorized, try refreshing the token and retrying
-    if (response.status === 401) {
-      await refreshAccessToken();
-
-      if (accessToken.value) {
-        response = await fetch(input, {
-          ...init,
-          headers: {
-            ...init.headers,
-            Authorization: `Bearer ${accessToken.value}`,
-          },
-        });
-      }
-    }
-
-    return response;
-  };
-
   const signUp = async (form: SignUpForm): Promise<void> => {
     loadingSignUp.value = true;
     signUpMessage.value = null;
 
     try {
-      const successServerResponse: SuccessServerResponse = await authService.signUp(form);
+      const successServerResponse: SuccessServerResponse = await $authService.signUp(form);
       signUpMessage.value = successServerResponse.message;
     } catch (error) {
-      handleError(error, { user: user, location: 'auth.ts -> signUp' });
+      $errorHandler.handleError(error, { user: user, location: 'auth.ts -> signUp' });
       throw error;
     } finally {
       loadingSignUp.value = false;
@@ -160,12 +125,12 @@ export const useAuthStore = defineStore('Auth', () => {
     loadingLogout.value = true;
 
     try {
-      const successServerResponse: SuccessServerResponse = await authService.logout();
+      const successServerResponse: SuccessServerResponse = await $authService.logout();
       logoutMessage.value = successServerResponse.message;
 
       clearSession();
     } catch (error) {
-      handleError(error, { user: user, accessToken: accessToken, location: 'auth.ts -> logout' });
+      $errorHandler.handleError(error, { user: user, accessToken: accessToken, location: 'auth.ts -> logout' });
       throw error;
     } finally {
       loadingLogout.value = false;
@@ -201,7 +166,6 @@ export const useAuthStore = defineStore('Auth', () => {
     signUp,
     logout,
     refreshAccessToken,
-    authorizedFetch,
     verifyToken,
     clearSession,
     isUserLoggedIn,

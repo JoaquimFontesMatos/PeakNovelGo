@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { useScroll } from '@vueuse/core';
 
-const { novelTitle, chapterNo } = useRoute().params;
+const { novelTitle, chapterNo } = useRoute().params as { novelTitle: string; chapterNo: string };
+
+const textUtils = new BaseTextUtils();
 
 const chapterStore = useChapterStore();
 const ttsStore = useTTSStore();
@@ -127,7 +129,7 @@ const scrollProgress = computed(() => {
           </div>
           <p
             :class="user ? user.readingPreferences.font : ''"
-            v-html="user && user.readingPreferences.atomicReading ? convertLineBreaksToHtml(toBionicText(chapter.body)) : convertLineBreaksToHtml(chapter.body)"
+            v-html="user && user.readingPreferences.atomicReading ? textUtils.convertLineBreaksToHtml(textUtils.toBionicText(chapter.body)) : textUtils.convertLineBreaksToHtml(chapter.body)"
           />
         </div>
 

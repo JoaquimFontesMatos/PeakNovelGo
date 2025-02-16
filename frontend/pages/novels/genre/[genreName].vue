@@ -1,5 +1,5 @@
 <script setup lang="ts">
-const { genreName } = useRoute().params;
+const { genreName } = useRoute().params as { genreName: string };
 const currentPage = ref(1);
 const currentLimit = ref(10);
 

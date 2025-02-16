@@ -1,5 +1,5 @@
 <script setup lang="ts">
-const { tagName } = useRoute().params;
+const { tagName } = useRoute().params as { tagName: string };
 const currentPage = ref(1);
 const currentLimit = ref(10);
 

@@ -1,6 +1,10 @@
-import { UserService } from '~/services/UserService';
 import type { SuccessServerResponse } from '~/schemas/SuccessServerResponse';
 import { AuthError } from '~/errors/AuthError';
+import type { ErrorHandler } from '~/interfaces/ErrorHandler';
+import type { HttpClient } from '~/interfaces/HttpClient';
+import type { ResponseParser } from '~/interfaces/ResponseParser';
+import { BaseUserService } from '~/services/UserService';
+import type { UserService } from '~/interfaces/services/UserService';
 
 export const useUserStore = defineStore('User', () => {
   const authStore = useAuthStore();
@@ -10,7 +14,12 @@ export const useUserStore = defineStore('User', () => {
   const { user } = storeToRefs(authStore);
 
   // Initialize user service
-  const userService: UserService = new UserService(url);
+  const httpClient: HttpClient = new FetchHttpClient();
+  const responseParser: ResponseParser = new ZodResponseParser();
+  const userService: UserService = new BaseUserService(url, httpClient, responseParser);
+
+  // Initialize error handler
+  const errorHandler: ErrorHandler = new BaseErrorHandler();
 
   // Handling update user Variables
   const updatingUser: Ref<boolean> = ref<boolean>(false);
@@ -44,7 +53,7 @@ export const useUserStore = defineStore('User', () => {
 
       updateMessage.value = serverResponse.message;
     } catch (error) {
-      handleError(error, { user: user, fields: fields, location: 'user.ts -> updateUserFields' });
+      errorHandler.handleError(error, { user: user, fields: fields, location: 'user.ts -> updateUserFields' });
       throw error;
     } finally {
       updatingUser.value = false;
@@ -68,7 +77,7 @@ export const useUserStore = defineStore('User', () => {
 
       deleteMessage.value = serverResponse.message;
     } catch (error) {
-      handleError(error, { user: user, location: 'user.ts -> deleteUser' });
+      errorHandler.handleError(error, { user: user, location: 'user.ts -> deleteUser' });
       authStore.clearSession();
 
       throw error;

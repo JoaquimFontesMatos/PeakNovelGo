@@ -1,14 +1,21 @@
 import { ChapterError } from '~/errors/ChapterError';
 import { ProjectError } from '~/errors/ProjectError';
+import type { HttpClient } from '~/interfaces/HttpClient';
+import type { ResponseParser } from '~/interfaces/ResponseParser';
+import type { ChapterService } from '~/interfaces/services/ChapterService';
 import { ChapterSchema, PaginatedChaptersSchema, type Chapter } from '~/schemas/Chapter';
 import { ErrorServerResponseSchema } from '~/schemas/ErrorServerResponse';
 import type { PaginatedServerResponse } from '~/schemas/PaginatedServerResponse';
 
-export class ChapterService {
+export class BaseChapterService implements ChapterService {
   private readonly baseUrl: string;
+  private readonly httpClient;
+  private readonly responseParser;
 
-  constructor(baseUrl: string) {
+  constructor(baseUrl: string, httpClient: HttpClient, responseParser: ResponseParser) {
     this.baseUrl = baseUrl;
+    this.httpClient = httpClient;
+    this.responseParser = responseParser;
   }
 
   async fetchChapter(novelUpdatesId: string, chaptNo: number): Promise<Chapter> {
@@ -16,7 +23,7 @@ export class ChapterService {
     let errorMessage = 'An unexpected error occurred';
 
     try {
-      response = await fetch(this.baseUrl + '/novels/chapters/novel/' + novelUpdatesId + '/chapter/' + chaptNo, {
+      response = await this.httpClient.request(this.baseUrl + '/novels/chapters/novel/' + novelUpdatesId + '/chapter/' + chaptNo, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -30,11 +37,11 @@ export class ChapterService {
       });
     }
 
-    const parsedResponse = await parseJSONPromise(response);
+    const parsedResponse = await this.responseParser.parseJSON(response);
 
     if (!response.ok) {
       try {
-        const validatedResponse = ErrorServerResponseSchema.parse(parsedResponse);
+        const validatedResponse = this.responseParser.validateSchema(ErrorServerResponseSchema, parsedResponse);
         errorMessage = validatedResponse.error;
       } catch (validationError) {
         console.log(validationError);
@@ -65,7 +72,7 @@ export class ChapterService {
     }
 
     try {
-      const successResponse = ChapterSchema.parse(parsedResponse);
+      const successResponse = this.responseParser.validateSchema(ChapterSchema, parsedResponse);
 
       return successResponse;
     } catch (validationError) {
@@ -82,7 +89,7 @@ export class ChapterService {
     let errorMessage = 'An unexpected error occurred';
 
     try {
-      response = await fetch(this.baseUrl + '/novels/chapters/novel/' + novelUpdatesId + '/chapters/?page=' + page + '&limit=' + limit, {
+      response = await this.httpClient.request(this.baseUrl + '/novels/chapters/novel/' + novelUpdatesId + '/chapters/?page=' + page + '&limit=' + limit, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -96,11 +103,11 @@ export class ChapterService {
       });
     }
 
-    const parsedResponse = await parseJSONPromise(response);
+    const parsedResponse = await this.responseParser.parseJSON(response);
 
     if (!response.ok) {
       try {
-        const validatedResponse = ErrorServerResponseSchema.parse(parsedResponse);
+        const validatedResponse = this.responseParser.validateSchema(ErrorServerResponseSchema, parsedResponse);
         errorMessage = validatedResponse.error;
       } catch (validationError) {
         console.log(validationError);
@@ -131,7 +138,7 @@ export class ChapterService {
     }
 
     try {
-      const successResponse = PaginatedChaptersSchema.parse(parsedResponse);
+      const successResponse = this.responseParser.validateSchema(PaginatedChaptersSchema, parsedResponse);
 
       return successResponse;
     } catch (validationError) {

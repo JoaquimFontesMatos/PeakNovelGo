@@ -1,12 +1,22 @@
+import type { ErrorHandler } from '~/interfaces/ErrorHandler';
+import type { HttpClient } from '~/interfaces/HttpClient';
+import type { ResponseParser } from '~/interfaces/ResponseParser';
+import type { NovelService } from '~/interfaces/services/NovelService';
 import type { Novel, NovelSchema } from '~/schemas/Novel';
 import type { PaginatedServerResponse } from '~/schemas/PaginatedServerResponse';
-import { NovelService } from '~/services/NovelService';
+import { BaseNovelService } from '~/services/NovelService';
 
 export const useNovelStore = defineStore('Novel', () => {
   const runtimeConfig = useRuntimeConfig();
   const url = runtimeConfig.public.apiUrl;
 
-  const novelService = new NovelService(url);
+  // Initialize novel service
+  const httpClient: HttpClient = new FetchHttpClient();
+  const responseParser: ResponseParser = new ZodResponseParser();
+  const novelService: NovelService = new BaseNovelService(url, httpClient, responseParser);
+
+  // Initialize error handler
+  const errorHandler: ErrorHandler = new BaseErrorHandler();
 
   const novel = shallowRef<Novel | null>(null);
   const fetchingNovel = ref(true);
@@ -25,7 +35,7 @@ export const useNovelStore = defineStore('Novel', () => {
     try {
       novel.value = await novelService.fetchNovel(novelUpdatesId);
     } catch (error) {
-      handleError(error, { novelUpdatesId: novelUpdatesId, location: 'novel.ts -> fetchNovel' });
+      errorHandler.handleError(error, { novelUpdatesId: novelUpdatesId, location: 'novel.ts -> fetchNovel' });
       novel.value = null;
       throw error;
     } finally {
@@ -39,7 +49,7 @@ export const useNovelStore = defineStore('Novel', () => {
     try {
       paginatedNovelsData.value = await novelService.fetchNovels(page, limit);
     } catch (error) {
-      handleError(error, { page: page, limit: limit, location: 'novel.ts -> fetchNovels' });
+      errorHandler.handleError(error, { page: page, limit: limit, location: 'novel.ts -> fetchNovels' });
       paginatedNovelsData.value = null;
       throw error;
     } finally {
@@ -53,7 +63,7 @@ export const useNovelStore = defineStore('Novel', () => {
     try {
       paginatedNovelsDataByTag.value = await novelService.fetchNovelsByTag(tag, page, limit);
     } catch (error) {
-      handleError(error, { tag: tag, page: page, limit: limit, location: 'novel.ts -> fetchNovelsByTag' });
+      errorHandler.handleError(error, { tag: tag, page: page, limit: limit, location: 'novel.ts -> fetchNovelsByTag' });
       paginatedNovelsDataByTag.value = null;
       throw error;
     } finally {
@@ -67,7 +77,7 @@ export const useNovelStore = defineStore('Novel', () => {
     try {
       paginatedNovelsDataByAuthor.value = await novelService.fetchNovelsByAuthor(author, page, limit);
     } catch (error) {
-      handleError(error, { author: author, page: page, limit: limit, location: 'novel.ts -> fetchNovelsByAuthor' });
+      errorHandler.handleError(error, { author: author, page: page, limit: limit, location: 'novel.ts -> fetchNovelsByAuthor' });
       paginatedNovelsDataByAuthor.value = null;
       throw error;
     } finally {
@@ -81,7 +91,7 @@ export const useNovelStore = defineStore('Novel', () => {
     try {
       paginatedNovelsDataByGenre.value = await novelService.fetchNovelsByGenre(genre, page, limit);
     } catch (error) {
-      handleError(error, { genre: genre, page: page, limit: limit, location: 'novel.ts -> fetchNovelsByGenre' });
+      errorHandler.handleError(error, { genre: genre, page: page, limit: limit, location: 'novel.ts -> fetchNovelsByGenre' });
       paginatedNovelsDataByGenre.value = null;
       throw error;
     } finally {

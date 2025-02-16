@@ -1,17 +1,23 @@
 import type { LoginForm, SignUpForm } from '~/schemas/Forms';
 import { AuthError } from '~/errors/AuthError';
 import { ProjectError } from '~/errors/ProjectError';
-import { parseJSONPromise } from '~/utils/JsonParser';
 import { type AuthSession, AuthSessionSchema } from '~/schemas/AuthSession';
 import { type ErrorServerResponse, ErrorServerResponseSchema } from '~/schemas/ErrorServerResponse';
 import { UserError } from '~/errors/UserError';
 import { type SuccessServerResponse, SuccessServerResponseSchema } from '~/schemas/SuccessServerResponse';
+import type { HttpClient } from '~/interfaces/HttpClient';
+import type { ResponseParser } from '~/interfaces/ResponseParser';
+import type { AuthService } from '~/interfaces/services/AuthService';
 
-export class AuthService {
+export class BaseAuthService implements AuthService {
   private readonly baseUrl: string;
+  private readonly httpClient: HttpClient;
+  private readonly responseParser: ResponseParser;
 
-  constructor(baseUrl: string) {
+  constructor(baseUrl: string, httpClient: HttpClient, responseParser: ResponseParser) {
     this.baseUrl = baseUrl;
+    this.httpClient = httpClient;
+    this.responseParser = responseParser;
   }
 
   async login(form: LoginForm): Promise<AuthSession> {
@@ -19,7 +25,7 @@ export class AuthService {
     let errorMessage = 'An unexpected error occurred';
 
     try {
-      response = await fetch(`${this.baseUrl}/auth/login`, {
+      response = await this.httpClient.request(`${this.baseUrl}/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -35,11 +41,11 @@ export class AuthService {
       });
     }
 
-    const parsedResponse = await parseJSONPromise(response);
+    const parsedResponse = await this.responseParser.parseJSON(response);
 
     if (!response.ok) {
       try {
-        const validatedResponse = ErrorServerResponseSchema.parse(parsedResponse);
+        const validatedResponse = this.responseParser.validateSchema(ErrorServerResponseSchema, parsedResponse);
         errorMessage = validatedResponse.error;
       } catch (validationError) {
         console.log(validationError);
@@ -70,7 +76,7 @@ export class AuthService {
     }
 
     try {
-      const validatedAuthSessionResponse = AuthSessionSchema.parse(parsedResponse);
+      const validatedAuthSessionResponse = this.responseParser.validateSchema(AuthSessionSchema, parsedResponse);
 
       return validatedAuthSessionResponse;
     } catch (validationError) {
@@ -96,7 +102,7 @@ export class AuthService {
     };
 
     try {
-      response = await fetch(`${this.baseUrl}/auth/register`, {
+      response = await this.httpClient.request(`${this.baseUrl}/auth/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -111,11 +117,11 @@ export class AuthService {
       });
     }
 
-    const parsedResponse = await parseJSONPromise(response);
+    const parsedResponse = await this.responseParser.parseJSON(response);
 
     if (!response.ok) {
       try {
-        const validatedResponse: ErrorServerResponse = ErrorServerResponseSchema.parse(parsedResponse);
+        const validatedResponse: ErrorServerResponse = this.responseParser.validateSchema(ErrorServerResponseSchema, parsedResponse);
         errorMessage = validatedResponse.error;
       } catch (validationError) {
         console.log(validationError);
@@ -146,7 +152,7 @@ export class AuthService {
     }
 
     try {
-      const validatedResponse: SuccessServerResponse = SuccessServerResponseSchema.parse(parsedResponse);
+      const validatedResponse: SuccessServerResponse = this.responseParser.validateSchema(SuccessServerResponseSchema, parsedResponse);
 
       return validatedResponse as SuccessServerResponse;
     } catch (validationError) {
@@ -164,7 +170,7 @@ export class AuthService {
     let errorMessage = 'An unexpected error occurred';
 
     try {
-      response = await fetch(`${this.baseUrl}/auth/refresh-token`, {
+      response = await this.httpClient.request(`${this.baseUrl}/auth/refresh-token`, {
         method: 'POST',
         credentials: 'include',
       });
@@ -176,11 +182,11 @@ export class AuthService {
       });
     }
 
-    const parsedResponse = await parseJSONPromise(response);
+    const parsedResponse = await this.responseParser.parseJSON(response);
 
     if (!response.ok) {
       try {
-        const validatedResponse: ErrorServerResponse = ErrorServerResponseSchema.parse(parsedResponse);
+        const validatedResponse: ErrorServerResponse = this.responseParser.validateSchema(ErrorServerResponseSchema, parsedResponse);
         errorMessage = validatedResponse.error;
       } catch (validationError) {
         console.log(validationError);
@@ -223,7 +229,7 @@ export class AuthService {
     }
 
     try {
-      const validatedAuthSessionResponse = AuthSessionSchema.parse(parsedResponse);
+      const validatedAuthSessionResponse = this.responseParser.validateSchema(AuthSessionSchema, parsedResponse);
 
       return validatedAuthSessionResponse as AuthSession;
     } catch (validationError) {
@@ -241,7 +247,7 @@ export class AuthService {
     let errorMessage = 'An unexpected error occurred';
 
     try {
-      response = await fetch(`${this.baseUrl}/auth/verify-email?token=${token}`, {
+      response = await this.httpClient.request(`${this.baseUrl}/auth/verify-email?token=${token}`, {
         method: 'GET',
       });
     } catch (error) {
@@ -252,11 +258,11 @@ export class AuthService {
       });
     }
 
-    const parsedResponse = await parseJSONPromise(response);
+    const parsedResponse = await this.responseParser.parseJSON(response);
 
     if (!response.ok) {
       try {
-        const validatedResponse: ErrorServerResponse = ErrorServerResponseSchema.parse(parsedResponse);
+        const validatedResponse: ErrorServerResponse = this.responseParser.validateSchema(ErrorServerResponseSchema, parsedResponse);
         errorMessage = validatedResponse.error;
       } catch (validationError) {
         console.log(validationError);
@@ -299,7 +305,7 @@ export class AuthService {
     }
 
     try {
-      const validatedSuccessResponse = SuccessServerResponseSchema.parse(parsedResponse);
+      const validatedSuccessResponse = this.responseParser.validateSchema(SuccessServerResponseSchema, parsedResponse);
 
       return validatedSuccessResponse;
     } catch (validationError) {
@@ -317,7 +323,7 @@ export class AuthService {
     let errorMessage = 'An unexpected error occurred';
 
     try {
-      response = await fetch(`${this.baseUrl}/auth/logout`, {
+      response = await this.httpClient.request(`${this.baseUrl}/auth/logout`, {
         method: 'POST',
         credentials: 'include',
       });
@@ -329,11 +335,11 @@ export class AuthService {
       });
     }
 
-    const parsedResponse = await parseJSONPromise(response);
+    const parsedResponse = await this.responseParser.parseJSON(response);
 
     if (!response.ok) {
       try {
-        const validatedResponse: ErrorServerResponse = ErrorServerResponseSchema.parse(parsedResponse);
+        const validatedResponse: ErrorServerResponse = this.responseParser.validateSchema(ErrorServerResponseSchema, parsedResponse);
         errorMessage = validatedResponse.error;
       } catch (validationError) {
         console.log(validationError);
@@ -358,7 +364,7 @@ export class AuthService {
     }
 
     try {
-      const validatedResponse: SuccessServerResponse = SuccessServerResponseSchema.parse(parsedResponse);
+      const validatedResponse: SuccessServerResponse = this.responseParser.validateSchema(SuccessServerResponseSchema, parsedResponse);
 
       return validatedResponse as SuccessServerResponse;
     } catch (validationError) {

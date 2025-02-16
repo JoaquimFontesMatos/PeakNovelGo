@@ -1,17 +1,22 @@
 import { BookmarkError } from '~/errors/BookmarkError';
 import { ProjectError } from '~/errors/ProjectError';
+import type { HttpClient } from '~/interfaces/HttpClient';
+import type { ResponseParser } from '~/interfaces/ResponseParser';
+import type { BookmarkService } from '~/interfaces/services/BookmarkService';
 import { BookmarkedNovelSchema, PaginatedBookmarkedNovelsSchema, type BookmarkedNovel } from '~/schemas/BookmarkedNovel';
 import { ErrorServerResponseSchema } from '~/schemas/ErrorServerResponse';
 import type { PaginatedServerResponse } from '~/schemas/PaginatedServerResponse';
 import { SuccessServerResponseSchema, type SuccessServerResponse } from '~/schemas/SuccessServerResponse';
 
-export class BookmarkService {
+export class BaseBookmarkService implements BookmarkService {
   private readonly baseUrl: string;
-  private authStore;
+  private readonly httpClient: HttpClient;
+  private readonly responseParser: ResponseParser;
 
-  constructor(baseUrl: string) {
+  constructor(baseUrl: string, httpClient: HttpClient, responseParser: ResponseParser) {
     this.baseUrl = baseUrl;
-    this.authStore = useAuthStore();
+    this.httpClient = httpClient;
+    this.responseParser = responseParser;
   }
 
   async bookmarkNovel(novelId: number, userId: number): Promise<BookmarkedNovel> {
@@ -27,7 +32,7 @@ export class BookmarkService {
     };
 
     try {
-      response = await this.authStore.authorizedFetch(this.baseUrl + '/novels/bookmarked', {
+      response = await this.httpClient.authorizedRequest(this.baseUrl + '/novels/bookmarked', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -42,11 +47,11 @@ export class BookmarkService {
       });
     }
 
-    const parsedResponse = await parseJSONPromise(response);
+    const parsedResponse = await this.responseParser.parseJSON(response);
 
     if (!response.ok) {
       try {
-        const validatedResponse = ErrorServerResponseSchema.parse(parsedResponse);
+        const validatedResponse = this.responseParser.validateSchema(ErrorServerResponseSchema, parsedResponse);
         errorMessage = validatedResponse.error;
       } catch (validationError) {
         console.log(validationError);
@@ -77,7 +82,7 @@ export class BookmarkService {
     }
 
     try {
-      const successResponse = BookmarkedNovelSchema.parse(parsedResponse);
+      const successResponse = this.responseParser.validateSchema(BookmarkedNovelSchema, parsedResponse);
 
       return successResponse;
     } catch (validationError) {
@@ -94,7 +99,7 @@ export class BookmarkService {
     let errorMessage = 'An unexpected error occurred';
 
     try {
-      response = await this.authStore.authorizedFetch(this.baseUrl + '/novels/bookmarked', {
+      response = await this.httpClient.authorizedRequest(this.baseUrl + '/novels/bookmarked', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -109,11 +114,11 @@ export class BookmarkService {
       });
     }
 
-    const parsedResponse = await parseJSONPromise(response);
+    const parsedResponse = await this.responseParser.parseJSON(response);
 
     if (!response.ok) {
       try {
-        const validatedResponse = ErrorServerResponseSchema.parse(parsedResponse);
+        const validatedResponse = this.responseParser.validateSchema(ErrorServerResponseSchema, parsedResponse);
         errorMessage = validatedResponse.error;
       } catch (validationError) {
         console.log(validationError);
@@ -144,7 +149,7 @@ export class BookmarkService {
     }
 
     try {
-      const successResponse = BookmarkedNovelSchema.parse(parsedResponse);
+      const successResponse = this.responseParser.validateSchema(BookmarkedNovelSchema, parsedResponse);
 
       return successResponse;
     } catch (validationError) {
@@ -161,7 +166,7 @@ export class BookmarkService {
     let errorMessage = 'An unexpected error occurred';
 
     try {
-      response = await this.authStore.authorizedFetch(this.baseUrl + '/novels/bookmarked/user/' + userId + '/novel/' + novelId, {
+      response = await this.httpClient.authorizedRequest(this.baseUrl + '/novels/bookmarked/user/' + userId + '/novel/' + novelId, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
@@ -175,11 +180,11 @@ export class BookmarkService {
       });
     }
 
-    const parsedResponse = await parseJSONPromise(response);
+    const parsedResponse = await this.responseParser.parseJSON(response);
 
     if (!response.ok) {
       try {
-        const validatedResponse = ErrorServerResponseSchema.parse(parsedResponse);
+        const validatedResponse = this.responseParser.validateSchema(ErrorServerResponseSchema, parsedResponse);
         errorMessage = validatedResponse.error;
       } catch (validationError) {
         console.log(validationError);
@@ -210,7 +215,7 @@ export class BookmarkService {
     }
 
     try {
-      const successResponse = SuccessServerResponseSchema.parse(parsedResponse);
+      const successResponse = this.responseParser.validateSchema(SuccessServerResponseSchema, parsedResponse);
 
       return successResponse;
     } catch (validationError) {
@@ -227,7 +232,7 @@ export class BookmarkService {
     let errorMessage = 'An unexpected error occurred';
 
     try {
-      response = await this.authStore.authorizedFetch(this.baseUrl + '/novels/bookmarked/user/' + userId + '/novel/' + novelUpdatesId, {
+      response = await this.httpClient.authorizedRequest(this.baseUrl + '/novels/bookmarked/user/' + userId + '/novel/' + novelUpdatesId, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -241,11 +246,11 @@ export class BookmarkService {
       });
     }
 
-    const parsedResponse = await parseJSONPromise(response);
+    const parsedResponse = await this.responseParser.parseJSON(response);
 
     if (!response.ok) {
       try {
-        const validatedResponse = ErrorServerResponseSchema.parse(parsedResponse);
+        const validatedResponse = this.responseParser.validateSchema(ErrorServerResponseSchema, parsedResponse);
         errorMessage = validatedResponse.error;
       } catch (validationError) {
         console.log(validationError);
@@ -276,7 +281,7 @@ export class BookmarkService {
     }
 
     try {
-      const successResponse = BookmarkedNovelSchema.parse(parsedResponse);
+      const successResponse = this.responseParser.validateSchema(BookmarkedNovelSchema, parsedResponse);
 
       return successResponse;
     } catch (validationError) {
@@ -293,7 +298,7 @@ export class BookmarkService {
     let errorMessage = 'An unexpected error occurred';
 
     try {
-      response = await this.authStore.authorizedFetch(this.baseUrl + '/novels/bookmarked/user/' + userId + '/?page=' + page + '&limit=' + limit, {
+      response = await this.httpClient.authorizedRequest(this.baseUrl + '/novels/bookmarked/user/' + userId + '/?page=' + page + '&limit=' + limit, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -307,11 +312,11 @@ export class BookmarkService {
       });
     }
 
-    const parsedResponse = await parseJSONPromise(response);
+    const parsedResponse = await this.responseParser.parseJSON(response);
 
     if (!response.ok) {
       try {
-        const validatedResponse = ErrorServerResponseSchema.parse(parsedResponse);
+        const validatedResponse = this.responseParser.validateSchema(ErrorServerResponseSchema, parsedResponse);
         errorMessage = validatedResponse.error;
       } catch (validationError) {
         console.log(validationError);
@@ -342,7 +347,7 @@ export class BookmarkService {
     }
 
     try {
-      const successResponse = PaginatedBookmarkedNovelsSchema.parse(parsedResponse);
+      const successResponse = this.responseParser.validateSchema(PaginatedBookmarkedNovelsSchema, parsedResponse);
 
       return successResponse;
     } catch (validationError) {

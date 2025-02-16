@@ -1,5 +1,5 @@
-import { FileTransport } from './errors/handling/FileTransport';
-import { Logger } from './errors/handling/Logger';
+import { BaseFileTransport } from './composables/fileTransport';
+import { BaseLogger } from './composables/logger';
 
 // config.ts
 
@@ -12,9 +12,9 @@ if (import.meta.client) {
   _runMode = runtimeConfig.public.runMode;
 }
 
-const logger = new Logger(_runMode === 'production' ? 'info' : 'debug');
+const logger = new BaseLogger(_runMode === 'production' ? 'info' : 'debug');
 
-const fileTransport = new FileTransport(_apiUrl);
+const fileTransport = new BaseFileTransport(_apiUrl);
 
 logger.addTransport(fileTransport.log.bind(fileTransport));
 

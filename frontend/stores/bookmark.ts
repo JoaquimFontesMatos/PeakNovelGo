@@ -1,14 +1,24 @@
 import type { ShallowRef } from 'vue';
 import { AuthError } from '~/errors/AuthError';
+import type { ErrorHandler } from '~/interfaces/ErrorHandler';
+import type { HttpClient } from '~/interfaces/HttpClient';
+import type { ResponseParser } from '~/interfaces/ResponseParser';
+import type { BookmarkService } from '~/interfaces/services/BookmarkService';
 import type { BookmarkedNovel, BookmarkedNovelSchema } from '~/schemas/BookmarkedNovel';
 import type { PaginatedServerResponse } from '~/schemas/PaginatedServerResponse';
-import { BookmarkService } from '~/services/BookmarkService';
+import { BaseBookmarkService } from '~/services/BookmarkService';
 
 export const useBookmarkStore = defineStore('Bookmark', () => {
   const runtimeConfig = useRuntimeConfig();
   const url: string = runtimeConfig.public.apiUrl;
 
-  const bookmarkService = new BookmarkService(url);
+  // Initialize bookmark service
+  const httpClient: HttpClient = new FetchHttpClient();
+  const responseParser: ResponseParser = new ZodResponseParser();
+  const bookmarkService: BookmarkService = new BaseBookmarkService(url, httpClient, responseParser);
+
+  // Initialize error handler
+  const errorHandler: ErrorHandler = new BaseErrorHandler();
 
   const authStore = useAuthStore();
 
@@ -37,7 +47,7 @@ export const useBookmarkStore = defineStore('Bookmark', () => {
 
       bookmark.value = await bookmarkService.bookmarkNovel(novelId, user.value.ID);
     } catch (error) {
-      handleError(error, { user: user, novelId: novelId, location: 'bookmark.ts -> bookmarkNovel' });
+      errorHandler.handleError(error, { user: user, novelId: novelId, location: 'bookmark.ts -> bookmarkNovel' });
       bookmark.value = null;
       throw error;
     } finally {
@@ -59,7 +69,7 @@ export const useBookmarkStore = defineStore('Bookmark', () => {
 
       bookmark.value = await bookmarkService.updateBookmark(updatedBookmark);
     } catch (error) {
-      handleError(error, { user: user, updatedBookmark: updatedBookmark, location: 'bookmark.ts -> updateBookmark' });
+      errorHandler.handleError(error, { user: user, updatedBookmark: updatedBookmark, location: 'bookmark.ts -> updateBookmark' });
       throw error;
     } finally {
       updatingBookmark.value = false;
@@ -83,7 +93,7 @@ export const useBookmarkStore = defineStore('Bookmark', () => {
       unbookmarkMessage.value = message.message;
       bookmark.value = null;
     } catch (error) {
-      handleError(error, { user: user, novelId: novelId, location: 'bookmark.ts -> unbookmarkNovel' });
+      errorHandler.handleError(error, { user: user, novelId: novelId, location: 'bookmark.ts -> unbookmarkNovel' });
       throw error;
     } finally {
       bookmarkingNovel.value = false;
@@ -104,7 +114,7 @@ export const useBookmarkStore = defineStore('Bookmark', () => {
 
       bookmark.value = await bookmarkService.fetchBookmarkedNovelByUser(novelId, user.value.ID);
     } catch (error) {
-      handleError(error, { user: user, novelId: novelId, location: 'bookmark.ts -> fetchBookmarkedNovelByUser' });
+      errorHandler.handleError(error, { user: user, novelId: novelId, location: 'bookmark.ts -> fetchBookmarkedNovelByUser' });
       bookmark.value = null;
       throw error;
     } finally {
@@ -127,7 +137,7 @@ export const useBookmarkStore = defineStore('Bookmark', () => {
       paginatedBookmarkedNovels.value = await bookmarkService.fetchBookmarkedNovelsByUser(user.value.ID, page, limit);
     } catch (error) {
       paginatedBookmarkedNovels.value = null;
-      handleError(error, { user: user, page: page, limit: limit, location: 'bookmark.ts -> fetchBookmarkedNovelsByUser' });
+      errorHandler.handleError(error, { user: user, page: page, limit: limit, location: 'bookmark.ts -> fetchBookmarkedNovelsByUser' });
       throw error;
     } finally {
       fetchingBookmarkedNovel.value = false;

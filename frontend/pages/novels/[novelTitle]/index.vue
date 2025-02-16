@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import LoginGuard from '~/components/LoginGuard.vue';
 
-const { novelTitle } = useRoute().params;
+const { novelTitle } = useRoute().params as { novelTitle: string };
 
 function openNovelUpdatesUrl(url: string) {
   window.open(url, '_blank');
