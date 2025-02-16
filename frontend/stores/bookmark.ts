@@ -11,14 +11,10 @@ import { BaseBookmarkService } from '~/services/BookmarkService';
 export const useBookmarkStore = defineStore('Bookmark', () => {
   const runtimeConfig = useRuntimeConfig();
   const url: string = runtimeConfig.public.apiUrl;
-
-  // Initialize bookmark service
-  const httpClient: HttpClient = new FetchHttpClient();
+  const httpClient: HttpClient = new FetchHttpClient(useAuthStore());
   const responseParser: ResponseParser = new ZodResponseParser();
-  const bookmarkService: BookmarkService = new BaseBookmarkService(url, httpClient, responseParser);
-
-  // Initialize error handler
-  const errorHandler: ErrorHandler = new BaseErrorHandler();
+  const $bookmarkService: BookmarkService = new BaseBookmarkService(url, httpClient, responseParser);
+  const $errorHandler: ErrorHandler = new BaseErrorHandler();
 
   const authStore = useAuthStore();
 
@@ -45,9 +41,9 @@ export const useBookmarkStore = defineStore('Bookmark', () => {
         });
       }
 
-      bookmark.value = await bookmarkService.bookmarkNovel(novelId, user.value.ID);
+      bookmark.value = await $bookmarkService.bookmarkNovel(novelId, user.value.ID);
     } catch (error) {
-      errorHandler.handleError(error, { user: user, novelId: novelId, location: 'bookmark.ts -> bookmarkNovel' });
+      $errorHandler.handleError(error, { user: user, novelId: novelId, location: 'bookmark.ts -> bookmarkNovel' });
       bookmark.value = null;
       throw error;
     } finally {
@@ -67,9 +63,9 @@ export const useBookmarkStore = defineStore('Bookmark', () => {
         });
       }
 
-      bookmark.value = await bookmarkService.updateBookmark(updatedBookmark);
+      bookmark.value = await $bookmarkService.updateBookmark(updatedBookmark);
     } catch (error) {
-      errorHandler.handleError(error, { user: user, updatedBookmark: updatedBookmark, location: 'bookmark.ts -> updateBookmark' });
+      $errorHandler.handleError(error, { user: user, updatedBookmark: updatedBookmark, location: 'bookmark.ts -> updateBookmark' });
       throw error;
     } finally {
       updatingBookmark.value = false;
@@ -89,11 +85,11 @@ export const useBookmarkStore = defineStore('Bookmark', () => {
         });
       }
 
-      const message = await bookmarkService.unbookmarkNovel(novelId, user.value.ID);
+      const message = await $bookmarkService.unbookmarkNovel(novelId, user.value.ID);
       unbookmarkMessage.value = message.message;
       bookmark.value = null;
     } catch (error) {
-      errorHandler.handleError(error, { user: user, novelId: novelId, location: 'bookmark.ts -> unbookmarkNovel' });
+      $errorHandler.handleError(error, { user: user, novelId: novelId, location: 'bookmark.ts -> unbookmarkNovel' });
       throw error;
     } finally {
       bookmarkingNovel.value = false;
@@ -112,9 +108,9 @@ export const useBookmarkStore = defineStore('Bookmark', () => {
         });
       }
 
-      bookmark.value = await bookmarkService.fetchBookmarkedNovelByUser(novelId, user.value.ID);
+      bookmark.value = await $bookmarkService.fetchBookmarkedNovelByUser(novelId, user.value.ID);
     } catch (error) {
-      errorHandler.handleError(error, { user: user, novelId: novelId, location: 'bookmark.ts -> fetchBookmarkedNovelByUser' });
+      $errorHandler.handleError(error, { user: user, novelId: novelId, location: 'bookmark.ts -> fetchBookmarkedNovelByUser' });
       bookmark.value = null;
       throw error;
     } finally {
@@ -134,10 +130,10 @@ export const useBookmarkStore = defineStore('Bookmark', () => {
         });
       }
 
-      paginatedBookmarkedNovels.value = await bookmarkService.fetchBookmarkedNovelsByUser(user.value.ID, page, limit);
+      paginatedBookmarkedNovels.value = await $bookmarkService.fetchBookmarkedNovelsByUser(user.value.ID, page, limit);
     } catch (error) {
       paginatedBookmarkedNovels.value = null;
-      errorHandler.handleError(error, { user: user, page: page, limit: limit, location: 'bookmark.ts -> fetchBookmarkedNovelsByUser' });
+      $errorHandler.handleError(error, { user: user, page: page, limit: limit, location: 'bookmark.ts -> fetchBookmarkedNovelsByUser' });
       throw error;
     } finally {
       fetchingBookmarkedNovel.value = false;

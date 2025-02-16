@@ -4,29 +4,36 @@ import type { AuthSession } from '~/schemas/AuthSession';
 import type { User } from '~/schemas/User';
 import type { ErrorHandler } from '~/interfaces/ErrorHandler';
 import type { AuthService } from '~/interfaces/services/AuthService';
+import { BaseAuthService } from '~/services/AuthService';
+import type { HttpClient } from '~/interfaces/HttpClient';
+import type { ResponseParser } from '~/interfaces/ResponseParser';
 
 export const useAuthStore = defineStore('Auth', () => {
-  // Inject dependencies using Nuxt's DI system
-  const { $authService: AuthService, $errorHandler: ErrorHandler } = useNuxtApp();
+  const runtimeConfig = useRuntimeConfig();
+  const url: string = runtimeConfig.public.apiUrl;
+  const httpClient: HttpClient = new FetchHttpClient(useAuthStore());
+  const responseParser: ResponseParser = new ZodResponseParser();
+  const $authService: AuthService = new BaseAuthService(url, httpClient, responseParser);
+  const $errorHandler: ErrorHandler = new BaseErrorHandler();
 
   // Auth Session Info
-  const user = useState<User | null>('user', () => null);
-  const accessToken = useState<string | null>('accessToken', () => null);
+  const user = ref<User | null>(null);
+  const accessToken = ref<string | null>(null);
 
   // Handling Login Variables
-  const loadingLogin = useState<boolean>('loadingLogin', () => false);
+  const loadingLogin = ref<boolean>(false);
 
   // Handling Sign Up Variables
-  const loadingSignUp = useState<boolean>('loadingSignUp', () => false);
-  const signUpMessage = useState<string | null>('signUpMessage', () => null);
+  const loadingSignUp = ref<boolean>(false);
+  const signUpMessage = ref<string | null>(null);
 
   // Handling Logout Variables
-  const loadingLogout = useState<boolean>('loadingLogout', () => false);
+  const loadingLogout = ref<boolean>(false);
   const logoutMessage: Ref<string | null> = ref<string | null>(null);
 
   // Handling Verify Token Variables
-  const loadingVerifyToken = useState<boolean>('loadingVerifyToken', () => false);
-  const verifyTokenMessage = useState<string | null>('verifyTokenMessage', () => null);
+  const loadingVerifyToken = ref<boolean>(false);
+  const verifyTokenMessage = ref<string | null>(null);
 
   // Function to set the access token and user info
   const setSession = (loginResponse: AuthSession) => {

@@ -8,17 +8,14 @@ import type { TTSRequest } from '~/schemas/TTSRequest';
 import { BaseTtsService } from '~/services/TtsService';
 
 export const useTTSStore = defineStore('TTS', () => {
-  const authStore = useAuthStore();
   const runtimeConfig = useRuntimeConfig();
   const url: string = runtimeConfig.public.apiUrl;
-
-  // Initialize tts service
-  const httpClient: HttpClient = new FetchHttpClient();
+  const httpClient: HttpClient = new FetchHttpClient(useAuthStore());
   const responseParser: ResponseParser = new ZodResponseParser();
-  const ttsService: TtsService = new BaseTtsService(url, httpClient, responseParser);
+  const $ttsService: TtsService = new BaseTtsService(url, httpClient, responseParser);
+  const $errorHandler: ErrorHandler = new BaseErrorHandler();
 
-  // Initialize error handler
-  const errorHandler: ErrorHandler = new BaseErrorHandler();
+  const authStore = useAuthStore();
 
   const { user } = storeToRefs(authStore);
 
@@ -63,9 +60,9 @@ export const useTTSStore = defineStore('TTS', () => {
         });
       }
 
-      paragraphs.value = await ttsService.generateTTS(ttsRequest);
+      paragraphs.value = await $ttsService.generateTTS(ttsRequest);
     } catch (error) {
-      errorHandler.handleError(error, { user: user, ttsRequest: ttsRequest, location: 'tts.ts -> generateTTS' });
+      $errorHandler.handleError(error, { user: user, ttsRequest: ttsRequest, location: 'tts.ts -> generateTTS' });
       throw error;
     } finally {
       fetchingTTS.value = false;
@@ -84,10 +81,10 @@ export const useTTSStore = defineStore('TTS', () => {
         });
       }
 
-      const voices = await ttsService.fetchTTSVoices();
+      const voices = await $ttsService.fetchTTSVoices();
       console.log(voices);
     } catch (error) {
-      errorHandler.handleError(error, { user: user, location: 'tts.ts -> fetchTTSVoices' });
+      $errorHandler.handleError(error, { user: user, location: 'tts.ts -> fetchTTSVoices' });
       throw error;
     } finally {
       fetchingTTS.value = false;

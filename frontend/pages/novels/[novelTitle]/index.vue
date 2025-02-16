@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import LoginGuard from '~/components/LoginGuard.vue';
 
+const textUtils = new BaseTextUtils();
+
 const { novelTitle } = useRoute().params as { novelTitle: string };
 
 function openNovelUpdatesUrl(url: string) {
@@ -254,7 +256,7 @@ watchEffect(async () => {
           </div>
         </div>
         <DetailsLabel>Description:</DetailsLabel>
-        <p v-html="convertLineBreaksToHtml(novel.synopsis)" />
+        <p v-html="textUtils.convertLineBreaksToHtml(novel.synopsis)" />
 
         <VerticalSpacer />
 

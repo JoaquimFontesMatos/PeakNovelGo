@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useScroll } from '@vueuse/core';
+import { BaseTextUtils } from '~/composables/textUtils';
 
 const { novelTitle, chapterNo } = useRoute().params as { novelTitle: string; chapterNo: string };
 

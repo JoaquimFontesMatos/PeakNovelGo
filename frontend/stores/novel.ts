@@ -8,15 +8,11 @@ import { BaseNovelService } from '~/services/NovelService';
 
 export const useNovelStore = defineStore('Novel', () => {
   const runtimeConfig = useRuntimeConfig();
-  const url = runtimeConfig.public.apiUrl;
-
-  // Initialize novel service
-  const httpClient: HttpClient = new FetchHttpClient();
+  const url: string = runtimeConfig.public.apiUrl;
+  const httpClient: HttpClient = new FetchHttpClient(useAuthStore());
   const responseParser: ResponseParser = new ZodResponseParser();
-  const novelService: NovelService = new BaseNovelService(url, httpClient, responseParser);
-
-  // Initialize error handler
-  const errorHandler: ErrorHandler = new BaseErrorHandler();
+  const $novelService: NovelService = new BaseNovelService(url, httpClient, responseParser);
+  const $errorHandler: ErrorHandler = new BaseErrorHandler();
 
   const novel = shallowRef<Novel | null>(null);
   const fetchingNovel = ref(true);
@@ -33,9 +29,9 @@ export const useNovelStore = defineStore('Novel', () => {
     fetchingNovel.value = true;
 
     try {
-      novel.value = await novelService.fetchNovel(novelUpdatesId);
+      novel.value = await $novelService.fetchNovel(novelUpdatesId);
     } catch (error) {
-      errorHandler.handleError(error, { novelUpdatesId: novelUpdatesId, location: 'novel.ts -> fetchNovel' });
+      $errorHandler.handleError(error, { novelUpdatesId: novelUpdatesId, location: 'novel.ts -> fetchNovel' });
       novel.value = null;
       throw error;
     } finally {
@@ -47,9 +43,9 @@ export const useNovelStore = defineStore('Novel', () => {
     fetchingNovel.value = true;
 
     try {
-      paginatedNovelsData.value = await novelService.fetchNovels(page, limit);
+      paginatedNovelsData.value = await $novelService.fetchNovels(page, limit);
     } catch (error) {
-      errorHandler.handleError(error, { page: page, limit: limit, location: 'novel.ts -> fetchNovels' });
+      $errorHandler.handleError(error, { page: page, limit: limit, location: 'novel.ts -> fetchNovels' });
       paginatedNovelsData.value = null;
       throw error;
     } finally {
@@ -61,9 +57,9 @@ export const useNovelStore = defineStore('Novel', () => {
     fetchingNovel.value = true;
 
     try {
-      paginatedNovelsDataByTag.value = await novelService.fetchNovelsByTag(tag, page, limit);
+      paginatedNovelsDataByTag.value = await $novelService.fetchNovelsByTag(tag, page, limit);
     } catch (error) {
-      errorHandler.handleError(error, { tag: tag, page: page, limit: limit, location: 'novel.ts -> fetchNovelsByTag' });
+      $errorHandler.handleError(error, { tag: tag, page: page, limit: limit, location: 'novel.ts -> fetchNovelsByTag' });
       paginatedNovelsDataByTag.value = null;
       throw error;
     } finally {
@@ -75,9 +71,9 @@ export const useNovelStore = defineStore('Novel', () => {
     fetchingNovel.value = true;
 
     try {
-      paginatedNovelsDataByAuthor.value = await novelService.fetchNovelsByAuthor(author, page, limit);
+      paginatedNovelsDataByAuthor.value = await $novelService.fetchNovelsByAuthor(author, page, limit);
     } catch (error) {
-      errorHandler.handleError(error, { author: author, page: page, limit: limit, location: 'novel.ts -> fetchNovelsByAuthor' });
+      $errorHandler.handleError(error, { author: author, page: page, limit: limit, location: 'novel.ts -> fetchNovelsByAuthor' });
       paginatedNovelsDataByAuthor.value = null;
       throw error;
     } finally {
@@ -89,9 +85,9 @@ export const useNovelStore = defineStore('Novel', () => {
     fetchingNovel.value = true;
 
     try {
-      paginatedNovelsDataByGenre.value = await novelService.fetchNovelsByGenre(genre, page, limit);
+      paginatedNovelsDataByGenre.value = await $novelService.fetchNovelsByGenre(genre, page, limit);
     } catch (error) {
-      errorHandler.handleError(error, { genre: genre, page: page, limit: limit, location: 'novel.ts -> fetchNovelsByGenre' });
+      $errorHandler.handleError(error, { genre: genre, page: page, limit: limit, location: 'novel.ts -> fetchNovelsByGenre' });
       paginatedNovelsDataByGenre.value = null;
       throw error;
     } finally {

@@ -1,16 +1,21 @@
 import type { HttpClient } from '~/interfaces/HttpClient';
 
 export class FetchHttpClient implements HttpClient {
+  private authStore: ReturnType<typeof useAuthStore>;
+
+  constructor(authStore: ReturnType<typeof useAuthStore>) {
+    this.authStore = authStore;
+  }
+
   async request(input: RequestInfo, init: RequestInit = {}): Promise<Response> {
     return fetch(input, init);
   }
 
   async authorizedRequest(input: RequestInfo, init: RequestInit = {}): Promise<Response> {
-    const authStore = useAuthStore();
-    const { accessToken } = storeToRefs(authStore);
+    const { accessToken } = storeToRefs(this.authStore);
 
     if (!accessToken.value) {
-      await authStore.refreshAccessToken();
+      await this.authStore.refreshAccessToken();
     }
 
     let response = await fetch(input, {
@@ -23,7 +28,7 @@ export class FetchHttpClient implements HttpClient {
 
     // If unauthorized, try refreshing the token and retrying
     if (response.status === 401) {
-      await authStore.refreshAccessToken();
+      await this.authStore.refreshAccessToken();
 
       if (accessToken.value) {
         response = await this.request(input, {
