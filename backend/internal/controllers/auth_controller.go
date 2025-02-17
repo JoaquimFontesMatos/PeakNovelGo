@@ -1,9 +1,13 @@
 package controllers
 
 import (
+	"context"
+	"encoding/json"
 	"errors"
+	"fmt"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"strconv"
 
@@ -13,6 +17,7 @@ import (
 	"backend/internal/validators"
 
 	"github.com/gin-gonic/gin"
+	"github.com/markbates/goth/gothic"
 )
 
 type AuthController struct {
@@ -239,4 +244,97 @@ func (ac *AuthController) VerifyEmail(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Email verified successfully"})
+}
+
+// StartGoogleAuth initiates the Google OAuth2 flow
+func (ac *AuthController) StartGoogleAuth(c *gin.Context) {
+	// Add the provider name to the request context
+	c.Request = c.Request.WithContext(context.WithValue(c.Request.Context(), "provider", "google"))
+
+	// Start the OAuth2 flow
+	gothic.BeginAuthHandler(c.Writer, c.Request)
+}
+
+// GoogleCallback handles the callback from Google after OAuth2 login
+func (ac *AuthController) GoogleCallback(c *gin.Context) {
+	// Complete the OAuth2 flow and get the user's Google profile
+	user, err := gothic.CompleteUserAuth(c.Writer, c.Request)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to authenticate with Google"})
+		return
+	}
+
+	// Use the Google profile to create or log in a user in your system
+	// For example, check if the user already exists by email
+	existingUser, err := ac.UserService.GetUserByEmail(user.Email)
+	if err != nil {
+		// If the user doesn't exist, create a new user
+		newUser := &dtos.RegisterRequest{
+			Email:          user.Email,
+			Username:       user.Name,
+			Password:       "12345678910",
+			Bio:            "Please edit me",
+			ProfilePicture: user.AvatarURL,
+			DateOfBirth:    "2000-01-01",
+			Provider:       user.Provider,
+		}
+		if err := ac.UserService.RegisterUser(newUser); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create user"})
+			return
+		}
+
+		createdUser, err := ac.UserService.GetUserByEmail(user.Email)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get user"})
+			return
+		}
+
+		existingUser = createdUser
+	}
+
+	// Generate JWT tokens for the user
+	accessToken, refreshToken, err := ac.AuthService.GenerateToken(existingUser)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate tokens"})
+		return
+	}
+
+	// Set the refresh token in an HttpOnly cookie
+	secure, err := strconv.ParseBool(os.Getenv("COOKIES_SECURE"))
+	if err != nil {
+		secure = false // Default to false if parsing fails
+	}
+	c.SetCookie(
+		"refreshToken", // Name
+		refreshToken,   // Value
+		7*24*60*60,     // MaxAge: 7 days
+		"/",            // Path
+		"",             // Domain
+		secure,         // Secure: Only send over HTTPS
+		true,           // HttpOnly: Inaccessible to JavaScript
+	)
+
+	userDto, err := dtos.ConvertUserModelToDTO(*existingUser)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Serialize the userDto to JSON
+	userDtoJSON, err := json.Marshal(userDto)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to serialize user data"})
+		return
+	}
+
+	// Redirect to the frontend callback route with the OAuth data
+	frontendCallbackURL := os.Getenv("FRONTEND_URL") + "/auth/callback"
+	redirectURL := fmt.Sprintf(
+		"%s?accessToken=%s&user=%s",
+		frontendCallbackURL,
+		accessToken,
+		url.QueryEscape(string(userDtoJSON)),
+	)
+	c.Redirect(http.StatusFound, redirectURL)
 }

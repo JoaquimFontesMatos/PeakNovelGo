@@ -30,13 +30,17 @@ const onSubmit = handleSubmit(async (values: LoginForm) => {
 const handleEnterSignUp = () => {
   navigateTo('/auth/sign-up');
 };
+
+const loginWithGoogle = () => {
+  window.location.href = 'http://localhost:8081/auth/google';
+};
 </script>
 
 <template>
   <main class="my-10 bg-gradient-to-r from-primary to-secondary px-5 py-2.5 md:px-20 md:py-10">
     <div class="flex flex-col justify-center gap-10 md:flex-row">
       <!-- Login Section -->
-      <section class="flex w-full flex-col items-center justify-center rounded-lg bg-secondary p-4 text-secondary-content shadow-lg md:w-2/3 md:p-8">
+      <section class="flex w-full flex-col items-center justify-center rounded-lg bg-secondary p-4 text-secondary-content shadow-lg md:w-2/4 md:p-8">
         <h1 class="text-center text-4xl font-bold text-primary-content">Login to Your Account</h1>
 
         <VerticalSpacer />
@@ -95,8 +99,22 @@ const handleEnterSignUp = () => {
         <SmallVerticalSpacer />
       </section>
 
+      <section class="flex w-full flex-col items-center justify-center rounded-lg bg-secondary p-4 text-secondary-content shadow-lg md:w-1/4 md:p-8">
+        <h1 class="text-center text-4xl font-bold text-primary-content">Other Sign-up Options</h1>
+
+        <VerticalSpacer />
+
+        <Button :disabled="loadingLogin" @click="loginWithGoogle">
+          <div v-if="loadingLogin" class="flex items-center justify-center rounded">
+            <LoadingSpinner />
+            <span>Signing in...</span>
+          </div>
+          <span v-else>Login with Google</span>
+        </Button>
+      </section>
+
       <!-- Sign Up Section -->
-      <section class="flex w-full flex-col items-center justify-center rounded-lg bg-accent-gold p-4 text-primary shadow-lg md:w-1/3 md:p-8">
+      <section class="flex w-full flex-col items-center justify-center rounded-lg bg-accent-gold p-4 text-primary shadow-lg md:w-1/4 md:p-8">
         <h1 class="text-center text-3xl font-bold">New Here?</h1>
 
         <VerticalSpacer />

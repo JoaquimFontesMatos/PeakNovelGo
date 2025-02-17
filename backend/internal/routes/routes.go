@@ -46,7 +46,10 @@ func SetupRoutes(r *gin.Engine,
 		auth.POST("/refresh-token", middleware.RefreshTokenMiddleware(), authController.RefreshToken)
 		auth.GET("/verify-email", authController.VerifyEmail)
 		auth.POST("/logout", middleware.RefreshTokenMiddleware(), authController.Logout)
+		auth.GET("/google", authController.StartGoogleAuth)
+		auth.GET("/google/callback", authController.GoogleCallback)
 	}
+
 	user := r.Group("/user")
 	{
 		user.GET("/:id", userController.HandleGetUser)

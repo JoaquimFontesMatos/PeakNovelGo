@@ -21,4 +21,5 @@ type User struct {
 	PreferredLanguage  string    `gorm:"size:100" json:"preferredLanguage,omitempty"`
 	ReadingPreferences string    `gorm:"size:255" json:"readingPreferences,omitempty"`
 	IsDeleted          bool      `gorm:"default:false" json:"-"`
+	Provider           string    `gorm:"size:255" json:"-"`
 }

@@ -2,6 +2,7 @@ package main
 
 import (
 	"backend/config"
+	"backend/internal/auth"
 	"backend/internal/controllers"
 	"backend/internal/repositories"
 	"backend/internal/routes"
@@ -53,6 +54,8 @@ func main() {
 	ttsService := &services.TTSService{
 		OutputDir: ttsDir,
 	}
+
+	auth.NewAuth()
 
 	userController := controllers.NewUserController(userService)
 	authController := controllers.NewAuthController(authService, userService)

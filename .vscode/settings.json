@@ -4,6 +4,7 @@
         "dtos",
         "edgetts",
         "Gamification",
+        "godotenv",
         "gonic",
         "gorm",
         "Nums",

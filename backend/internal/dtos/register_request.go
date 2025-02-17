@@ -7,4 +7,5 @@ type RegisterRequest struct {
 	Bio            string `json:"bio" binding:"required"`
 	ProfilePicture string `json:"profilePicture"`
 	DateOfBirth    string `json:"dateOfBirth" binding:"required"`
+	Provider       string `json:"-"`
 }
