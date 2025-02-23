@@ -123,11 +123,15 @@ watch(
     isPlaying.value = false;
     cleanupAudioPlayer();
 
+    if (!user.value.readingPreferences.tts.voice || user.value.readingPreferences.tts.voice === '' || user.value.readingPreferences.tts.voice === ' ') {
+      user.value.readingPreferences.tts.voice = 'en-US-AriaNeural';
+    }
+
     const ttsRequest: TTSRequest = {
       text: newChapter.body,
       novelId: newChapter.novelId,
       chapterNo: newChapter.chapterNo,
-      voice: user.value.readingPreferences.tts.voice || 'none',
+      voice: user.value.readingPreferences.tts.voice,
       rate: user.value.readingPreferences.tts.rate || 0,
     };
 

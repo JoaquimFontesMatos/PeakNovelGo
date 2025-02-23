@@ -74,6 +74,7 @@ func SetupRoutes(r *gin.Engine,
 
 		chapters := novel.Group("/chapters")
 		{
+			chapters.POST("/:novel_id/scrape", novelController.HandleImportChapters)
 			chapters.POST("/:novel_id", middleware.AuthMiddleware(), novelController.HandleImportChaptersZip)
 			chapters.GET("/:novel_id", novelController.GetChaptersByNovelID)
 			chapters.GET("/chapter/:chapter_id", novelController.GetChapterByID)

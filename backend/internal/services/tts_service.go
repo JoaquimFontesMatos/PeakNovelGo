@@ -91,18 +91,20 @@ func (s *TTSService) generateFile(filePath string) (io.Writer, error) {
 
 func (s *TTSService) GenerateParagraphs(ttsRequest *dtos.TTSRequest, baseUrl string) []Paragraph {
 	// Split the text into paragraphs based on double newlines
-	paragraphs := strings.Split(ttsRequest.Text, "\n\n")
+	paragraphs := strings.Split(ttsRequest.Text, "\n")
 
 	// Process paragraphs to handle dots or other special cases
 	processedParagraphs := make([]string, 0, len(paragraphs))
 	for _, paragraph := range paragraphs {
 		trimmedParagraph := strings.TrimSpace(paragraph)
-		if trimmedParagraph == "" {
+		trimmedParagraph = strings.ReplaceAll(trimmedParagraph, "<", "")
+		trimmedParagraph = strings.ReplaceAll(trimmedParagraph, ">", "")
+		if trimmedParagraph == "" || trimmedParagraph == "\n" {
 			// Skip empty paragraphs
 			continue
 		} else if isOnlyDots(trimmedParagraph) {
 			// Replace dots with a meaningful placeholder for TTS
-			processedParagraphs = append(processedParagraphs, ". . .    cenary change    . . .")
+			processedParagraphs = append(processedParagraphs, ". . .    scene change    . . .")
 		} else {
 			// Keep the paragraph as is
 			processedParagraphs = append(processedParagraphs, trimmedParagraph)
@@ -133,7 +135,7 @@ func (s *TTSService) GenerateParagraphs(ttsRequest *dtos.TTSRequest, baseUrl str
 // Helper function to check if a string contains only dots
 func isOnlyDots(s string) bool {
 	for _, char := range s {
-		if char != '.' && char != '…' {
+		if char != '.' && char != '…' && char != '*' && char != ' ' {
 			return false
 		}
 	}

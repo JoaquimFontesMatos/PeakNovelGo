@@ -4,9 +4,11 @@ import (
 	"backend/config"
 	"backend/internal/auth"
 	"backend/internal/controllers"
+	"backend/internal/models"
 	"backend/internal/repositories"
 	"backend/internal/routes"
 	"backend/internal/services"
+	"backend/internal/utils"
 	"fmt"
 	"log"
 	"os"
@@ -53,6 +55,29 @@ func main() {
 
 	ttsService := &services.TTSService{
 		OutputDir: ttsDir,
+	}
+
+	_, err = userRepo.GetUserByEmail("admin@example.com")
+	if err != nil {
+		// Hash the user's password
+		hashedPassword, err := utils.HashPassword(os.Getenv("ADMIN_SECRET"))
+		if err != nil {
+			log.Println(err)
+			return
+		}
+
+		err = userRepo.CreateUser(&models.User{
+			Email:          "admin@example.com",
+			Password:       hashedPassword,
+			Roles:          "admin",
+			Username:       "Admin",
+			ProfilePicture: "https://cdn3.iconfinder.com/data/icons/user-group-black/100/user-process-512.png",
+			Bio:            "Admin user",
+		})
+		if err != nil {
+			log.Println(err)
+			return
+		}
 	}
 
 	auth.NewAuth()

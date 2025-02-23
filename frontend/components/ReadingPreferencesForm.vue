@@ -2,6 +2,7 @@
 const userStore = useUserStore();
 const { user } = storeToRefs(userStore);
 const colorMode = useColorMode();
+
 const handleChangeReadingPreferences = async () => {
   if (!user.value) return;
 

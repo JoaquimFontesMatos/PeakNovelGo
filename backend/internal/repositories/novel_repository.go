@@ -620,6 +620,8 @@ func (n *NovelRepository) isChapterCreated(chapter models.Chapter) bool {
 //   - CONFLICT_ERROR if the chapter already exists
 //   - INTERNAL_SERVER_ERROR if the chapter could not be created
 func (n *NovelRepository) CreateChapter(chapter models.Chapter) (*models.Chapter, error) {
+	n.db.Logger = n.db.Logger.LogMode(logger.Silent)
+
 	if IsChapterCreated := n.isChapterCreated(chapter); IsChapterCreated {
 		return nil, types.WrapError(types.CONFLICT_ERROR, "Chapter already exists", nil)
 	}

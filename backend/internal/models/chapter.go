@@ -19,6 +19,14 @@ type ImportedChapter struct {
 	Body       string `json:"body"`
 }
 
+type ImportedChapterMetadata struct {
+	Title      string `json:"title" binding:"required"`
+	ChapterUrl string `json:"url" binding:"required"`
+	Body       string `json:"body" binding:"required"`
+	ID         uint   `json:"id"`
+}
+
+
 func (c *ImportedChapter) ToChapter() *Chapter {
 	return &Chapter{
 		ChapterNo:  c.ID,

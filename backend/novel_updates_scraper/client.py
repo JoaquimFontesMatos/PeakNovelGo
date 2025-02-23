@@ -55,8 +55,48 @@ class Client:
             A dictionary containing information about the series.
             Contains all information and links for the series.
         """
-        req = self.req.get(f"https://www.novelupdates.com/series/{series_id}")
+        req = self.req.get(f"https://www.lightnovelworld.co/novel/{series_id}")
         return parsers.parseSeries(req)
+
+    def chapters(self, series_id, i=1):
+        """Gets the chapters of a series.
+
+        Parameters
+        ----------
+        id : :class:`int`
+            The id of the series. (/series/{ID})
+
+        Returns
+        -------
+        :class:`dict`
+            A dictionary containing information about the series.
+            Contains all information and links for the series.
+        """
+        url = f"https://www.lightnovelworld.co/novel/{series_id}/chapter-{i}"
+        req = self.req.get(url)  # Make the request
+
+        tries = 5
+
+        while tries > 0 and req.status_code != 200:
+            if req.status_code == 404:
+                return None
+            else:
+                tries -= 1
+                req = self.req.get(url)  # Make the request
+
+        if req.status_code != 200:
+            return False
+
+        # Parse the chapter content
+        chapter_data = parsers.parseChapters(req)
+
+        chapter = {
+            "title": chapter_data["title"],
+            "url": url,
+            "body": chapter_data["body"],
+        }
+
+        return chapter
 
     def series_groups(self, series_id):
         """Gets the groups that are translating a series.
@@ -90,9 +130,19 @@ if __name__ == "__main__":
 
     # Read the argument passed from Go
     if len(sys.argv) > 1:
-        series_id = sys.argv[1]
-        result = client.series_info(series_id)
-        print(json.dumps(result))
+        action = sys.argv[1]
+
+        if action == "import-novel":
+            series_id = sys.argv[2]
+            result = client.series_info(series_id)
+
+            print(json.dumps(result))
+        elif action == "import-chapter":
+            series_id = sys.argv[2]
+            chaptNo = sys.argv[3]
+            result = client.chapters(series_id, chaptNo)
+
+            print(json.dumps(result))
     else:
         print(json.dumps({"error": "No series ID provided"}))
         sys.exit(1)

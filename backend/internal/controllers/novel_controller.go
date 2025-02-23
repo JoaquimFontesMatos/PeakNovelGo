@@ -7,6 +7,7 @@ import (
 	"backend/internal/types"
 	"backend/internal/utils"
 	"backend/internal/validators"
+	"errors"
 	"strings"
 
 	//"backend/internal/validators"
@@ -84,12 +85,12 @@ func (n *NovelController) HandleImportNovelByNovelUpdatesID(ctx *gin.Context) {
 	}
 
 	// Specify the Python script and its module
-	cmd := exec.Command(os.Getenv("PYTHON"), "-m", "novel_updates_scraper.client", novelUpdatesID)
+	cmd := exec.Command(os.Getenv("PYTHON"), "-m", "novel_updates_scraper.client", "import-novel", novelUpdatesID)
 
 	// Capture the output of the Python script
 	output, err := cmd.Output()
 	if err != nil {
-		log.Printf("Error: %s\n", err)
+		fmt.Println("Error: ", err)
 		ctx.JSON(500, gin.H{"error": "Failed to execute Python script"})
 		return
 	}
@@ -135,6 +136,164 @@ func (n *NovelController) HandleImportNovelByNovelUpdatesID(ctx *gin.Context) {
 
 	ctx.JSON(200, createdNovel)
 
+}
+
+// HandleImportChapters handles streaming response for importing chapters
+func (n *NovelController) HandleImportChapters(ctx *gin.Context) {
+	idParam := ctx.Param("novel_id")
+
+	novel, err := n.novelService.GetNovelByUpdatesID(idParam)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx.Writer.Header().Set("Content-Type", "text/event-stream")
+	ctx.Writer.Header().Set("Cache-Control", "no-cache")
+	ctx.Writer.Header().Set("Connection", "keep-alive")
+	ctx.Writer.Flush() // Ensure headers are sent immediately
+
+	chapterCount, err := n.processChaptersWithStreaming(ctx, idParam, novel.ID)
+	if err != nil {
+		fmt.Fprintf(ctx.Writer, "event: error\ndata: %s\n\n", err.Error())
+		ctx.Writer.Flush()
+		return
+	}
+
+	// Final success message
+	fmt.Fprintf(ctx.Writer, "event: complete\ndata: Chapters extracted successfully. %d chapters added.\n\n", chapterCount)
+	ctx.Writer.Flush()
+}
+
+func (n *NovelController) processChaptersWithStreaming(ctx *gin.Context, novelUpdatesID string, novelID uint) (int, error) {
+	const workerCount = 5 // Adjust as needed (higher = more parallel requests)
+	chapterCount := 0
+	chapterQueue := make(chan int, workerCount)
+	results := make(chan models.ImportedChapterMetadata)
+	errorsChan := make(chan error)
+	done := make(chan struct{}) // ✅ Add done channel to stop the loop
+
+	// Worker function to process chapters
+	var wg sync.WaitGroup
+	for i := 0; i < workerCount; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for chapterNo := range chapterQueue {
+				result, err := n.importChapter(novelUpdatesID, chapterNo)
+				if err != nil {
+					errorsChan <- err
+					return
+				}
+
+				// Stop processing if the chapter is empty (assumes no more chapters exist)
+				if result.Title == "" || result.ChapterUrl == "" || result.Body == "" {
+					close(done) // ✅ Stop sending new chapters
+					return
+				}
+
+				// Send result back to main thread
+				results <- result
+			}
+		}()
+	}
+
+	// Goroutine to close results channel when workers are done
+	go func() {
+		wg.Wait()
+		close(results)
+		close(errorsChan)
+	}()
+
+	// ✅ Start sending chapter numbers to workers but stop when `done` is closed
+	go func() {
+		for chapterNo := 1; ; chapterNo++ {
+			select {
+			case <-done:
+				close(chapterQueue) // ✅ Stop workers when no more chapters exist
+				return
+			default:
+				chapterQueue <- chapterNo
+			}
+		}
+	}()
+
+	// Process results as they arrive
+	for {
+		select {
+		case err := <-errorsChan:
+			close(chapterQueue) // Stop workers
+			return chapterCount, err
+
+		case result, ok := <-results:
+			if !ok {
+				// ✅ Send final message when processing is done
+				fmt.Fprintf(ctx.Writer, "event: complete\ndata: Chapters extracted successfully. %d chapters added.\n\n", chapterCount)
+				ctx.Writer.Flush()
+				return chapterCount, nil
+			}
+
+			// Save chapter in DB
+			err := n.saveChapter(novelID, result)
+			if err != nil {
+				close(chapterQueue) // Stop workers
+				return chapterCount, err
+			}
+
+			// Update counter and send event
+			chapterCount++
+			fmt.Fprintf(ctx.Writer, "event: progress\ndata: Imported Chapter %d: %s\n\n", chapterCount, result.Title)
+			ctx.Writer.Flush()
+		}
+	}
+}
+
+// importChapter executes Python script and parses result
+func (n *NovelController) importChapter(novelUpdatesID string, chapterNo int) (models.ImportedChapterMetadata, error) {
+	chapterNoStr := strconv.Itoa(chapterNo)
+	cmd := exec.Command(os.Getenv("PYTHON"), "-m", "novel_updates_scraper.client", "import-chapter", novelUpdatesID, chapterNoStr)
+
+	output, err := cmd.Output()
+	if err != nil {
+		return models.ImportedChapterMetadata{}, fmt.Errorf("failed to execute Python script: %v", err)
+	}
+
+	var result models.ImportedChapterMetadata
+	err = json.Unmarshal(output, &result)
+	if err != nil {
+		return models.ImportedChapterMetadata{}, fmt.Errorf("failed to parse Python script output as JSON: %v", err)
+	}
+
+	result.Body = utils.StripHTML(result.Body)
+
+	result.ID = uint(chapterNo)
+
+	return result, nil
+}
+
+// saveChapter inserts chapter into database
+func (n *NovelController) saveChapter(novelID uint, result models.ImportedChapterMetadata) error {
+	importedChapter := models.ImportedChapter{
+		NovelID:    &novelID,
+		ID:         result.ID,
+		Title:      result.Title,
+		ChapterUrl: result.ChapterUrl,
+		Body:       result.Body,
+	}
+
+	chapter := importedChapter.ToChapter()
+	_, err := n.novelService.CreateChapter(*chapter)
+	if err != nil {
+		var userErr *types.MyError
+		if errors.As(err, &userErr) {
+			if userErr.Code == "CONFLICT_ERROR" {
+				return nil // Ignore duplicate errors
+			}
+		}
+		return err
+	}
+
+	return nil
 }
 
 // HandleUploadNovelZip handles POST /novel/upload
