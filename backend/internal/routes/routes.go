@@ -63,7 +63,8 @@ func SetupRoutes(r *gin.Engine,
 
 	novel := r.Group("/novels")
 	{
-		novel.POST("/:novel_updates_id", middleware.AuthMiddleware(), novelController.HandleImportNovel)
+		novel.POST("/", middleware.AuthMiddleware(), novelController.HandleImportNovel)
+		novel.POST("/:novel_updates_id", middleware.AuthMiddleware(), novelController.HandleImportNovelByNovelUpdatesID)
 		novel.GET("/", novelController.GetNovels)
 		novel.GET("/authors/:author_name", novelController.GetNovelsByAuthorName)
 		novel.GET("/genres/:genre_name", novelController.GetNovelsByGenreName)

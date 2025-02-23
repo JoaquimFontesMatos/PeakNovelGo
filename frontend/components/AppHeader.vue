@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { hasPermission } from '~/config/permissionsConfig';
+
 const isTop = ref(true);
 const isMenuOpen = ref(false);
 const lastScrollY = ref(0);
@@ -76,43 +78,59 @@ watch(isMenuOpen, val => {
     ]"
     style="will-change: transform, opacity"
   >
-    <div @click="handleClickHome()" class="flex items-center gap-2 cursor-pointer">
-      <img src="/android-chrome-512x512.png" alt="PeakNovelGo Logo" class="w-10 h-10 cursor-pointer hover:scale-105 brightness-105" />
-      <h1 class="text-2xl font-bold hover:cursor-pointer hidden sm:block">PeakNovelGo</h1>
+    <div @click="handleClickHome()" class="flex cursor-pointer items-center gap-2">
+      <img src="/android-chrome-512x512.png" alt="PeakNovelGo Logo" class="h-10 w-10 cursor-pointer brightness-105 hover:scale-105" />
+      <h1 class="hidden text-2xl font-bold hover:cursor-pointer sm:block">PeakNovelGo</h1>
     </div>
 
     <!-- Desktop Navigation -->
-    <div class="hidden md:flex flex-1 justify-end items-center gap-5 pr-4">
+    <div class="hidden flex-1 items-center justify-end gap-5 pr-4 md:flex">
       <div class="flex gap-5">
         <NuxtLink class="hover:text-accent-gold hover:underline" to="/novels">Novels</NuxtLink>
         <NuxtLink v-if="user" class="hover:text-accent-gold hover:underline" to="/settings"> Settings </NuxtLink>
+        <NuxtLink
+          v-if="user && hasPermission(user, 'novels', 'create')"
+          @click="isMenuOpen = false"
+          class="hover:text-accent-gold hover:underline"
+          to="/novels/import"
+        >
+          Import Novel
+        </NuxtLink>
       </div>
 
       <div v-if="!user" class="flex gap-5">
         <NuxtLink class="hover:text-accent-gold hover:underline" to="/auth/login">Login</NuxtLink>
         <NuxtLink class="hover:text-accent-gold hover:underline" to="/auth/sign-up"> Register </NuxtLink>
       </div>
-      <div v-else class="flex gap-5 items-center">
+      <div v-else class="flex items-center gap-5">
         <p class="hidden sm:block">Hello, {{ user.username }}</p>
-        <p @click="handleLogout()" class="hover:text-accent-gold hover:underline cursor-pointer">Logout</p>
+        <p @click="handleLogout()" class="cursor-pointer hover:text-accent-gold hover:underline">Logout</p>
       </div>
     </div>
 
     <!-- Mobile Hamburger -->
-    <button @click="toggleMenu()" class="md:hidden p-2 mr-4 focus:outline-none hamburger" aria-label="Toggle menu">
-      <Icon name="fluent:line-horizontal-3-20-filled" class="w-6 h-6" :class="isMenuOpen ? 'hidden' : 'block'" />
-      <Icon name="fluent:dismiss-20-filled" class="w-6 h-6" :class="isMenuOpen ? 'block' : 'hidden'" />
+    <button @click="toggleMenu()" class="hamburger mr-4 p-2 focus:outline-none md:hidden" aria-label="Toggle menu">
+      <Icon name="fluent:line-horizontal-3-20-filled" class="h-6 w-6" :class="isMenuOpen ? 'hidden' : 'block'" />
+      <Icon name="fluent:dismiss-20-filled" class="h-6 w-6" :class="isMenuOpen ? 'block' : 'hidden'" />
     </button>
   </header>
 
   <!-- Mobile Menu Drawer -->
   <div
-    class="md:hidden fixed top-14 right-0 h-full w-64 bg-primary bg-opacity-50 backdrop-blur-md transform transition-transform duration-300 ease-in-out mobile-menu z-50"
+    class="mobile-menu fixed right-0 top-14 z-50 h-full w-64 transform bg-primary bg-opacity-50 backdrop-blur-md transition-transform duration-300 ease-in-out md:hidden"
     :class="isMenuOpen ? 'translate-x-0' : 'translate-x-full'"
   >
-    <div class="flex flex-col p-4 space-y-4">
+    <div class="flex flex-col space-y-4 p-4">
       <NuxtLink @click="isMenuOpen = false" class="hover:text-accent-gold hover:underline" to="/novels"> Novels </NuxtLink>
       <NuxtLink v-if="user" @click="isMenuOpen = false" class="hover:text-accent-gold hover:underline" to="/settings"> Settings </NuxtLink>
+      <NuxtLink
+        v-if="user && hasPermission(user, 'novels', 'create')"
+        @click="isMenuOpen = false"
+        class="hover:text-accent-gold hover:underline"
+        to="/novels/import"
+      >
+        Import Novel
+      </NuxtLink>
 
       <template v-if="!user">
         <NuxtLink @click="isMenuOpen = false" class="hover:text-accent-gold hover:underline" to="/auth/login"> Login </NuxtLink>
@@ -121,7 +139,7 @@ watch(isMenuOpen, val => {
 
       <template v-else>
         <p class="pt-4">Hello, {{ user.username }}</p>
-        <p @click="handleLogout()" class="hover:text-accent-gold hover:underline cursor-pointer">Logout</p>
+        <p @click="handleLogout()" class="cursor-pointer hover:text-accent-gold hover:underline">Logout</p>
       </template>
     </div>
   </div>

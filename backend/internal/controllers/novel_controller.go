@@ -6,6 +6,7 @@ import (
 	"backend/internal/services/interfaces"
 	"backend/internal/types"
 	"backend/internal/utils"
+	"backend/internal/validators"
 	"strings"
 
 	//"backend/internal/validators"
@@ -29,20 +30,52 @@ func NewNovelController(novelService interfaces.NovelServiceInterface) *NovelCon
 	return &NovelController{novelService: novelService}
 }
 
-type Session struct {
-	UserInput        string `json:"user_input,omitempty"`
-	OutputPath       string `json:"output_path,omitempty"`
-	Completed        bool   `json:"completed,omitempty"`
-	DownloadChapters []int  `json:"download_chapters,omitempty"`
-}
+// HandleGetNovels handles POST /novel
+func (n *NovelController) HandleImportNovel(ctx *gin.Context) {
+	var metadata models.ImportedNovel
 
-type Metadata struct {
-	Novel   models.ImportedNovel `json:"novel,omitempty"`
-	Session Session              `json:"session,omitempty"`
+	if err := validators.ValidateBody(ctx, &metadata); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	year := strings.ReplaceAll(metadata.Year, "\n", "")
+	status := strings.ReplaceAll(metadata.Status, "\n", "")
+	language := strings.ReplaceAll(metadata.Language.Name, "\n", "")
+	lowerCaseTitle := strings.ToLower(metadata.Title)
+	novelUpdatesID := strings.ReplaceAll(lowerCaseTitle, " ", "-")
+
+	novel := models.Novel{
+		Title:            metadata.Title,
+		Synopsis:         metadata.Synopsis,
+		CoverUrl:         metadata.CoverUrl,
+		Language:         language,
+		Status:           status,
+		NovelUpdatesUrl:  fmt.Sprintf("https://www.novelupdates.com/series/%s", novelUpdatesID),
+		NovelUpdatesID:   novelUpdatesID,
+		Tags:             metadata.Tags,
+		Authors:          metadata.Authors,
+		Genres:           metadata.Genres,
+		Year:             year,
+		ReleaseFrequency: metadata.ReleaseFrequency,
+	}
+
+	// Save the novel to the database
+	createdNovel, err := n.novelService.CreateNovel(novel)
+
+	if err != nil {
+		log.Println(err)
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Failed to save novel to database"})
+		return
+	}
+
+	log.Println("Novel saved successfully")
+
+	ctx.JSON(200, createdNovel)
 }
 
 // HandleGetNovels handles POST /novel
-func (n *NovelController) HandleImportNovel(ctx *gin.Context) {
+func (n *NovelController) HandleImportNovelByNovelUpdatesID(ctx *gin.Context) {
 	novelUpdatesID := ctx.Param("novel_updates_id")
 
 	if novelUpdatesID == "" {
@@ -56,7 +89,7 @@ func (n *NovelController) HandleImportNovel(ctx *gin.Context) {
 	// Capture the output of the Python script
 	output, err := cmd.Output()
 	if err != nil {
-		log.Println("Error:", err)
+		log.Printf("Error: %s\n", err)
 		ctx.JSON(500, gin.H{"error": "Failed to execute Python script"})
 		return
 	}
