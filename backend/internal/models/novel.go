@@ -18,6 +18,7 @@ type Novel struct {
 	Genres           []Genre  `gorm:"many2many:novel_genres;" json:"genres"`
 	Year             string   `gorm:"not null" json:"year"`
 	ReleaseFrequency string   `gorm:"size:255;not null" json:"releaseFrequency"`
+	LatestChapter    int     `gorm:"size:255;not null" json:"latestChapter"`
 }
 
 type ImportedNovel struct {
@@ -31,6 +32,7 @@ type ImportedNovel struct {
 	Genres           []Genre          `json:"genre"`
 	Year             string           `json:"year"`
 	ReleaseFrequency string           `json:"release_freq"`
+	LatestChapter    string           `json:"latest_chapter"`
 }
 
 type ImportedLanguage struct {

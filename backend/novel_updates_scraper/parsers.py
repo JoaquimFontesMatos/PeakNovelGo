@@ -94,19 +94,20 @@ def parseSearch(req):
 
 
 def parseChapters(req):
+    """Parses the chapter content from the response."""
     soup = bs(req.text, "html.parser")
-
     chapter_article = soup.find("article", id="chapter-article")
+
+    if not chapter_article:
+        return None  # No valid chapter found
+
     section = chapter_article.find("section", class_="page-in content-wrap")
     title = section.find("h1").find("span", class_="chapter-title").text.strip()
 
     body = section.find("div", id="chapter-container")
+    body = body.decode_contents().strip() if body else ""
 
-    body = body.decode_contents().strip()
-
-    result = {"title": title, "body": body, "err": False}
-
-    return result
+    return {"title": title, "body": body}
 
 
 def parseSeries(req):
@@ -189,5 +190,6 @@ def parseSeries(req):
         "status": status,
         "release_freq": "N/A",
         "description": description,
+        "latest_chapter": latest_chapter,
     }
     return result

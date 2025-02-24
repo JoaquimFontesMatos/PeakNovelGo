@@ -15,6 +15,7 @@ type NovelServiceInterface interface {
 	GetChapterByNovelUpdatesIDAndChapterNo(novelTitle string, chapterNo uint) (*models.Chapter, error)
 	GetChaptersByNovelUpdatesID(novelTitle string, page, limit int) ([]models.Chapter, int64, error)
 	CreateNovel(novel models.Novel) (*models.Novel, error)
+	IsChapterCreated(chapterNo uint, novelID uint) bool
 	CreateChapters(chapters []models.Chapter) (int, error)
 	GetChaptersByNovelID(novelID uint, page, limit int) ([]models.Chapter, int64, error)
 	CreateChapter(chapter models.Chapter) (*models.Chapter, error)

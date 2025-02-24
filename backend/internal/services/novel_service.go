@@ -61,6 +61,10 @@ func (s *NovelService) GetChaptersByNovelID(novelID uint, page, limit int) ([]mo
 	return s.repo.GetChaptersByNovelID(novelID, page, limit)
 }
 
+func (s *NovelService) IsChapterCreated(chapterNo uint, novelID uint) bool {
+	return s.repo.IsChapterCreated(chapterNo, novelID)
+}
+
 func (s *NovelService) CreateChapter(chapter models.Chapter) (*models.Chapter, error) {
 	return s.repo.CreateChapter(chapter)
 }

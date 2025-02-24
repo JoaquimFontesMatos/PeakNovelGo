@@ -63,14 +63,13 @@ class Client:
 
         Parameters
         ----------
-        id : :class:`int`
+        series_id : :class:`int`
             The id of the series. (/series/{ID})
 
         Returns
         -------
         :class:`dict`
-            A dictionary containing information about the series.
-            Contains all information and links for the series.
+            A dictionary containing chapter information, or an error indicator.
         """
         url = f"https://www.lightnovelworld.co/novel/{series_id}/chapter-{i}"
         req = self.req.get(url)  # Make the request
@@ -79,24 +78,31 @@ class Client:
 
         while tries > 0 and req.status_code != 200:
             if req.status_code == 404:
-                return None
+                return {"status": 404, "chapter_no": i, "error": "Chapter not found"}
             else:
                 tries -= 1
-                req = self.req.get(url)  # Make the request
+                req = self.req.get(url)  # Retry request
 
         if req.status_code != 200:
-            return False
+            return {
+                "status": 500,
+                "chapter_no": i,
+                "error": "Failed to retrieve chapter",
+            }
 
         # Parse the chapter content
         chapter_data = parsers.parseChapters(req)
 
-        chapter = {
+        if not chapter_data["body"].strip():
+            return {"status": 204, "chapter_no": i, "error": "Empty chapter"}
+
+        return {
+            "status": 200,
+            "chapter_no": i,
             "title": chapter_data["title"],
             "url": url,
             "body": chapter_data["body"],
         }
-
-        return chapter
 
     def series_groups(self, series_id):
         """Gets the groups that are translating a series.
