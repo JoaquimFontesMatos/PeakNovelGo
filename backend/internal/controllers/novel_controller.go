@@ -107,8 +107,8 @@ func (n *NovelController) HandleImportNovelByNovelUpdatesID(ctx *gin.Context) {
 	year := strings.ReplaceAll(result.Year, "\n", "")
 	status := strings.ReplaceAll(result.Status, "\n", "")
 	language := strings.ReplaceAll(result.Language.Name, "\n", "")
-	latestChapter ,err:= utils.ParseInt(result.LatestChapter)
-	if err!=nil{
+	latestChapter, err := utils.ParseInt(result.LatestChapter)
+	if err != nil {
 		ctx.JSON(500, gin.H{"error": "Invalid Latest Chapter"})
 		return
 	}
@@ -167,9 +167,9 @@ func (n *NovelController) HandleImportChapters(ctx *gin.Context) {
 	}
 }
 
-type SkippedChapter struct {
-	ChapterNo int
-	Title     string
+type ChapterStatus struct {
+	ChapterNo int    `json:"chapterNo"`
+	Status    string `json:"status"`
 }
 
 func (n *NovelController) processChaptersWithStreaming(ctx *gin.Context, novelUpdatesID string, novelID uint) error {
@@ -177,13 +177,13 @@ func (n *NovelController) processChaptersWithStreaming(ctx *gin.Context, novelUp
 	chapterCount := 0
 	chapterQueue := make(chan int, workerCount)
 	results := make(chan models.ImportedChapterMetadata)
-	errorsChan := make(chan error)
-	skippedChan := make(chan SkippedChapter)
+	errorsChan := make(chan ChapterStatus)
+	skippedChan := make(chan ChapterStatus)
 	done := make(chan struct{})
 
 	var wg sync.WaitGroup
 
-	// 🔥 Fetch the latest chapter number before scraping
+	// Fetch the latest chapter number before scraping
 	seriesInfo, err := n.novelService.GetNovelByUpdatesID(novelUpdatesID)
 	if err != nil {
 		fmt.Fprintf(ctx.Writer, "event: error\ndata: %s\n\n", err.Error())
@@ -192,11 +192,15 @@ func (n *NovelController) processChaptersWithStreaming(ctx *gin.Context, novelUp
 	}
 
 	latestChapter := seriesInfo.LatestChapter
-
 	if latestChapter == 0 {
 		fmt.Fprintf(ctx.Writer, "event: error\ndata: No chapters found\n\n")
 		ctx.Writer.Flush()
 		return fmt.Errorf("no chapters found")
+	}
+
+	chapterStatuses := make(map[int]string, latestChapter+2)
+	for i := 1; i <= latestChapter; i++ {
+		chapterStatuses[i] = "to download"
 	}
 
 	// Worker goroutines
@@ -206,15 +210,14 @@ func (n *NovelController) processChaptersWithStreaming(ctx *gin.Context, novelUp
 			defer wg.Done()
 			for chapterNo := range chapterQueue {
 				isChapterCreated := n.novelService.IsChapterCreated(uint(chapterNo), novelID)
-
 				if isChapterCreated {
-					skippedChan <- SkippedChapter{ChapterNo: chapterNo, Title: fmt.Sprintf("Chapter %d", chapterNo)}
+					skippedChan <- ChapterStatus{ChapterNo: chapterNo, Status: "skipped"}
 					continue
 				}
 
 				result, err := n.importChapter(novelUpdatesID, chapterNo)
 				if err != nil {
-					errorsChan <- err
+					errorsChan <- ChapterStatus{ChapterNo: chapterNo, Status: "error"}
 					continue
 				}
 
@@ -223,15 +226,15 @@ func (n *NovelController) processChaptersWithStreaming(ctx *gin.Context, novelUp
 		}()
 	}
 
-	// ✅ Populate queue up to the latest chapter
+	// Populate queue up to the latest chapter
 	go func() {
 		defer close(chapterQueue)
-
 		for chapterNo := 1; chapterNo <= latestChapter; chapterNo++ {
 			select {
 			case <-done:
 				return
 			case chapterQueue <- chapterNo:
+				log.Printf("Added chapter %d to queue", chapterNo)
 			}
 		}
 	}()
@@ -248,31 +251,49 @@ func (n *NovelController) processChaptersWithStreaming(ctx *gin.Context, novelUp
 	for {
 		select {
 		case err := <-errorsChan:
-			fmt.Fprintf(ctx.Writer, "event: error\ndata: %s\n\n", err.Error())
+			chapterStatuses[err.ChapterNo] = err.Status
+			log.Printf("Error importing chapter %d: %s", err.ChapterNo, err.Status)
 			ctx.Writer.Flush()
 
 		case result, ok := <-results:
 			if !ok {
-				fmt.Fprintf(ctx.Writer, "event: complete\ndata: Chapters extracted successfully. %d chapters added.\n\n", chapterCount)
+				log.Printf("All chapters processed")
+				fmt.Fprintf(ctx.Writer, "event: complete\ndata: All chapters processed\n\n")
 				ctx.Writer.Flush()
 				return nil
 			}
 
+			chapterStatuses[int(result.ID)] = "downloading"
+			ctx.Writer.Flush()
+
 			err := n.saveChapter(novelID, result)
 			if err != nil {
+				log.Printf("Failed to save chapter %d: %v", result.ID, err)
 				return err
 			}
 
 			chapterCount++
-			fmt.Fprintf(ctx.Writer, "event: progress\ndata: Imported Chapter: %s\n\n", result.Title)
+			chapterStatuses[int(result.ID)] = "downloaded"
 			ctx.Writer.Flush()
 
 		case skipped, ok := <-skippedChan:
 			if ok {
-				fmt.Fprintf(ctx.Writer, "event: skipped\ndata: Chapter: %s\n\n",  skipped.Title)
+				chapterStatuses[skipped.ChapterNo] = "skipped"
 				ctx.Writer.Flush()
 			}
 		}
+
+		// Send the current status map
+		statusJSON, err := json.Marshal(chapterStatuses)
+		if err != nil {
+			log.Printf("Failed to marshal statuses: %v", err)
+			fmt.Fprintf(ctx.Writer, "event: error\ndata: %s\n\n", err.Error())
+			ctx.Writer.Flush()
+			return err
+		}
+
+		fmt.Fprintf(ctx.Writer, "event: status\ndata: %s\n\n", statusJSON)
+		ctx.Writer.Flush()
 	}
 }
 
@@ -288,7 +309,7 @@ func (n *NovelController) importChapter(novelUpdatesID string, chapterNo int) (m
 	var result struct {
 		Title     string `json:"title"`
 		Body      string `json:"body"`
-		ChapterNo string    `json:"chapter_no"`
+		ChapterNo string `json:"chapter_no"`
 		Status    int    `json:"status"`
 		Error     string `json:"error,omitempty"`
 	}

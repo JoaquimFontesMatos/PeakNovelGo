@@ -96,6 +96,14 @@ watch(isMenuOpen, val => {
         >
           Import Novel
         </NuxtLink>
+        <NuxtLink
+          v-if="user && hasPermission(user, 'chapters', 'create')"
+          @click="isMenuOpen = false"
+          class="hover:text-accent-gold hover:underline"
+          to="/novels/import/chapters"
+        >
+          Import Chapters
+        </NuxtLink>
       </div>
 
       <div v-if="!user" class="flex gap-5">
@@ -130,6 +138,14 @@ watch(isMenuOpen, val => {
         to="/novels/import"
       >
         Import Novel
+      </NuxtLink>
+      <NuxtLink
+        v-if="user && hasPermission(user, 'chapters', 'create')"
+        @click="isMenuOpen = false"
+        class="hover:text-accent-gold hover:underline"
+        to="/novels/import/chapters"
+      >
+        Import Chapters
       </NuxtLink>
 
       <template v-if="!user">
