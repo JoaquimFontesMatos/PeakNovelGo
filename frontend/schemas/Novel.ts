@@ -36,6 +36,7 @@ const NovelSchema = z.object({
   year: z.string(),
   releaseFrequency: z.string(),
   novelUpdatesId: z.string(),
+  latestChapter: z.number(),
 });
 
 const PaginatedNovelsSchema = PaginatedServerResponseSchema<typeof NovelSchema>(NovelSchema);

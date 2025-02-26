@@ -65,18 +65,18 @@ export const useChapterStore = defineStore('Chapter', () => {
       } catch (error) {
         console.error('Failed to parse status update:', error);
       }
-    }, 1000); // Adjust the interval (in milliseconds) as needed
+    }, 300); // Adjust the interval (in milliseconds) as needed
 
     eventSource.addEventListener('status', throttledStatusHandler);
 
-    eventSource.addEventListener('error', event => {
-      console.error('EventSource failed:', event);
+    eventSource.addEventListener('error', (event: MessageEvent) => {
+      console.error('EventSource failed:', event.data);
       eventSource.close();
       importingChapters.value = false; // Reset importing state
     });
 
-    eventSource.addEventListener('complete', () => {
-      console.log('Chapter import completed');
+    eventSource.addEventListener('complete', (event: MessageEvent) => {
+      console.log('Chapter import completed:', event.data);
       eventSource.close();
       importingChapters.value = false; // Reset importing state
     });

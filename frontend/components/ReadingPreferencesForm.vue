@@ -90,12 +90,16 @@ const handleChangeReadingPreferences = async () => {
         <div class="form-group">
           <label for="voice" class="block text-sm font-medium text-secondary-content">Voice</label>
           <select id="voice" name="voice" v-model="user.readingPreferences.tts.voice" @change="handleChangeReadingPreferences()">
-            <option value="en-US-AriaNeural">en-US AriaNeural</option>
-            <option value="Reading">Reading</option>
-            <option value="Completed">Completed</option>
-            <option value="On-Hold">On-Hold</option>
-            <option value="Dropped">Dropped</option>
-            <option value="Plan to Read">Plan to Read</option>
+            <option value="en-US-AriaNeural">en-US-AriaNeural</option>
+            <option value="en-US-MichelleNeural">en-US-MichelleNeural</option>
+            <option value="en-US-ChristopherNeural">en-US-ChristopherNeural</option>
+            <option value="en-US-AnaNeural">en-US-AnaNeural</option>
+            <option value="en-GB-SoniaNeural">en-GB-SoniaNeural</option>
+            <option value="en-US-AvaNeural">en-US-AvaNeural</option>
+            <option value="en-GB-LibbyNeural">en-GB-LibbyNeural</option>
+            <option value="es-ES-ElviraNeural">es-ES-ElviraNeural</option>
+            <option value="en-US-SteffanNeural">en-US-SteffanNeural</option>
+            <option value="en-US-JennyNeural">en-US-JennyNeural</option>
           </select>
         </div>
 

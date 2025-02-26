@@ -6,6 +6,7 @@ const props = defineProps<{
   novelTitle: string;
   chapter: Chapter | null;
 }>();
+const textUtils = new BaseTextUtils();
 
 const ttsStore = useTTSStore();
 const userStore = useUserStore();
@@ -114,38 +115,34 @@ watch(currentParagraph, newValue => {
 });
 
 // Watch for changes to the chapter prop
-watch(
-  () => props.chapter,
-  async newChapter => {
-    if (!newChapter || !user.value) return;
-    // Reset state for the new chapter
-    currentParagraph.value = 0;
-    isPlaying.value = false;
-    cleanupAudioPlayer();
+watchEffect(async () => {
+  if (!props.chapter || !user.value) return;
+  // Reset state for the new chapter
+  currentParagraph.value = 0;
+  isPlaying.value = false;
+  cleanupAudioPlayer();
 
-    if (!user.value.readingPreferences.tts.voice || user.value.readingPreferences.tts.voice === '' || user.value.readingPreferences.tts.voice === ' ') {
-      user.value.readingPreferences.tts.voice = 'en-US-AriaNeural';
-    }
+  if (!user.value.readingPreferences.tts.voice || user.value.readingPreferences.tts.voice === '' || user.value.readingPreferences.tts.voice === ' ') {
+    user.value.readingPreferences.tts.voice = 'en-US-AriaNeural';
+  }
 
-    const ttsRequest: TTSRequest = {
-      text: newChapter.body,
-      novelId: newChapter.novelId,
-      chapterNo: newChapter.chapterNo,
-      voice: user.value.readingPreferences.tts.voice,
-      rate: user.value.readingPreferences.tts.rate || 0,
-    };
+  const ttsRequest: TTSRequest = {
+    text: props.chapter.body,
+    novelId: props.chapter.novelId,
+    chapterNo: props.chapter.chapterNo,
+    voice: user.value.readingPreferences.tts.voice,
+    rate: user.value.readingPreferences.tts.rate || 0,
+  };
 
-    try {
-      await ttsStore.generateTTS(ttsRequest);
-    } catch {}
+  try {
+    await ttsStore.generateTTS(ttsRequest);
+  } catch {}
 
-    // Start playing audio for the first paragraph
-    if (paragraphs.value.length > 0) {
-      playAudio();
-    }
-  },
-  { immediate: true }
-);
+  // Start playing audio for the first paragraph
+  if (paragraphs.value.length > 0) {
+    playAudio();
+  }
+});
 </script>
 
 <template>
@@ -166,7 +163,7 @@ watch(
       :class="index === currentParagraph ? 'text-primary p-[0.75rem] bg-primary-content' : 'text-secondary'"
       @dblclick="currentParagraph = index"
     >
-      <p class="2xl:text:3xl my-9 font-mono font-bold md:text-lg lg:text-xl xl:text-2xl">
+      <p class="2xl:text:3xl my-9 font-bold md:text-lg lg:text-xl xl:text-2xl" :class="user ? user.readingPreferences.font : 'font-mono'">
         {{ paragraph.text }}
       </p>
     </div>

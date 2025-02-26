@@ -182,6 +182,12 @@ watchEffect(async () => {
             </DetailsInfo>
             <SmallVerticalSpacer />
 
+            <DetailsLabel>Latest Chapter:</DetailsLabel>
+            <DetailsInfo>
+              {{ novel.latestChapter }}
+            </DetailsInfo>
+            <SmallVerticalSpacer />
+
             <DetailsLabel>Novel Updates URL:</DetailsLabel>
             <img
               @click="openNovelUpdatesUrl(novel.novelUpdatesUrl)"

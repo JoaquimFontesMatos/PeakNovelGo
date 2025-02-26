@@ -2,12 +2,12 @@ package controllers
 
 import (
 	"archive/zip"
+	"backend/internal/dtos"
 	"backend/internal/models"
 	"backend/internal/services/interfaces"
 	"backend/internal/types"
 	"backend/internal/utils"
 	"backend/internal/validators"
-	"errors"
 	"strings"
 
 	//"backend/internal/validators"
@@ -119,7 +119,7 @@ func (n *NovelController) HandleImportNovelByNovelUpdatesID(ctx *gin.Context) {
 		CoverUrl:         result.CoverUrl,
 		Language:         language,
 		Status:           status,
-		NovelUpdatesUrl:  fmt.Sprintf("https://www.novelupdates.com/series/%s", novelUpdatesID),
+		NovelUpdatesUrl:  fmt.Sprintf("https://www.lightnovelworld.co/novel/%s", novelUpdatesID),
 		NovelUpdatesID:   novelUpdatesID,
 		Tags:             result.Tags,
 		Authors:          result.Authors,
@@ -167,9 +167,13 @@ func (n *NovelController) HandleImportChapters(ctx *gin.Context) {
 	}
 }
 
-type ChapterStatus struct {
-	ChapterNo int    `json:"chapterNo"`
-	Status    string `json:"status"`
+func getStatusJSON(statuses map[int]string) string {
+	statusJSON, err := json.Marshal(statuses)
+	if err != nil {
+		log.Printf("Failed to marshal statuses: %v", err)
+		return "{}"
+	}
+	return string(statusJSON)
 }
 
 func (n *NovelController) processChaptersWithStreaming(ctx *gin.Context, novelUpdatesID string, novelID uint) error {
@@ -177,8 +181,8 @@ func (n *NovelController) processChaptersWithStreaming(ctx *gin.Context, novelUp
 	chapterCount := 0
 	chapterQueue := make(chan int, workerCount)
 	results := make(chan models.ImportedChapterMetadata)
-	errorsChan := make(chan ChapterStatus)
-	skippedChan := make(chan ChapterStatus)
+	errorsChan := make(chan dtos.ChapterStatus)
+	skippedChan := make(chan dtos.ChapterStatus)
 	done := make(chan struct{})
 
 	var wg sync.WaitGroup
@@ -211,13 +215,13 @@ func (n *NovelController) processChaptersWithStreaming(ctx *gin.Context, novelUp
 			for chapterNo := range chapterQueue {
 				isChapterCreated := n.novelService.IsChapterCreated(uint(chapterNo), novelID)
 				if isChapterCreated {
-					skippedChan <- ChapterStatus{ChapterNo: chapterNo, Status: "skipped"}
+					skippedChan <- dtos.ChapterStatus{ChapterNo: chapterNo, Status: "skipped"}
 					continue
 				}
 
-				result, err := n.importChapter(novelUpdatesID, chapterNo)
+				result, err := n.novelService.ImportChapter(novelUpdatesID, chapterNo)
 				if err != nil {
-					errorsChan <- ChapterStatus{ChapterNo: chapterNo, Status: "error"}
+					errorsChan <- dtos.ChapterStatus{ChapterNo: chapterNo, Status: "error"}
 					continue
 				}
 
@@ -253,7 +257,6 @@ func (n *NovelController) processChaptersWithStreaming(ctx *gin.Context, novelUp
 		case err := <-errorsChan:
 			chapterStatuses[err.ChapterNo] = err.Status
 			log.Printf("Error importing chapter %d: %s", err.ChapterNo, err.Status)
-			ctx.Writer.Flush()
 
 		case result, ok := <-results:
 			if !ok {
@@ -263,10 +266,7 @@ func (n *NovelController) processChaptersWithStreaming(ctx *gin.Context, novelUp
 				return nil
 			}
 
-			chapterStatuses[int(result.ID)] = "downloading"
-			ctx.Writer.Flush()
-
-			err := n.saveChapter(novelID, result)
+			err := n.novelService.CreateChapter(novelID, result)
 			if err != nil {
 				log.Printf("Failed to save chapter %d: %v", result.ID, err)
 				return err
@@ -274,90 +274,16 @@ func (n *NovelController) processChaptersWithStreaming(ctx *gin.Context, novelUp
 
 			chapterCount++
 			chapterStatuses[int(result.ID)] = "downloaded"
-			ctx.Writer.Flush()
 
 		case skipped, ok := <-skippedChan:
 			if ok {
 				chapterStatuses[skipped.ChapterNo] = "skipped"
-				ctx.Writer.Flush()
 			}
 		}
 
-		// Send the current status map
-		statusJSON, err := json.Marshal(chapterStatuses)
-		if err != nil {
-			log.Printf("Failed to marshal statuses: %v", err)
-			fmt.Fprintf(ctx.Writer, "event: error\ndata: %s\n\n", err.Error())
-			ctx.Writer.Flush()
-			return err
-		}
-
-		fmt.Fprintf(ctx.Writer, "event: status\ndata: %s\n\n", statusJSON)
+		fmt.Fprintf(ctx.Writer, "event: status\ndata: %s\n\n", getStatusJSON(chapterStatuses))
 		ctx.Writer.Flush()
 	}
-}
-
-func (n *NovelController) importChapter(novelUpdatesID string, chapterNo int) (models.ImportedChapterMetadata, error) {
-	chapterNoStr := strconv.Itoa(chapterNo)
-	cmd := exec.Command(os.Getenv("PYTHON"), "-m", "novel_updates_scraper.client", "import-chapter", novelUpdatesID, chapterNoStr)
-
-	output, err := cmd.Output()
-	if err != nil {
-		return models.ImportedChapterMetadata{}, fmt.Errorf("failed to execute Python script: %v", err)
-	}
-
-	var result struct {
-		Title     string `json:"title"`
-		Body      string `json:"body"`
-		ChapterNo string `json:"chapter_no"`
-		Status    int    `json:"status"`
-		Error     string `json:"error,omitempty"`
-	}
-
-	err = json.Unmarshal(output, &result)
-	if err != nil {
-		return models.ImportedChapterMetadata{}, fmt.Errorf("failed to parse Python script output as JSON: %v", err)
-	}
-
-	if result.Status == 404 {
-		return models.ImportedChapterMetadata{}, fmt.Errorf("no more chapters available")
-	}
-
-	if result.Status == 204 {
-		return models.ImportedChapterMetadata{}, fmt.Errorf("skipping empty chapter %d", chapterNo)
-	}
-
-	return models.ImportedChapterMetadata{
-		ID:         uint(chapterNo),
-		Title:      result.Title,
-		Body:       utils.StripHTML(result.Body),
-		ChapterUrl: fmt.Sprintf("https://www.lightnovelworld.co/novel/%s/chapter-%d", novelUpdatesID, chapterNo),
-	}, nil
-}
-
-// saveChapter inserts chapter into database
-func (n *NovelController) saveChapter(novelID uint, result models.ImportedChapterMetadata) error {
-	importedChapter := models.ImportedChapter{
-		NovelID:    &novelID,
-		ID:         result.ID,
-		Title:      result.Title,
-		ChapterUrl: result.ChapterUrl,
-		Body:       result.Body,
-	}
-
-	chapter := importedChapter.ToChapter()
-	_, err := n.novelService.CreateChapter(*chapter)
-	if err != nil {
-		var userErr *types.MyError
-		if errors.As(err, &userErr) {
-			if userErr.Code == "CONFLICT_ERROR" {
-				return nil // Ignore duplicate errors
-			}
-		}
-		return err
-	}
-
-	return nil
 }
 
 // HandleUploadNovelZip handles POST /novel/upload
@@ -743,22 +669,6 @@ func (n *NovelController) GetChaptersByNovelUpdatesID(ctx *gin.Context) {
 		"limit":      limit,
 		"totalPages": totalPages,
 	})
-}
-
-func (n *NovelController) CreateChapter(ctx *gin.Context) {
-	var chapter models.Chapter
-	if err := ctx.ShouldBindJSON(&chapter); err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	createdChapter, err := n.novelService.CreateChapter(chapter)
-	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-
-	ctx.JSON(http.StatusOK, createdChapter)
 }
 
 func (n *NovelController) GetBookmarkedNovelsByUserID(ctx *gin.Context) {
