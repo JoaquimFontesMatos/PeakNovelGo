@@ -15,9 +15,15 @@ import (
 	"path/filepath"
 
 	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
 )
 
 func main() {
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal("error loading .env file", err)
+	}
+
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8081" // Default port for local testing
@@ -29,7 +35,7 @@ func main() {
 	logDir := "logs"
 
 	// Delete all TTS files
-	err := os.RemoveAll(ttsDir)
+	err = os.RemoveAll(ttsDir)
 	if err != nil {
 		log.Println(err.Error())
 	}
