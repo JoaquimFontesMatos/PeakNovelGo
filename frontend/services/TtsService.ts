@@ -23,7 +23,7 @@ export class BaseTtsService implements TtsService {
     let errorMessage = 'An unexpected error occurred';
 
     try {
-      response = await this.httpClient.authorizedRequest(this.baseUrl + '/novels/tts', {
+      response = await this.httpClient.authorizedRequest(this.baseUrl + '/novels/tts/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

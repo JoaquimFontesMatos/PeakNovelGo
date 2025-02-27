@@ -32,7 +32,7 @@ export class BaseBookmarkService implements BookmarkService {
     };
 
     try {
-      response = await this.httpClient.authorizedRequest(this.baseUrl + '/novels/bookmarked', {
+      response = await this.httpClient.authorizedRequest(this.baseUrl + '/novels/bookmarked/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -99,7 +99,7 @@ export class BaseBookmarkService implements BookmarkService {
     let errorMessage = 'An unexpected error occurred';
 
     try {
-      response = await this.httpClient.authorizedRequest(this.baseUrl + '/novels/bookmarked', {
+      response = await this.httpClient.authorizedRequest(this.baseUrl + '/novels/bookmarked/', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -298,7 +298,7 @@ export class BaseBookmarkService implements BookmarkService {
     let errorMessage = 'An unexpected error occurred';
 
     try {
-      response = await this.httpClient.authorizedRequest(this.baseUrl + '/novels/bookmarked/user/' + userId + '/?page=' + page + '&limit=' + limit, {
+      response = await this.httpClient.authorizedRequest(this.baseUrl + '/novels/bookmarked/user/' + userId + '?page=' + page + '&limit=' + limit, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',

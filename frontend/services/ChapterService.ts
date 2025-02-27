@@ -89,7 +89,7 @@ export class BaseChapterService implements ChapterService {
     let errorMessage = 'An unexpected error occurred';
 
     try {
-      response = await this.httpClient.request(this.baseUrl + '/novels/chapters/novel/' + novelUpdatesId + '/chapters/?page=' + page + '&limit=' + limit, {
+      response = await this.httpClient.request(this.baseUrl + '/novels/chapters/novel/' + novelUpdatesId + '/chapters?page=' + page + '&limit=' + limit, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
