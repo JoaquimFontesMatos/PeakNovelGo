@@ -1,3 +1,6 @@
+## v1.0.1 - 2025-02-27
+* fix: hotfix 1
+* chore: update release notes and changelog for v1.0.0
 ## v1.0.0 - 2025-02-27
 * Merge branch 'dev'
 * fix: fixed a few misplaced toasts and other miscellaneous things
