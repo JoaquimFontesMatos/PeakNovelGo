@@ -1,3 +1,6 @@
+## v1.0.3 - 2025-02-27
+* fix: hotfix 4
+* chore: update release notes and changelog for v1.0.2
 ## v1.0.2 - 2025-02-27
 * fix: hotfix 3
 * fix: hotfix 2
