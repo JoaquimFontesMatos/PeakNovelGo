@@ -13,16 +13,7 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt"
-	"github.com/joho/godotenv"
 )
-
-func init() {
-	// Load environment variables from .env file
-	err := godotenv.Load()
-	if err != nil {
-		log.Println("No .env file found. Using system environment variables.")
-	}
-}
 
 // AuthService struct represents an authentication service.
 type AuthService struct {

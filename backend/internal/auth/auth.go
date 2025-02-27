@@ -1,22 +1,15 @@
 package auth
 
 import (
-	"log"
 	"os"
 
 	"github.com/gorilla/sessions"
-	"github.com/joho/godotenv"
 	"github.com/markbates/goth"
 	"github.com/markbates/goth/gothic"
 	"github.com/markbates/goth/providers/google"
 )
 
 func NewAuth() {
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatal("Error loading .env file", err)
-	}
-
 	store := sessions.NewCookieStore([]byte(os.Getenv("SESSION_SECRET")))
 	store.MaxAge(86400 * 30) // 30 days
 	store.Options.Path = "/"

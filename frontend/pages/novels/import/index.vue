@@ -58,15 +58,8 @@ const onSubmitForm = handleSubmit(async (values: ImportedNovel) => {
 
 <template>
   <Container>
-    <!-- Toggle Form Button -->
-    <button @click="showForm = !showForm" class="w-full rounded border-border bg-secondary px-4 py-2 md:w-auto">
-      <span>{{ showForm ? 'Hide Form' : 'Add Novel Manually' }}</span>
-    </button>
-
-    <VerticalSpacer />
-
     <!-- Input Section -->
-    <div v-if="!showForm">
+    <div>
       <div class="w-full space-y-2 md:w-2/3">
         <label for="novelUpdatesId" class="block text-sm font-medium after:text-error after:content-['*']"> Novel Updates ID </label>
         <div class="relative">
@@ -92,91 +85,6 @@ const onSubmitForm = handleSubmit(async (values: ImportedNovel) => {
         </div>
         <span v-else>Import Novel</span>
       </Button>
-    </div>
-
-    <!-- Manual Form Section -->
-    <div v-if="showForm" class="mt-4 space-y-4 rounded-lg border-border bg-secondary p-4">
-      <h2 class="text-lg font-semibold">Add Novel Manually</h2>
-      <form @submit.prevent="onSubmit" class="space-y-4">
-        <!-- Title -->
-        <div>
-          <label for="title" class="block text-sm font-medium">Title</label>
-          <input id="title" v-model="title" type="text" class="w-full rounded-md border p-2" />
-          <span v-if="titleError" class="mt-1 text-sm text-error">{{ titleError }}</span>
-        </div>
-
-        <!-- Description -->
-        <div>
-          <label for="description" class="block text-sm font-medium">Description</label>
-          <textarea id="description" v-model="description as string" class="w-full rounded-md border p-2" />
-          <span v-if="descriptionError" class="mt-1 text-sm text-error">{{ descriptionError }}</span>
-        </div>
-
-        <!-- Image URL -->
-        <div>
-          <label for="image" class="block text-sm font-medium">Image URL</label>
-          <input id="image" v-model="image" type="text" class="w-full rounded-md border p-2" />
-          <span v-if="imageError" class="mt-1 text-sm text-error">{{ imageError }}</span>
-        </div>
-
-        <!-- Language -->
-        <div>
-          <label for="language" class="block text-sm font-medium">Language</label>
-          <input id="language" v-model="languageName" type="text" class="w-full rounded-md border p-2" />
-          <span v-if="languageError" class="mt-1 text-sm text-error">{{ languageError }}</span>
-        </div>
-
-        <!-- Status -->
-        <div>
-          <label for="status" class="block text-sm font-medium">Status</label>
-          <input id="status" v-model="status" type="text" class="w-full rounded-md border p-2" />
-          <span v-if="statusError" class="mt-1 text-sm text-error">{{ statusError }}</span>
-        </div>
-
-        <!-- Tags -->
-        <div>
-          <label for="tags" class="block text-sm font-medium">Tags</label>
-          <input id="tags" v-model="tags" type="text" class="w-full rounded-md border p-2" placeholder="Comma-separated list" />
-          <span v-if="tagsError" class="mt-1 text-sm text-error">{{ tagsError }}</span>
-        </div>
-
-        <!-- Authors -->
-        <div>
-          <label for="authors" class="block text-sm font-medium">Authors</label>
-          <input id="authors" v-model="authors" type="text" class="w-full rounded-md border p-2" placeholder="Comma-separated list" />
-          <span v-if="authorsError" class="mt-1 text-sm text-error">{{ authorsError }}</span>
-        </div>
-
-        <!-- Genres -->
-        <div>
-          <label for="genres" class="block text-sm font-medium">Genres</label>
-          <input id="genres" v-model="genres" type="text" class="w-full rounded-md border p-2" placeholder="Comma-separated list" />
-          <span v-if="genresError" class="mt-1 text-sm text-error">{{ genresError }}</span>
-        </div>
-
-        <!-- Year -->
-        <div>
-          <label for="year" class="block text-sm font-medium">Year</label>
-          <input id="year" v-model="year" type="text" class="w-full rounded-md border p-2" />
-          <span v-if="yearError" class="mt-1 text-sm text-error">{{ yearError }}</span>
-        </div>
-
-        <!-- Release Frequency -->
-        <div>
-          <label for="release_freq" class="block text-sm font-medium">Release Frequency</label>
-          <input id="release_freq" v-model="release_freq" type="text" class="w-full rounded-md border p-2" />
-          <span v-if="releaseFreqError" class="mt-1 text-sm text-error">{{ releaseFreqError }}</span>
-        </div>
-
-        <!-- Submit Button -->
-        <Button :disabled="importingNovel" @click="onSubmitForm" class="w-full md:w-auto">
-          <div v-if="importingNovel" class="flex items-center gap-2">
-            <LoadingSpinner class="h-5 w-5" />
-            <span>Importing Novel...</span>
-          </div>
-          <span v-else>Import Novel</span>
-        </Button>
-      </form>
     </div>
 
     <VerticalSpacer />

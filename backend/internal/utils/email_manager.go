@@ -9,21 +9,11 @@ import (
 
 	"backend/internal/models"
 	"backend/internal/types"
-
-	"github.com/joho/godotenv"
 )
 
 // EmailSender interface allows mocking of SMTP SendMail
 type EmailSender interface {
 	SendMail(addr string, auth smtp.Auth, from string, to []string, msg []byte) error
-}
-
-func init() {
-	// Load environment variables from .env file
-	err := godotenv.Load()
-	if err != nil {
-		log.Println("No .env file found. Using system environment variables.")
-	}
 }
 
 // SendVerificationEmail sends a verification email to the user.

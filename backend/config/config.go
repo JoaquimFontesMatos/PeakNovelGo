@@ -7,19 +7,12 @@ import (
 	"os"
 
 	"github.com/glebarez/sqlite"
-	"github.com/joho/godotenv"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
 
 // ConnectDB connects to the database, either PostgreSQL or SQLite in-memory, based on an environment variable.
 func ConnectDB(isTest bool) *gorm.DB {
-	// Load environment variables (for PostgreSQL config)
-	err := godotenv.Load()
-	if err != nil {
-		log.Println("No .env file found. Using system environment variables.")
-	}
-
 	var db *gorm.DB
 	var dsn string
 	var errConnect error
