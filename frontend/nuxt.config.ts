@@ -12,7 +12,7 @@ export default defineNuxtConfig({
       autoprefixer: {},
     },
   },
-  compatibilityDate: '2024-11-01',
+  compatibilityDate: '2025-02-27',
   devtools: { enabled: true },
   modules: [
     '@nuxtjs/tailwindcss',
@@ -39,7 +39,7 @@ export default defineNuxtConfig({
   runtimeConfig: {
     // Keys within public are also exposed client-side
     public: {
-      apiUrl: process.env.NUXT_PUBLIC_API_URL || 'http://localhost:80',
+      apiUrl: process.env.NUXT_PUBLIC_API_URL || 'http://localhost:8081',
       runMode: process.env.NUXT_PUBLIC_RUN_MODE || 'development',
     },
   },

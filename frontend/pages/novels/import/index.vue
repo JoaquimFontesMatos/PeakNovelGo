@@ -74,7 +74,7 @@ const onSubmitForm = handleSubmit(async (values: ImportedNovel) => {
             id="novelUpdatesId"
             v-model="novelUpdatesId"
             type="text"
-            placeholder="e.g., naruto"
+            placeholder="e.g., reverend-insanity"
             class="w-full rounded-md border p-2 focus:outline-none focus:ring-2 focus:ring-primary"
             :class="{ 'border-error': errorMessage }"
           />
