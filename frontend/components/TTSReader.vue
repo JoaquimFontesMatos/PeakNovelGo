@@ -6,7 +6,6 @@ const props = defineProps<{
   novelTitle: string;
   chapter: Chapter | null;
 }>();
-const textUtils = new BaseTextUtils();
 
 const ttsStore = useTTSStore();
 const userStore = useUserStore();

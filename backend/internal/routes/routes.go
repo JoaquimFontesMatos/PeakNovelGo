@@ -94,7 +94,7 @@ func SetupRoutes(r *gin.Engine,
 		tts := novel.Group("/tts")
 		{
 			tts.POST("/", middleware.AuthMiddleware(), ttsController.GenerateTTS)
-			tts.GET("/voices",  ttsController.GetVoices)
+			tts.GET("/voices", middleware.AuthMiddleware(), ttsController.GetVoices)
 		}
 	}
 

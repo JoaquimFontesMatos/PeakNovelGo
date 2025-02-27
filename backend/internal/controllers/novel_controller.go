@@ -8,6 +8,7 @@ import (
 	"backend/internal/types"
 	"backend/internal/utils"
 	"backend/internal/validators"
+	"errors"
 	"strings"
 
 	//"backend/internal/validators"
@@ -760,6 +761,15 @@ func (n *NovelController) GetBookmarkedNovelByUserIDAndNovelID(ctx *gin.Context)
 
 	novel, err := n.novelService.GetBookmarkedNovelByUserIDAndNovelID(userID, novelIDParam)
 	if err != nil {
+		var myError *types.MyError
+		if errors.As(err, &myError) {
+			switch myError.Code {
+			case types.NOVEL_NOT_FOUND_ERROR:
+				ctx.JSON(http.StatusNotFound, gin.H{"error": myError.Message})
+			}
+			return
+		}
+
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}

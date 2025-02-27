@@ -55,31 +55,93 @@ export const useChapterStore = defineStore('Chapter', () => {
 
     const eventSourceUrl = `${url}/novels/chapters/${novelUpdatesId}/scrape`;
 
-    const eventSource = new EventSource(eventSourceUrl);
+    // Use your authorizedRequest function to fetch the SSE stream
+    const response = await httpClient.authorizedRequest(eventSourceUrl, {
+      headers: {
+        Accept: 'text/event-stream', // Ensure the server knows you want SSE
+      },
+    });
 
-    // Debounced handler for status updates
-    const throttledStatusHandler = throttle((event: MessageEvent) => {
-      try {
-        const statuses = JSON.parse(event.data) as Record<number, string>;
-        chapterStatuses.value = { ...chapterStatuses.value, ...statuses }; // Update statuses
-      } catch (error) {
-        console.error('Failed to parse status update:', error);
+    if (!response.ok) {
+      console.error('Failed to establish SSE connection:', response.statusText);
+      importingChapters.value = false; // Reset importing state
+      return;
+    }
+
+    // Read the stream
+    const reader = response.body?.getReader();
+    const decoder = new TextDecoder();
+
+    if (!reader) {
+      console.error('Failed to read SSE stream');
+      importingChapters.value = false; // Reset importing state
+      return;
+    }
+
+    const processStream = async () => {
+      let buffer = ''; // Buffer to accumulate incomplete data
+
+      while (true) {
+        const { done, value } = await reader.read();
+
+        if (done) {
+          console.log('SSE stream closed');
+          importingChapters.value = false; // Reset importing state
+          return;
+        }
+
+        const chunk = decoder.decode(value); // Decode the chunk
+        buffer += chunk; // Append the chunk to the buffer
+
+        // Split the buffer by double newlines (SSE events are separated by \n\n)
+        const events = buffer.split('\n\n');
+
+        // Process all complete events (leave the last one in the buffer if incomplete)
+        for (let i = 0; i < events.length - 1; i++) {
+          const event = events[i].trim(); // Remove any leading/trailing whitespace
+
+          if (!event) {
+            // Skip empty events
+            continue;
+          }
+
+          // Split the event into individual lines
+          const lines = event.split('\n');
+
+          let eventType = ''; // To store the event type (e.g., "status")
+          let eventData = ''; // To store the JSON data
+
+          // Process each line in the event
+          for (const line of lines) {
+            if (line.startsWith('event:')) {
+              // Extract the event type
+              eventType = line.replace('event:', '').trim();
+            } else if (line.startsWith('data:')) {
+              // Extract the JSON data
+              eventData = line.replace('data:', '').trim();
+            }
+          }
+
+          // Only process if the event type is "status" and data is present
+          if (eventType === 'status' && eventData) {
+            try {
+              const statuses = JSON.parse(eventData) as Record<number, string>;
+              chapterStatuses.value = { ...chapterStatuses.value, ...statuses }; // Update statuses
+            } catch (error) {
+              console.error('Failed to parse status update:', error);
+              console.error('Invalid JSON data:', eventData); // Log the invalid data
+            }
+          } else {
+            console.warn('Skipping non-status event or empty data:', event);
+          }
+        }
+
+        // Keep the last (possibly incomplete) event in the buffer
+        buffer = events[events.length - 1];
       }
-    }, 300); // Adjust the interval (in milliseconds) as needed
+    };
 
-    eventSource.addEventListener('status', throttledStatusHandler);
-
-    eventSource.addEventListener('error', (event: MessageEvent) => {
-      console.error('EventSource failed:', event.data);
-      eventSource.close();
-      importingChapters.value = false; // Reset importing state
-    });
-
-    eventSource.addEventListener('complete', (event: MessageEvent) => {
-      console.log('Chapter import completed:', event.data);
-      eventSource.close();
-      importingChapters.value = false; // Reset importing state
-    });
+    processStream();
   };
 
   return {
