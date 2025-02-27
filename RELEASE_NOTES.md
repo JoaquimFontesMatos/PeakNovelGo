@@ -1,3 +1,7 @@
+## v1.0.4 - 2025-02-27
+* Merge remote-tracking branch 'origin/main'
+* fix: hotfix 5
+* chore: update release notes and changelog for v1.0.3
 ## v1.0.3 - 2025-02-27
 * fix: hotfix 4
 * chore: update release notes and changelog for v1.0.2
