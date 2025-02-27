@@ -1,3 +1,30 @@
+## v1.0.0 - 2025-02-27
+* Merge branch 'dev'
+* fix: fixed a few misplaced toasts and other miscellaneous things
+* fix: fixed several tiny bugs
+* feat: added import chapter page to frontend
+* fix: fixed the chapter import timing out
+* feat: added chapter import in backend
+* feat: added novel import
+* feat: added google login
+* fix: removeld old files
+* fix: removeld old files
+* fix: removeld old files
+* fix: fixed git ignore
+* feat: added Dependency injection to Services
+* test
+* feat: added favicon
+* feat: added a activate account page
+* feat: added a login guard
+* feat: added a custom icon map for the different errors and such
+* feat: added a more manageable way to handle errors
+* Merge remote-tracking branch 'origin/dev' into dev
+* feat: refactored all the stores and toasts
+* feat: refactored all the stores and toasts
+* feat: added a logger
+* feat: now the navigation bar hides when scrolling down
+* Merge branch 'main' into dev
+* chore: update release notes and changelog for v0.10.0
 ## v0.10.0 - 2025-02-03
 * Merge remote-tracking branch 'origin/main'
 * fix: fixed the header responsiveness
