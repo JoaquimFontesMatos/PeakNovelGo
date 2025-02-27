@@ -153,6 +153,8 @@ type NovelRepositoryInterface interface {
 	//   - NO_CHAPTERS_ERROR if the chapters could not be fetched
 	GetChaptersByNovelUpdatesID(novelTitle string, page, limit int) ([]models.Chapter, int64, error)
 
+	IsChapterCreated(chapterNo uint, novelID uint) bool
+
 	// CreateChapter creates a new chapter in the database.
 	//
 	// Parameters:

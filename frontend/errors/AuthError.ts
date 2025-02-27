@@ -1,12 +1,11 @@
 import { ErrorBase } from '~/errors/ErrorBase';
 
-type ErrorName =
-    | 'SIGN_UP_ERROR'
-    | 'REFRESH_TOKEN_ERROR'
-    | 'LOGOUT_ERROR'
-    | 'UNAUTHORIZED_ERROR'
-    | 'INVALID_CREDENTIALS_ERROR'
-    | 'INVALID_SESSION_DATA'
+type AuthErrorName = 'SIGN_UP_ERROR' | 'REFRESH_TOKEN_ERROR' | 'LOGOUT_ERROR' | 'UNAUTHORIZED_ERROR' | 'INVALID_CREDENTIALS_ERROR' | 'INVALID_SESSION_DATA';
 
-export class AuthError extends ErrorBase<ErrorName> {
+class AuthError extends ErrorBase<'AuthError', AuthErrorName> {
+  constructor(params: { type: AuthErrorName; message: string; cause?: unknown }) {
+    super({ name: 'AuthError', type: params.type, message: params.message, cause: params.cause });
+  }
 }
+
+export { AuthError, type AuthErrorName };

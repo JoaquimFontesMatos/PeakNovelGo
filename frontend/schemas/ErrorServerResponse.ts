@@ -1,5 +1,9 @@
-import * as yup from 'yup';
+import { z } from 'zod';
 
-export const ErrorServerResponseSchema = yup.object({
-    error: yup.string().required(),
+const ErrorServerResponseSchema = z.object({
+  error: z.string().nonempty('Error message is required'),
 });
+
+type ErrorServerResponse = z.infer<typeof ErrorServerResponseSchema>;
+
+export { type ErrorServerResponse, ErrorServerResponseSchema };

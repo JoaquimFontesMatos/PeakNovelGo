@@ -55,8 +55,54 @@ class Client:
             A dictionary containing information about the series.
             Contains all information and links for the series.
         """
-        req = self.req.get(f"https://www.novelupdates.com/series/{series_id}")
+        req = self.req.get(f"https://www.lightnovelworld.co/novel/{series_id}")
         return parsers.parseSeries(req)
+
+    def chapters(self, series_id, i=1):
+        """Gets the chapters of a series.
+
+        Parameters
+        ----------
+        series_id : :class:`int`
+            The id of the series. (/series/{ID})
+
+        Returns
+        -------
+        :class:`dict`
+            A dictionary containing chapter information, or an error indicator.
+        """
+        url = f"https://www.lightnovelworld.co/novel/{series_id}/chapter-{i}"
+        req = self.req.get(url)  # Make the request
+
+        tries = 5
+
+        while tries > 0 and req.status_code != 200:
+            if req.status_code == 404:
+                return {"status": 404, "chapter_no": i, "error": "Chapter not found"}
+            else:
+                tries -= 1
+                req = self.req.get(url)  # Retry request
+
+        if req.status_code != 200:
+            return {
+                "status": 500,
+                "chapter_no": i,
+                "error": "Failed to retrieve chapter",
+            }
+
+        # Parse the chapter content
+        chapter_data = parsers.parseChapters(req)
+
+        if not chapter_data["body"].strip():
+            return {"status": 204, "chapter_no": i, "error": "Empty chapter"}
+
+        return {
+            "status": 200,
+            "chapter_no": i,
+            "title": chapter_data["title"],
+            "url": url,
+            "body": chapter_data["body"],
+        }
 
     def series_groups(self, series_id):
         """Gets the groups that are translating a series.
@@ -90,9 +136,19 @@ if __name__ == "__main__":
 
     # Read the argument passed from Go
     if len(sys.argv) > 1:
-        series_id = sys.argv[1]
-        result = client.series_info(series_id)
-        print(json.dumps(result))
+        action = sys.argv[1]
+
+        if action == "import-novel":
+            series_id = sys.argv[2]
+            result = client.series_info(series_id)
+
+            print(json.dumps(result))
+        elif action == "import-chapter":
+            series_id = sys.argv[2]
+            chaptNo = sys.argv[3]
+            result = client.chapters(series_id, chaptNo)
+
+            print(json.dumps(result))
     else:
         print(json.dumps({"error": "No series ID provided"}))
         sys.exit(1)

@@ -26,11 +26,39 @@ type Paragraph struct {
 	URL      string `json:"url"`
 }
 
+// Define supported voices as a map for fast lookup
+var supportedVoices = map[string]bool{
+	"en-US-AriaNeural":        true,
+	"en-GB-LibbyNeural":       true,
+	"es-ES-ElviraNeural":      true,
+	"en-US-SteffanNeural":     true,
+	"en-US-JennyNeural":       true,
+	"en-US-MichelleNeural":    true,
+	"en-US-EricNeural":        true,
+	"en-US-ChristopherNeural": true,
+	"en-US-AnaNeural":         true,
+	"en-GB-SoniaNeural":       true,
+	"en-US-AvaNeural":         true,
+
+	// Add more voices as needed
+}
+
+// isVoiceSupported checks if the given voice is supported.
+func isVoiceSupported(voice string) bool {
+	_, exists := supportedVoices[voice]
+	return exists
+}
+
 // GenerateTTSFile generates TTS audio for a given text and voice and saves it to a file.
 func (s *TTSService) GenerateTTSFile(paragraphs []Paragraph, voice string, rate int) error {
 	// Validate the rate value
 	if rate < -100 || rate > 100 {
 		return fmt.Errorf("rate must be between -100 and 100 (inclusive)")
+	}
+
+	// Check if the voice is supported
+	if !isVoiceSupported(voice) {
+		return fmt.Errorf("invalid voice: %s", voice)
 	}
 
 	// Format the rate as a string with a % sign
@@ -91,18 +119,20 @@ func (s *TTSService) generateFile(filePath string) (io.Writer, error) {
 
 func (s *TTSService) GenerateParagraphs(ttsRequest *dtos.TTSRequest, baseUrl string) []Paragraph {
 	// Split the text into paragraphs based on double newlines
-	paragraphs := strings.Split(ttsRequest.Text, "\n\n")
+	paragraphs := strings.Split(ttsRequest.Text, "\n")
 
 	// Process paragraphs to handle dots or other special cases
 	processedParagraphs := make([]string, 0, len(paragraphs))
 	for _, paragraph := range paragraphs {
 		trimmedParagraph := strings.TrimSpace(paragraph)
-		if trimmedParagraph == "" {
+		trimmedParagraph = strings.ReplaceAll(trimmedParagraph, "<", "")
+		trimmedParagraph = strings.ReplaceAll(trimmedParagraph, ">", "")
+		if trimmedParagraph == "" || trimmedParagraph == "\n" {
 			// Skip empty paragraphs
 			continue
 		} else if isOnlyDots(trimmedParagraph) {
 			// Replace dots with a meaningful placeholder for TTS
-			processedParagraphs = append(processedParagraphs, ". . .    cenary change    . . .")
+			processedParagraphs = append(processedParagraphs, ". . .    scene change    . . .")
 		} else {
 			// Keep the paragraph as is
 			processedParagraphs = append(processedParagraphs, trimmedParagraph)
@@ -133,7 +163,7 @@ func (s *TTSService) GenerateParagraphs(ttsRequest *dtos.TTSRequest, baseUrl str
 // Helper function to check if a string contains only dots
 func isOnlyDots(s string) bool {
 	for _, char := range s {
-		if char != '.' && char != '…' {
+		if char != '.' && char != '…' && char != '*' && char != ' ' {
 			return false
 		}
 	}
@@ -159,7 +189,27 @@ func (s *TTSService) GenerateTTSMap(ttsRequest *dtos.TTSRequest, baseURL string)
 }
 
 func (s *TTSService) GetVoices() ([]edgetts.Voice, error) {
-	return edgetts.NewVoiceManager().ListVoices()
+	// Get all voices
+	voices, err := edgetts.NewVoiceManager().ListVoices()
+	if err != nil {
+		return nil, err
+	}
+
+	// Filter voices to include only English locales
+	var englishVoices []edgetts.Voice
+	for _, voice := range voices {
+		if isEnglishVoice(voice.Locale) {
+			englishVoices = append(englishVoices, voice)
+		}
+	}
+
+	return englishVoices, nil
+}
+
+// isEnglishVoice checks if the locale is for an English voice.
+func isEnglishVoice(locale string) bool {
+	// English locales start with "en-"
+	return len(locale) >= 3 && locale[:3] == "en-"
 }
 
 // scheduleCleanup removes only the specific TTS files after a specified duration.

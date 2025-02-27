@@ -18,19 +18,376 @@
   [multiple],
   textarea,
   select {
-    @apply w-full border-secondary rounded-lg shadow-sm focus:border-accent-gold-dark focus:ring-1 focus:ring-accent-gold-dark text-neutral-light bg-border;
+    @apply w-full rounded-lg border-secondary bg-border text-neutral-light shadow-sm focus:border-accent-gold-dark focus:ring-1 focus:ring-accent-gold-dark;
   }
   [type='checkbox'],
   [type='radio'] {
-    @apply  rounded border-secondary-content text-accent-gold-dark focus:ring-accent-gold-dark;
+    @apply rounded border-secondary-content text-accent-gold-dark focus:ring-accent-gold-dark;
   }
   [type='range'] {
-    @apply w-full border-secondary rounded-lg shadow-sm accent-accent-gold-dark text-neutral-light bg-border;
+    @apply w-full rounded-lg border-secondary bg-border text-neutral-light accent-accent-gold-dark shadow-sm;
   }
+}
+
+/* 🌞 Light Theme (Default) */
+:root {
+  --color-primary: #ffffff; /* White */
+  --color-secondary: #f7fafc; /* Light gray */
+  --color-primary-content: #1a202c; /* Dark text */
+  --color-secondary-content: #4a5568; /* Gray text */
+  --color-highlight-content: #d97706; /* Gold highlight */
+
+  --color-accent-gold: #d97706;
+  --color-accent-gold-light: #facc15;
+  --color-accent-gold-dark: #b45309;
+
+  --color-error: #e53e3e;
+  --color-error-darker: #942828;
+  --color-success: #38a169;
+  --color-warning: #dd6b20;
+  --color-info: #3182ce;
+
+  --color-neutral-light: #f7fafc;
+  --color-neutral-dark: #2d3748;
+  --color-border: #cbd5e0; /* Light gray border */
+}
+
+/* 🌑 Dark Theme */
+.dark {
+  --color-primary: #1a202c; /* Dark background */
+  --color-secondary: #2d3748;
+  --color-primary-content: #e2e8f0;
+  --color-secondary-content: #a0aec0;
+  --color-highlight-content: #fbbf24;
+
+  --color-accent-gold: #fbbf24;
+  --color-accent-gold-light: #facc15;
+  --color-accent-gold-dark: #d97706;
+
+  --color-error: #e53e3e;
+  --color-error-darker: #942828;
+  --color-success: #38a169;
+  --color-warning: #dd6b20;
+  --color-info: #3182ce;
+
+  --color-neutral-light: #f7fafc;
+  --color-neutral-dark: #2d3748;
+  --color-border: #4a5568; /* Darker gray border */
+}
+
+.deep-blue {
+  --color-primary: #0f172a;       /* Navy background */
+  --color-secondary: #1e293b;     /* Slightly lighter navy */
+  --color-primary-content: #e2e8f0;
+  --color-secondary-content: #94a3b8;
+  --color-highlight-content: #10b981; /* Emerald accent */
+
+  --color-accent-gold: #10b981;       /* Emerald replaces gold */
+  --color-accent-gold-light: #34d399;
+  --color-accent-gold-dark: #059669;
+
+  --color-error: #ef4444;
+  --color-error-darker: #b91c1c;
+  --color-success: #22c55e;
+  --color-warning: #f59e0b;
+  --color-info: #3b82f6;
+
+  --color-neutral-light: #f1f5f9;
+  --color-neutral-dark: #1e293b;
+  --color-border: #475569;
+}
+
+.purple-dusk {
+  --color-primary: #1e1b4b;       /* Deep purple */
+  --color-secondary: #312e81;
+  --color-primary-content: #e0e7ff;
+  --color-secondary-content: #a5b4fc;
+  --color-highlight-content: #c026d3; /* Magenta accent */
+
+  --color-accent-gold: #c026d3;       /* Magenta replaces gold */
+  --color-accent-gold-light: #d946ef;
+  --color-accent-gold-dark: #86198f;
+
+  --color-error: #dc2626;
+  --color-error-darker: #991b1b;
+  --color-success: #16a34a;
+  --color-warning: #ea580c;
+  --color-info: #2563eb;
+
+  --color-neutral-light: #f5f3ff;
+  --color-neutral-dark: #312e81;
+  --color-border: #4f46e5;
+}
+
+.crimson-night {
+  --color-primary: #1a1919;       /* Charcoal */
+  --color-secondary: #2a2828;
+  --color-primary-content: #f3f4f6;
+  --color-secondary-content: #d1d5db;
+  --color-highlight-content: #dc2626; /* Crimson accent */
+
+  --color-accent-gold: #dc2626;       /* Crimson replaces gold */
+  --color-accent-gold-light: #ef4444;
+  --color-accent-gold-dark: #991b1b;
+
+  --color-error: #ef4444;
+  --color-error-darker: #b91c1c;
+  --color-success: #22c55e;
+  --color-warning: #f59e0b;
+  --color-info: #3b82f6;
+
+  --color-neutral-light: #f8fafc;
+  --color-neutral-dark: #2a2828;
+  --color-border: #4b5563;
+}
+
+.cyber-green {
+  --color-primary: #000000;       /* Pure black */
+  --color-secondary: #0a0a0a;
+  --color-primary-content: #00ff88; /* Neon green */
+  --color-secondary-content: #00cc6a;
+  --color-highlight-content: #00ff88;
+
+  --color-accent-gold: #00ff88;       /* Neon green */
+  --color-accent-gold-light: #00ff88;
+  --color-accent-gold-dark: #00cc6a;
+
+  --color-error: #ff0000;
+  --color-error-darker: #cc0000;
+  --color-success: #00ff88;
+  --color-warning: #ffd700;
+  --color-info: #00ffff;
+
+  --color-neutral-light: #0a0a0a;
+  --color-neutral-dark: #000000;
+  --color-border: #00ff88;
+}
+
+.warm-amber {
+  --color-primary: #1c1917;       /* Deep brown-gray */
+  --color-secondary: #292524;
+  --color-primary-content: #f5f5f4;
+  --color-secondary-content: #d6d3d1;
+  --color-highlight-content: #f59e0b; /* Amber accent */
+
+  --color-accent-gold: #f59e0b;       /* Amber replaces gold */
+  --color-accent-gold-light: #fbbf24;
+  --color-accent-gold-dark: #d97706;
+
+  --color-error: #ef4444;
+  --color-error-darker: #b91c1c;
+  --color-success: #22c55e;
+  --color-warning: #ea580c;
+  --color-info: #3b82f6;
+
+  --color-neutral-light: #f5f5f4;
+  --color-neutral-dark: #292524;
+  --color-border: #57534e;
+}
+
+/* Midnight Indigo */
+.midnight-indigo {
+  --color-primary: #0d1b2a;       /* Deep navy background */
+  --color-secondary: #1b263b;     /* Slightly lighter navy */
+  --color-primary-content: #e0e1dd; /* Pale text for contrast */
+  --color-secondary-content: #a5a5a5; /* Subdued secondary text */
+  --color-highlight-content: #3e92cc; /* Vivid blue accent */
+
+  --color-accent-gold: #3e92cc;       /* Blue replaces gold */
+  --color-accent-gold-light: #70a9d7;
+  --color-accent-gold-dark: #2e6e9e;
+
+  --color-error: #ff4d4d;
+  --color-error-darker: #b30000;
+  --color-success: #4caf50;
+  --color-warning: #ffa726;
+  --color-info: #29b6f6;
+
+  --color-neutral-light: #e0e1dd;
+  --color-neutral-dark: #1b263b;
+  --color-border: #3a506b; /* Slate-like border */
+}
+
+/* Neon Pink */
+.neon-pink {
+  --color-primary: #1a001a;       /* Dark, almost black with a purple tint */
+  --color-secondary: #2a002a;
+  --color-primary-content: #ffe6f0; /* Very light text */
+  --color-secondary-content: #ff99cc; /* Soft pink for secondary content */
+  --color-highlight-content: #ff33cc; /* Intense neon pink accent */
+
+  --color-accent-gold: #ff33cc;       /* Replace gold with neon pink */
+  --color-accent-gold-light: #ff66dd;
+  --color-accent-gold-dark: #cc0099;
+
+  --color-error: #ff3366;
+  --color-error-darker: #cc0033;
+  --color-success: #33ff99;
+  --color-warning: #ffcc33;
+  --color-info: #66ccff;
+
+  --color-neutral-light: #ffe6f0;
+  --color-neutral-dark: #2a002a;
+  --color-border: #ff33cc; /* Consistent neon border */
+}
+
+.emerald-twilight {
+  --color-primary: #0f2f1d; /* Deep forest green */
+  --color-secondary: #1a4732; /* Richer, layered green */
+  --color-primary-content: #d1e8d2; /* Soft, light green for text */
+  --color-secondary-content: #a3c2a3; /* Muted secondary text */
+  --color-highlight-content: #00b894; /* Vibrant emerald accent */
+
+  --color-accent-gold: #00b894;
+  --color-accent-gold-light: #33d1b7;
+  --color-accent-gold-dark: #008f6e;
+
+  --color-error: #e53e3e;
+  --color-error-darker: #942828;
+  --color-success: #38a169;
+  --color-warning: #dd6b20;
+  --color-info: #3182ce;
+
+  --color-neutral-light: #e8f5e9;
+  --color-neutral-dark: #1b5e20;
+  --color-border: #2e7d32;
+}
+
+.smoky-quartz {
+  --color-primary: #2c2c2c; /* Deep charcoal base */
+  --color-secondary: #3b3b3b; /* Slightly lighter for layering */
+  --color-primary-content: #e0e0e0; /* Light gray for contrast */
+  --color-secondary-content: #b0b0b0;
+  --color-highlight-content: #d97706; /* Golden, warm accent */
+
+  --color-accent-gold: #d97706;
+  --color-accent-gold-light: #facc15;
+  --color-accent-gold-dark: #b45309;
+
+  --color-error: #e53e3e;
+  --color-error-darker: #942828;
+  --color-success: #38a169;
+  --color-warning: #dd6b20;
+  --color-info: #3182ce;
+
+  --color-neutral-light: #f5f5f5;
+  --color-neutral-dark: #2c2c2c;
+  --color-border: #4a5568;
+}
+
+.obsidian-flame {
+  --color-primary: #1c1c1c; /* Nearly black for a deep base */
+  --color-secondary: #2a2a2a;
+  --color-primary-content: #fdfdfd; /* Bright text for readability */
+  --color-secondary-content: #e0e0e0;
+  --color-highlight-content: #ff4500; /* Bold orange-red accent */
+
+  --color-accent-gold: #ff4500;
+  --color-accent-gold-light: #ff7f50;
+  --color-accent-gold-dark: #cc3700;
+
+  --color-error: #e53e3e;
+  --color-error-darker: #942828;
+  --color-success: #38a169;
+  --color-warning: #dd6b20;
+  --color-info: #3182ce;
+
+  --color-neutral-light: #f8f8f8;
+  --color-neutral-dark: #1c1c1c;
+  --color-border: #444444;
+}
+
+.velvet-noir {
+  --color-primary: #1a0d14; /* Very dark with a hint of burgundy */
+  --color-secondary: #2a1c24; /* Layered dark tones */
+  --color-primary-content: #f0e6e8; /* Soft, pale text for contrast */
+  --color-secondary-content: #d1b2b8;
+  --color-highlight-content: #8b3f47; /* Deep burgundy highlight */
+
+  --color-accent-gold: #8b3f47;
+  --color-accent-gold-light: #ad5a62;
+  --color-accent-gold-dark: #712c33;
+
+  --color-error: #e53e3e;
+  --color-error-darker: #942828;
+  --color-success: #38a169;
+  --color-warning: #dd6b20;
+  --color-info: #3182ce;
+
+  --color-neutral-light: #f7f7f7;
+  --color-neutral-dark: #2a1c24;
+  --color-border: #5c4b4f;
+}
+
+/* 🔥 Cyberpunk Theme */
+.cyberpunk {
+  --color-primary: #000000; /* Black background */
+  --color-secondary: #0f0f0f;
+  --color-primary-content: #00eaff; /* Neon cyan */
+  --color-secondary-content: #ff007f; /* Hot pink */
+  --color-highlight-content: #ffcc00; /* Bright yellow */
+
+  --color-accent-gold: #ff007f;
+  --color-accent-gold-light: #ff66cc;
+  --color-accent-gold-dark: #d4005b;
+
+  --color-error: #ff0000;
+  --color-error-darker: #9b0000;
+  --color-success: #00ff00;
+  --color-warning: #ff8800;
+  --color-info: #00eaff;
+
+  --color-neutral-light: #1f1f1f;
+  --color-neutral-dark: #000000;
+  --color-border: #ff007f; /* Neon pink border */
+}
+
+/* 🌲 Forest Theme */
+.forest {
+  --color-primary: #1b5e20; /* Dark green */
+  --color-secondary: #2e7d32;
+  --color-primary-content: #ffffff; /* White text */
+  --color-secondary-content: #c8e6c9; /* Light green text */
+  --color-highlight-content: #66bb6a; /* Bright green */
+
+  --color-accent-gold: #2e7d32;
+  --color-accent-gold-light: #81c784;
+  --color-accent-gold-dark: #1b5e20;
+
+  --color-error: #d32f2f;
+  --color-error-darker: #942828;
+  --color-success: #388e3c;
+  --color-warning: #ffb300;
+  --color-info: #0288d1;
+
+  --color-neutral-light: #c8e6c9;
+  --color-neutral-dark: #1b5e20;
+  --color-border: #66bb6a; /* Green border */
+}
+
+/* 👼 Heaven Mode (Extremely Bright) */
+.heaven {
+  --color-primary: #ffffff; /* Pure White */
+  --color-secondary: #fffbf3; /* Slightly off-white */
+  --color-primary-content: #ffff00; /* Bright Yellow */
+  --color-secondary-content: #ffcc00; /* Softer Yellow */
+  --color-highlight-content: #ff9900; /* Intense Orange */
+
+  --color-accent-gold: #ffcc00;
+  --color-accent-gold-light: #ffff99;
+  --color-accent-gold-dark: #ffaa00;
+
+  --color-error: #ff3333;
+  --color-error-darker: #cc0000;
+  --color-success: #33ff33;
+  --color-warning: #ffdd33;
+  --color-info: #3399ff;
+
+  --color-neutral-light: #ffffff;
+  --color-neutral-dark: #fffbf3;
+  --color-border: #ffcc00; /* Blinding yellow border */
 }
 
 body {
   @apply bg-primary text-primary-content;
 }
-
-

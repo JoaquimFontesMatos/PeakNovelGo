@@ -1,82 +1,101 @@
-import type { ReadingPreferences } from '~/models/ReadingPreferences';
+import type { SuccessServerResponse } from '~/schemas/SuccessServerResponse';
+import { AuthError } from '~/errors/AuthError';
+import type { ErrorHandler } from '~/interfaces/ErrorHandler';
+import type { UserService } from '~/interfaces/services/UserService';
+import type { HttpClient } from '~/interfaces/HttpClient';
+import type { ResponseParser } from '~/interfaces/ResponseParser';
+import { BaseUserService } from '~/services/UserService';
 
 export const useUserStore = defineStore('User', () => {
-    const authStore = useAuthStore();
-    const runtimeConfig = useRuntimeConfig();
-    const url: string = runtimeConfig.public.apiUrl;
+  const runtimeConfig = useRuntimeConfig();
+  const url: string = runtimeConfig.public.apiUrl;
+  const httpClient: HttpClient = new FetchHttpClient(useAuthStore());
+  const responseParser: ResponseParser = new ZodResponseParser();
+  const $userService: UserService = new BaseUserService(url, httpClient, responseParser);
+  const $errorHandler: ErrorHandler = new BaseErrorHandler();
 
-    const { user } = storeToRefs(authStore);
+  const authStore = useAuthStore();
 
-    const updatingUser = ref<boolean>(false);
-    const updateUserError = ref<string | null>(null);
+  const { user } = storeToRefs(authStore);
 
-    const isReaderMode = ref<boolean>(true);
+  // Handling update user Variables
+  const updatingUser: Ref<boolean> = ref<boolean>(false);
+  const updateMessage: Ref<string | null> = ref<string | null>(null);
 
-    const saveUserLocalStorage = () => {
-        localStorage.setItem('user', JSON.stringify(user.value));
-    };
+  // Handling user prefs Variables
+  const isReaderMode: Ref<boolean> = ref<boolean>(true);
 
-    const updateUserFields = async (fields: {}) => {
-        updatingUser.value = true;
-        updateUserError.value = null;
+  // Handling update user Variables
+  const deletingUser: Ref<boolean> = ref<boolean>(false);
+  const deleteMessage: Ref<string | null> = ref<string | null>(null);
 
-        try {
+  const saveUserLocalStorage = (): void => {
+    localStorage.setItem('user', JSON.stringify(user.value));
+  };
 
-            if (user.value === null) {
-                updatingUser.value = false;
-                updateUserError.value = 'You\'re not logged in!';
-                return;
-            }
+  const updateUserFields = async (fields: {}): Promise<void> => {
+    updatingUser.value = true;
+    updateMessage.value = null;
 
-            const response: Response | undefined = await authStore.authorizedFetch(url + '/user/' + user.value.ID + '/fields',
-                {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(fields),
-                });
+    try {
+      if (!authStore.isUserLoggedIn()) {
+        throw new AuthError({
+          type: 'UNAUTHORIZED_ERROR',
+          message: "You're not logged in!",
+          cause: 'User tried to update user fields without being logged in.',
+        });
+      }
 
-            if (response === null) {
-                updatingUser.value = false;
-                updateUserError.value = 'Unexpected Error';
-                return;
-            }
+      const serverResponse: SuccessServerResponse = await $userService.updateUserFields(fields, user.value!!.ID);
 
-            if (response.status === 200) {
-                const message = await response.json();
-                console.log(message);
-            } else {
-                const errorResponse = await response.json();
+      updateMessage.value = serverResponse.message;
+    } catch (error) {
+      $errorHandler.handleError(error, { user: user, fields: fields, location: 'user.ts -> updateUserFields' });
+      throw error;
+    } finally {
+      updatingUser.value = false;
+    }
+  };
 
-                updateUserError.value = errorResponse.error;
-            }
-        } catch (error) {
-            console.log('Unexpected Error:', error);
-            updateUserError.value = 'Unexpected error';
-        } finally {
-            updatingUser.value = false;
-        }
-    };
-    
-    const deleteUser = async (id: number) => {
-        try {
-            await authStore.authorizedFetch(`${url}/user/${id}`, {
-                method: 'DELETE',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-            });
+  const deleteUser = async (): Promise<void> => {
+    deletingUser.value = true;
+    deleteMessage.value = null;
 
-            authStore.clearSession();
-        } catch (error) {
-            console.log('Delete User', error);
-        }
-    };
+    try {
+      if (!authStore.isUserLoggedIn()) {
+        throw new AuthError({
+          type: 'UNAUTHORIZED_ERROR',
+          message: "You're not logged in!",
+          cause: 'User tried to update user fields without being logged in.',
+        });
+      }
 
-    return { user, isReaderMode, updatingUser, updateUserError, updateUserFields, saveUserLocalStorage };
+      const serverResponse: SuccessServerResponse = await $userService.deleteUser(user.value!!.ID);
+
+      deleteMessage.value = serverResponse.message;
+    } catch (error) {
+      $errorHandler.handleError(error, { user: user, location: 'user.ts -> deleteUser' });
+      authStore.clearSession();
+
+      throw error;
+    } finally {
+      deletingUser.value = false;
+    }
+  };
+
+  return {
+    user,
+    isReaderMode,
+    updatingUser,
+    updateMessage,
+    deletingUser,
+    deleteMessage,
+    deleteUser,
+    updateUserFields,
+    saveUserLocalStorage,
+  };
 });
 
 if (import.meta.hot) {
-    import.meta.hot.accept(acceptHMRUpdate(useUserStore, import.meta.hot));
+  import.meta.hot.accept(acceptHMRUpdate(useUserStore, import.meta.hot));
 }

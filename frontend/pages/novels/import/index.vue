@@ -1,0 +1,248 @@
+<script setup lang="ts">
+import { ImportedNovelSchema, type ImportedNovel } from '~/schemas/ImportedNovel';
+
+const novelStore = useNovelStore();
+const { importingNovel, novel } = storeToRefs(novelStore);
+const toastStore = useToastStore();
+
+const novelUpdatesId = ref('');
+const showPreview = ref(false); // Toggle for preview
+const errorMessage = ref(''); // Error message for validation
+
+const onSubmit = async () => {
+  if (!novelUpdatesId.value.trim()) {
+    errorMessage.value = 'Please enter a Novel Updates ID';
+    toastStore.addToast(errorMessage.value, 'error', 'project');
+    return;
+  }
+
+  errorMessage.value = ''; // Clear error on valid input
+  try {
+    await novelStore.importByNovelUpdatesId(novelUpdatesId.value);
+    showPreview.value = true; // Show preview after successful import
+  } catch (error) {
+    errorMessage.value = 'Failed to import novel. Please check the ID and try again.';
+    toastStore.addToast(errorMessage.value, 'error', 'project');
+  }
+};
+
+// Use the Vee-Validate form hook
+const { handleSubmit } = useForm<ImportedNovel>({
+  validationSchema: toTypedSchema(ImportedNovelSchema),
+});
+
+// Define form fields
+const { value: title, errorMessage: titleError } = useField('title');
+const { value: description, errorMessage: descriptionError } = useField('description');
+const { value: image, errorMessage: imageError } = useField('image');
+const { value: languageName, errorMessage: languageError } = useField('language.name');
+const { value: status, errorMessage: statusError } = useField('status');
+const { value: tags, errorMessage: tagsError } = useField('tags');
+const { value: authors, errorMessage: authorsError } = useField('authors');
+const { value: genres, errorMessage: genresError } = useField('genres');
+const { value: year, errorMessage: yearError } = useField('year');
+const { value: release_freq, errorMessage: releaseFreqError } = useField('release_freq');
+
+const showForm = ref(false);
+
+// Handle form submission
+const onSubmitForm = handleSubmit(async (values: ImportedNovel) => {
+  try {
+    await novelStore.importNovel(values);
+    toastStore.addToast('Novel created successfully!', 'success', 'project');
+  } catch (error) {
+    toastStore.addToast('Failed to create novel. Please try again.', 'error', 'project');
+  }
+});
+</script>
+
+<template>
+  <Container>
+    <!-- Toggle Form Button -->
+    <button @click="showForm = !showForm" class="w-full rounded border-border bg-secondary px-4 py-2 md:w-auto">
+      <span>{{ showForm ? 'Hide Form' : 'Add Novel Manually' }}</span>
+    </button>
+
+    <VerticalSpacer />
+
+    <!-- Input Section -->
+    <div v-if="!showForm">
+      <div class="w-full space-y-2 md:w-2/3">
+        <label for="novelUpdatesId" class="block text-sm font-medium after:text-error after:content-['*']"> Novel Updates ID </label>
+        <div class="relative">
+          <input
+            id="novelUpdatesId"
+            v-model="novelUpdatesId"
+            type="text"
+            placeholder="e.g., naruto"
+            class="w-full rounded-md border p-2 focus:outline-none focus:ring-2 focus:ring-primary"
+            :class="{ 'border-error': errorMessage }"
+          />
+          <p v-if="errorMessage" class="mt-1 text-sm text-error">{{ errorMessage }}</p>
+        </div>
+      </div>
+
+      <VerticalSpacer />
+
+      <!-- Import Button -->
+      <Button :disabled="importingNovel" @click="onSubmit" class="w-full md:w-auto">
+        <div v-if="importingNovel" class="flex items-center gap-2">
+          <LoadingSpinner class="h-5 w-5" />
+          <span>Importing Novel...</span>
+        </div>
+        <span v-else>Import Novel</span>
+      </Button>
+    </div>
+
+    <!-- Manual Form Section -->
+    <div v-if="showForm" class="mt-4 space-y-4 rounded-lg border-border bg-secondary p-4">
+      <h2 class="text-lg font-semibold">Add Novel Manually</h2>
+      <form @submit.prevent="onSubmit" class="space-y-4">
+        <!-- Title -->
+        <div>
+          <label for="title" class="block text-sm font-medium">Title</label>
+          <input id="title" v-model="title" type="text" class="w-full rounded-md border p-2" />
+          <span v-if="titleError" class="mt-1 text-sm text-error">{{ titleError }}</span>
+        </div>
+
+        <!-- Description -->
+        <div>
+          <label for="description" class="block text-sm font-medium">Description</label>
+          <textarea id="description" v-model="description as string" class="w-full rounded-md border p-2" />
+          <span v-if="descriptionError" class="mt-1 text-sm text-error">{{ descriptionError }}</span>
+        </div>
+
+        <!-- Image URL -->
+        <div>
+          <label for="image" class="block text-sm font-medium">Image URL</label>
+          <input id="image" v-model="image" type="text" class="w-full rounded-md border p-2" />
+          <span v-if="imageError" class="mt-1 text-sm text-error">{{ imageError }}</span>
+        </div>
+
+        <!-- Language -->
+        <div>
+          <label for="language" class="block text-sm font-medium">Language</label>
+          <input id="language" v-model="languageName" type="text" class="w-full rounded-md border p-2" />
+          <span v-if="languageError" class="mt-1 text-sm text-error">{{ languageError }}</span>
+        </div>
+
+        <!-- Status -->
+        <div>
+          <label for="status" class="block text-sm font-medium">Status</label>
+          <input id="status" v-model="status" type="text" class="w-full rounded-md border p-2" />
+          <span v-if="statusError" class="mt-1 text-sm text-error">{{ statusError }}</span>
+        </div>
+
+        <!-- Tags -->
+        <div>
+          <label for="tags" class="block text-sm font-medium">Tags</label>
+          <input id="tags" v-model="tags" type="text" class="w-full rounded-md border p-2" placeholder="Comma-separated list" />
+          <span v-if="tagsError" class="mt-1 text-sm text-error">{{ tagsError }}</span>
+        </div>
+
+        <!-- Authors -->
+        <div>
+          <label for="authors" class="block text-sm font-medium">Authors</label>
+          <input id="authors" v-model="authors" type="text" class="w-full rounded-md border p-2" placeholder="Comma-separated list" />
+          <span v-if="authorsError" class="mt-1 text-sm text-error">{{ authorsError }}</span>
+        </div>
+
+        <!-- Genres -->
+        <div>
+          <label for="genres" class="block text-sm font-medium">Genres</label>
+          <input id="genres" v-model="genres" type="text" class="w-full rounded-md border p-2" placeholder="Comma-separated list" />
+          <span v-if="genresError" class="mt-1 text-sm text-error">{{ genresError }}</span>
+        </div>
+
+        <!-- Year -->
+        <div>
+          <label for="year" class="block text-sm font-medium">Year</label>
+          <input id="year" v-model="year" type="text" class="w-full rounded-md border p-2" />
+          <span v-if="yearError" class="mt-1 text-sm text-error">{{ yearError }}</span>
+        </div>
+
+        <!-- Release Frequency -->
+        <div>
+          <label for="release_freq" class="block text-sm font-medium">Release Frequency</label>
+          <input id="release_freq" v-model="release_freq" type="text" class="w-full rounded-md border p-2" />
+          <span v-if="releaseFreqError" class="mt-1 text-sm text-error">{{ releaseFreqError }}</span>
+        </div>
+
+        <!-- Submit Button -->
+        <Button :disabled="importingNovel" @click="onSubmitForm" class="w-full md:w-auto">
+          <div v-if="importingNovel" class="flex items-center gap-2">
+            <LoadingSpinner class="h-5 w-5" />
+            <span>Importing Novel...</span>
+          </div>
+          <span v-else>Import Novel</span>
+        </Button>
+      </form>
+    </div>
+
+    <VerticalSpacer />
+
+    <!-- Preview Section -->
+    <section v-if="novel" class="space-y-4">
+      <div class="rounded-lg border-border bg-secondary p-4">
+        <p class="text-lg font-semibold">Novel imported successfully!</p>
+        <p class="text-secondary-content">You can close this window now.</p>
+        <SmallVerticalSpacer />
+        <button @click="showPreview = !showPreview" class="w-full hover:text-accent-gold hover:underline md:w-auto">
+          <span>{{ showPreview ? 'Hide Details' : 'Show Details' }}</span>
+        </button>
+      </div>
+
+      <!-- Collapsible Novel Info -->
+      <div class="space-y-2">
+        <div v-if="showPreview" class="space-y-2 rounded-lg border-border bg-secondary p-4">
+          <p><span class="font-medium">Novel ID:</span> {{ novel.ID }}</p>
+          <p><span class="font-medium">Title:</span> {{ novel.title }}</p>
+          <p><span class="font-medium">Synopsis:</span> {{ novel.synopsis }}</p>
+          <p><span class="font-medium">Cover URL:</span> {{ novel.coverUrl }}</p>
+          <p><span class="font-medium">Language:</span> {{ novel.language }}</p>
+          <p><span class="font-medium">Status:</span> {{ novel.status }}</p>
+          <p><span class="font-medium">Novel Updates URL:</span> {{ novel.novelUpdatesUrl }}</p>
+          <span class="font-medium">Tag(s):</span>
+          <ul class="flex max-h-28 flex-wrap overflow-scroll lg:max-h-64 xl:h-auto">
+            <li v-for="({ name, id }, index) in novel.tags" :key="id" class="text-accent-gold">
+              <NuxtLink :to="'/novels/tag/' + name" class="hover:underline">
+                {{ name }}
+              </NuxtLink>
+              <span v-if="index !== novel.tags.length - 1" class="mr-2">,</span>
+            </li>
+          </ul>
+
+          <span class="font-medium">Genre(s):</span>
+          <ul class="flex max-h-28 flex-wrap overflow-scroll lg:max-h-64 xl:h-auto">
+            <li v-for="({ name, id }, index) in novel.genres" :key="id" class="text-accent-gold">
+              <NuxtLink :to="'/novels/genre/' + name" class="hover:underline">
+                {{ name }}
+              </NuxtLink>
+              <span v-if="index !== novel.genres.length - 1" class="mr-2">,</span>
+            </li>
+          </ul>
+
+          <span class="font-medium">Author(s):</span>
+          <ul class="flex max-h-28 flex-wrap overflow-scroll lg:max-h-64 xl:h-auto">
+            <li v-for="({ name, id }, index) in novel.authors" :key="id" class="text-accent-gold">
+              <NuxtLink :to="'/novels/author/' + name" class="hover:underline">
+                {{ name }}
+              </NuxtLink>
+              <span v-if="index !== novel.authors.length - 1" class="mr-2">,</span>
+            </li>
+          </ul>
+          <p><span class="font-medium">Year:</span> {{ novel.year }}</p>
+          <p><span class="font-medium">Release Frequency:</span> {{ novel.releaseFrequency }}</p>
+          <p><span class="font-medium">Novel Updates ID:</span> {{ novel.novelUpdatesId }}</p>
+        </div>
+      </div>
+
+      <VerticalSpacer />
+
+      <!-- Navigation Button -->
+      <Button @click="navigateTo('/')" class="w-full md:w-auto">
+        <span>Go to Home</span>
+      </Button>
+    </section>
+  </Container>
+</template>

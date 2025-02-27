@@ -602,9 +602,9 @@ func (n *NovelRepository) GetChaptersByNovelUpdatesID(novelTitle string, page, l
 //
 // Returns:
 //   - bool (true if the chapter already exists, false otherwise)
-func (n *NovelRepository) isChapterCreated(chapter models.Chapter) bool {
+func (n *NovelRepository) IsChapterCreated(chapterNo uint, novelID uint) bool {
 	var existingChapter models.Chapter
-	if err := n.db.Where("chapter_no = ? AND novel_id = ?", chapter.ChapterNo, chapter.NovelID).First(&existingChapter).Error; err != nil {
+	if err := n.db.Where("chapter_no = ? AND novel_id = ?", chapterNo, novelID).First(&existingChapter).Error; err != nil {
 		return false
 	}
 	return existingChapter.ID != 0
@@ -620,7 +620,9 @@ func (n *NovelRepository) isChapterCreated(chapter models.Chapter) bool {
 //   - CONFLICT_ERROR if the chapter already exists
 //   - INTERNAL_SERVER_ERROR if the chapter could not be created
 func (n *NovelRepository) CreateChapter(chapter models.Chapter) (*models.Chapter, error) {
-	if IsChapterCreated := n.isChapterCreated(chapter); IsChapterCreated {
+	n.db.Logger = n.db.Logger.LogMode(logger.Silent)
+
+	if IsChapterCreated := n.IsChapterCreated(chapter.ChapterNo, *chapter.NovelID); IsChapterCreated {
 		return nil, types.WrapError(types.CONFLICT_ERROR, "Chapter already exists", nil)
 	}
 

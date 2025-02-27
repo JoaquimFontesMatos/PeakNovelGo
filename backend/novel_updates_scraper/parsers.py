@@ -93,131 +93,103 @@ def parseSearch(req):
     return results
 
 
+def parseChapters(req):
+    """Parses the chapter content from the response."""
+    soup = bs(req.text, "html.parser")
+    chapter_article = soup.find("article", id="chapter-article")
+
+    if not chapter_article:
+        return None  # No valid chapter found
+
+    section = chapter_article.find("section", class_="page-in content-wrap")
+    title = section.find("h1").find("span", class_="chapter-title").text.strip()
+
+    body = section.find("div", id="chapter-container")
+    body = body.decode_contents().strip() if body else ""
+
+    return {"title": title, "body": body}
+
+
 def parseSeries(req):
     soup = bs(req.text, "html.parser")
 
-    page = soup.find("div", class_="w-blog-content")
+    header = soup.find("header", class_="novel-header")
+    novel_body = soup.find("div", class_="novel-body container")
 
-    body = page.find("div", class_="g-cols wpb_row offset_default")
-    ot = (
-        body.find("div", class_="one-third")
-        .find("div", class_="wpb_text_column")
-        .find("div", class_="wpb_wrapper")
-    )
+    image = header.find("figure", class_="cover").find("img").get("data-src")
 
-    tt = (
-        body.find("div", class_="two-thirds")
-        .find("div", class_="wpb_text_column")
-        .find("div", class_="wpb_wrapper")
-    )
+    novel_info = header.find("div", class_="novel-info")
 
-    title = page.find("div", class_="seriestitlenu").text
+    title = novel_info.find("h1").text.strip()
 
-    # One Third (ot)
-    image = ot.find("div", class_="seriesimg").find("img").get("src")
-    typeRaw = ot.find("div", id="showtype")
-    typeText = typeRaw.find("a").text + " " + typeRaw.find("span").text
-    type = {"name": typeText, "link": typeRaw.find("a").get("href")}
-
-    genre = []
-    for g in ot.find("div", id="seriesgenre").find_all("a"):
-        genre.append(
-            {"name": g.text, "link": g.get("href"), "description": g.get("title")}
-        )
-
-    tags = []
-    for t in ot.find("div", id="showtags").find_all("a"):
-        tags.append(
-            {"name": t.text, "link": t.get("href"), "description": t.get("title")}
-        )
-
-    rating = []
-    tempR = 5
-    overallRating = re.sub(
-        r"[()]", "", ot.find_all("h5", class_="seriesother")[3].find("span").text
-    )
-    rating.append({"name": "Overall", "rating": overallRating})
-    for r in ot.find("table", id="myrates").find("tbody").find_all("tr"):
-        rating.append({"name": tempR, "rating": r.select("td")[1].text.strip()})
-        tempR -= 1
-
-    language = {
-        "name": ot.find("div", id="showlang").find("a").text,
-        "link": ot.find("div", id="showlang").find("a").get("href"),
-    }
-
+    author_div = novel_info.find("div", class_="author")
     authors = []
-    for author in ot.find("div", id="showauthors").find_all("a"):
-        authors.append({"name": author.text, "link": author.get("href")})
+    for author in author_div.find_all("a"):
+        link = author.get("href")
+        authorName = author.find("span").text
+        authors.append({"name": authorName, "link": link})
 
-    artists = []
-    for artist in ot.find("div", id="showartists").find_all("a"):
-        artists.append({"name": artist.text, "link": artist.get("href")})
+    rating_div = novel_info.find("div", class_="rating")
+    rating = rating_div.find("div", class_="rating-star").find("strong").text.strip()
 
-    year = ot.find("div", id="edityear").text[1:]
-    statusRaw = ot.find("div", id="editstatus")
-    if "<br>" in statusRaw:
-        for br in statusRaw.find_all("br"):
-            br.replace_with("\n")
-    status = statusRaw.text[1:]
-    licensed = ot.find("div", id="showlicensed").text[1:]
-    completelyTranslated = ot.find("div", id="showtranslated").text[1:]
-    if ot.find("div", id="showopublisher").find("a") is not None:
-        originalPublisher = {
-            "name": ot.find("div", id="showopublisher").find("a").text,
-            "link": ot.find("div", id="showopublisher").find("a").get("href"),
-        }
-    else:
-        originalPublisher = None
-    if ot.find("div", id="showepublisher").find("a") is not None:
-        englishPublisher = {
-            "name": ot.find("div", id="showepublisher").find("a").text,
-            "link": ot.find("div", id="showepublisher").find("a").get("href"),
-        }
-    else:
-        englishPublisher = None
-    releaseFreq = ot.find_all("h5", class_="seriesother")[14].next_sibling.strip()
+    categories_div = novel_info.find("div", class_="categories")
+    genre = []
+    for g in categories_div.find("ul").find_all("li"):
+        category = g.find("a")
+        genre.append(
+            {
+                "name": category.text,
+                "link": category.get("href"),
+                "description": category.get("title"),
+            }
+        )
 
-    # Two Thirds (tt)
-    descriptionRaw = tt.find("div", id="editdescription")
-    if "<br>" in descriptionRaw:
-        for br in descriptionRaw.find_all("br"):
-            br.replace_with("\n")
-    description = descriptionRaw.text[:-1]
+    stats = novel_info.find("div", class_="header-stats")
+    latest_chapter = stats.find("span").find("strong").text.strip()
+    second_span = stats.find("span").find_next_sibling("span")
+    views = second_span.find("strong").text.strip()
 
-    associatedNames = [
-        i for i in tt.find("div", id="editassociated").contents if str(i) != "<br/>"
-    ]
+    third_span = stats.find("span").find_next_sibling("span").find_next_sibling("span")
+    bookmarks = third_span.find("strong").text.strip()
 
-    groups = []
-    if soup.find("ol", class_="sp_grouptable") is not None:
-        for g in soup.find("ol", class_="sp_grouptable").find_all("li"):
-            name = g.find("span", style="padding-left:20px;").get("title")
-            temp = name.replace(" ", "-").lower()
-            temp2 = re.sub(r"[^\w\s]", "", temp)
-            link = f"https://www.novelupdates.com/group/{temp2}"
-            groups.append({"name": name, "link": link})
-    else:
-        groups = None
+    fourth_span = (
+        stats.find("span")
+        .find_next_sibling("span")
+        .find_next_sibling("span")
+        .find_next_sibling("span")
+    )
+    status = fourth_span.find("strong").text.strip()
+
+    info = novel_body.find("section", id="info")
+    summary_div = info.find("div", class_="summary")
+    description = (
+        summary_div.find("div", class_="content expand-wrapper").find("p").text.strip()
+    )
+
+    tags_div = info.find("div", class_="tags")
+    tag = []
+    for t in tags_div.find("div", class_="expand-wrapper").find("ul").find_all("li"):
+        tag_item = t.find("a")
+        tag.append(
+            {
+                "name": tag_item.text,
+                "link": tag_item.get("href"),
+                "description": tag_item.get("title"),
+            }
+        )
 
     result = {
         "title": title,
         "image": image,
-        "type": type,
         "genre": genre,
-        "tags": tags,
+        "tags": tag,
         "rating": rating,
-        "language": language,
+        "language": {"name": "English"},
         "authors": authors,
-        "artists": artists,
-        "year": year,
+        "year": "N/A",
         "status": status,
-        "licensed": licensed,
-        "completely_translated": completelyTranslated,
-        "original_publisher": originalPublisher,
-        "english_publisher": englishPublisher,
-        "release_freq": releaseFreq,
+        "release_freq": "N/A",
         "description": description,
-        "associated_names": associatedNames,
+        "latest_chapter": latest_chapter,
     }
     return result

@@ -1,7 +1,7 @@
 {
   "$schema": "https://cdn.statically.io/gh/nguyenngoclongdev/cdn/main/schema/v10/terminal-keeper.json",
   "theme": "tribe",
-  "active": "default",
+  "active": "saved-session",
   "activateOnStartup": true,
   "keepExistingTerminals": true,
   "sessions": {
@@ -11,45 +11,44 @@
         "autoExecuteCommands": true,
         "icon": "person",
         "color": "terminal.ansiGreen",
-        "commands": [
-          "echo hello"
-        ]
+        "commands": ["echo hello"]
       },
       [
         {
           "name": "docker:ros",
-          "commands": [
-            ""
-          ]
+          "commands": [""]
         },
         {
           "name": "docker:k8s",
-          "commands": [
-            ""
-          ]
+          "commands": [""]
         }
       ],
       [
         {
           "name": "docker:nats",
-          "commands": [
-            ""
-          ]
+          "commands": [""]
         },
         {
           "name": "docker:fleet",
-          "commands": [
-            ""
-          ]
+          "commands": [""]
         }
       ]
     ],
-    "saved-session": [
+    "peaknovelgo": [
       {
-        "name": "connect",
-        "commands": [
-          ""
-        ]
+        "name": "run-backend",
+        "cwd": "C:\\repos\\PeakNovelGo\\backend",
+        "commands": ["make -r run"]
+      },
+      {
+        "name": "run-frontend",
+        "cwd": "C:\\repos\\PeakNovelGo\\frontend",
+        "commands": ["bun run dev"]
+      },
+      {
+        "name": "help",
+        "cwd": "C:\\repos\\PeakNovelGo",
+        "commands": ["make -r help"]
       }
     ]
   }

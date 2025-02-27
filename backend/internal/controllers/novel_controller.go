@@ -2,10 +2,13 @@ package controllers
 
 import (
 	"archive/zip"
+	"backend/internal/dtos"
 	"backend/internal/models"
 	"backend/internal/services/interfaces"
 	"backend/internal/types"
 	"backend/internal/utils"
+	"backend/internal/validators"
+	"errors"
 	"strings"
 
 	//"backend/internal/validators"
@@ -29,20 +32,52 @@ func NewNovelController(novelService interfaces.NovelServiceInterface) *NovelCon
 	return &NovelController{novelService: novelService}
 }
 
-type Session struct {
-	UserInput        string `json:"user_input,omitempty"`
-	OutputPath       string `json:"output_path,omitempty"`
-	Completed        bool   `json:"completed,omitempty"`
-	DownloadChapters []int  `json:"download_chapters,omitempty"`
-}
+// HandleGetNovels handles POST /novel
+func (n *NovelController) HandleImportNovel(ctx *gin.Context) {
+	var metadata models.ImportedNovel
 
-type Metadata struct {
-	Novel   models.ImportedNovel `json:"novel,omitempty"`
-	Session Session              `json:"session,omitempty"`
+	if err := validators.ValidateBody(ctx, &metadata); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	year := strings.ReplaceAll(metadata.Year, "\n", "")
+	status := strings.ReplaceAll(metadata.Status, "\n", "")
+	language := strings.ReplaceAll(metadata.Language.Name, "\n", "")
+	lowerCaseTitle := strings.ToLower(metadata.Title)
+	novelUpdatesID := strings.ReplaceAll(lowerCaseTitle, " ", "-")
+
+	novel := models.Novel{
+		Title:            metadata.Title,
+		Synopsis:         metadata.Synopsis,
+		CoverUrl:         metadata.CoverUrl,
+		Language:         language,
+		Status:           status,
+		NovelUpdatesUrl:  fmt.Sprintf("https://www.novelupdates.com/series/%s", novelUpdatesID),
+		NovelUpdatesID:   novelUpdatesID,
+		Tags:             metadata.Tags,
+		Authors:          metadata.Authors,
+		Genres:           metadata.Genres,
+		Year:             year,
+		ReleaseFrequency: metadata.ReleaseFrequency,
+	}
+
+	// Save the novel to the database
+	createdNovel, err := n.novelService.CreateNovel(novel)
+
+	if err != nil {
+		log.Println(err)
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Failed to save novel to database"})
+		return
+	}
+
+	log.Println("Novel saved successfully")
+
+	ctx.JSON(200, createdNovel)
 }
 
 // HandleGetNovels handles POST /novel
-func (n *NovelController) HandleImportNovel(ctx *gin.Context) {
+func (n *NovelController) HandleImportNovelByNovelUpdatesID(ctx *gin.Context) {
 	novelUpdatesID := ctx.Param("novel_updates_id")
 
 	if novelUpdatesID == "" {
@@ -51,12 +86,12 @@ func (n *NovelController) HandleImportNovel(ctx *gin.Context) {
 	}
 
 	// Specify the Python script and its module
-	cmd := exec.Command(os.Getenv("PYTHON"), "-m", "novel_updates_scraper.client", novelUpdatesID)
+	cmd := exec.Command(os.Getenv("PYTHON"), "-m", "novel_updates_scraper.client", "import-novel", novelUpdatesID)
 
 	// Capture the output of the Python script
 	output, err := cmd.Output()
 	if err != nil {
-		log.Println("Error:", err)
+		fmt.Println("Error: ", err)
 		ctx.JSON(500, gin.H{"error": "Failed to execute Python script"})
 		return
 	}
@@ -73,6 +108,11 @@ func (n *NovelController) HandleImportNovel(ctx *gin.Context) {
 	year := strings.ReplaceAll(result.Year, "\n", "")
 	status := strings.ReplaceAll(result.Status, "\n", "")
 	language := strings.ReplaceAll(result.Language.Name, "\n", "")
+	latestChapter, err := utils.ParseInt(result.LatestChapter)
+	if err != nil {
+		ctx.JSON(500, gin.H{"error": "Invalid Latest Chapter"})
+		return
+	}
 
 	novel := models.Novel{
 		Title:            result.Title,
@@ -80,13 +120,14 @@ func (n *NovelController) HandleImportNovel(ctx *gin.Context) {
 		CoverUrl:         result.CoverUrl,
 		Language:         language,
 		Status:           status,
-		NovelUpdatesUrl:  fmt.Sprintf("https://www.novelupdates.com/series/%s", novelUpdatesID),
+		NovelUpdatesUrl:  fmt.Sprintf("https://www.lightnovelworld.co/novel/%s", novelUpdatesID),
 		NovelUpdatesID:   novelUpdatesID,
 		Tags:             result.Tags,
 		Authors:          result.Authors,
 		Genres:           result.Genres,
 		Year:             year,
 		ReleaseFrequency: result.ReleaseFrequency,
+		LatestChapter:    latestChapter,
 	}
 
 	// Save the novel to the database
@@ -102,6 +143,148 @@ func (n *NovelController) HandleImportNovel(ctx *gin.Context) {
 
 	ctx.JSON(200, createdNovel)
 
+}
+
+// HandleImportChapters handles streaming response for importing chapters
+func (n *NovelController) HandleImportChapters(ctx *gin.Context) {
+	idParam := ctx.Param("novel_id")
+
+	novel, err := n.novelService.GetNovelByUpdatesID(idParam)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx.Writer.Header().Set("Content-Type", "text/event-stream")
+	ctx.Writer.Header().Set("Cache-Control", "no-cache")
+	ctx.Writer.Header().Set("Connection", "keep-alive")
+	ctx.Writer.Flush() // Ensure headers are sent immediately
+
+	err = n.processChaptersWithStreaming(ctx, idParam, novel.ID)
+	if err != nil {
+		fmt.Fprintf(ctx.Writer, "event: error\ndata: %s\n\n", err.Error())
+		ctx.Writer.Flush()
+		return
+	}
+}
+
+func getStatusJSON(statuses map[int]string) string {
+	statusJSON, err := json.Marshal(statuses)
+	if err != nil {
+		log.Printf("Failed to marshal statuses: %v", err)
+		return "{}"
+	}
+	return string(statusJSON)
+}
+
+func (n *NovelController) processChaptersWithStreaming(ctx *gin.Context, novelUpdatesID string, novelID uint) error {
+	const workerCount = 10
+	chapterCount := 0
+	chapterQueue := make(chan int, workerCount)
+	results := make(chan models.ImportedChapterMetadata)
+	errorsChan := make(chan dtos.ChapterStatus)
+	skippedChan := make(chan dtos.ChapterStatus)
+	done := make(chan struct{})
+
+	var wg sync.WaitGroup
+
+	// Fetch the latest chapter number before scraping
+	seriesInfo, err := n.novelService.GetNovelByUpdatesID(novelUpdatesID)
+	if err != nil {
+		fmt.Fprintf(ctx.Writer, "event: error\ndata: %s\n\n", err.Error())
+		ctx.Writer.Flush()
+		return err
+	}
+
+	latestChapter := seriesInfo.LatestChapter
+	if latestChapter == 0 {
+		fmt.Fprintf(ctx.Writer, "event: error\ndata: No chapters found\n\n")
+		ctx.Writer.Flush()
+		return fmt.Errorf("no chapters found")
+	}
+
+	chapterStatuses := make(map[int]string, latestChapter+2)
+	for i := 1; i <= latestChapter; i++ {
+		chapterStatuses[i] = "to download"
+	}
+
+	// Worker goroutines
+	for i := 0; i < workerCount; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for chapterNo := range chapterQueue {
+				isChapterCreated := n.novelService.IsChapterCreated(uint(chapterNo), novelID)
+				if isChapterCreated {
+					skippedChan <- dtos.ChapterStatus{ChapterNo: chapterNo, Status: "skipped"}
+					continue
+				}
+
+				result, err := n.novelService.ImportChapter(novelUpdatesID, chapterNo)
+				if err != nil {
+					errorsChan <- dtos.ChapterStatus{ChapterNo: chapterNo, Status: "error"}
+					continue
+				}
+
+				results <- result
+			}
+		}()
+	}
+
+	// Populate queue up to the latest chapter
+	go func() {
+		defer close(chapterQueue)
+		for chapterNo := 1; chapterNo <= latestChapter; chapterNo++ {
+			select {
+			case <-done:
+				return
+			case chapterQueue <- chapterNo:
+				log.Printf("Added chapter %d to queue", chapterNo)
+			}
+		}
+	}()
+
+	// Goroutine to close result-related channels after workers finish
+	go func() {
+		wg.Wait()
+		close(results)
+		close(errorsChan)
+		close(skippedChan)
+	}()
+
+	// Process results
+	for {
+		select {
+		case err := <-errorsChan:
+			chapterStatuses[err.ChapterNo] = err.Status
+			log.Printf("Error importing chapter %d: %s", err.ChapterNo, err.Status)
+
+		case result, ok := <-results:
+			if !ok {
+				log.Printf("All chapters processed")
+				fmt.Fprintf(ctx.Writer, "event: complete\ndata: All chapters processed\n\n")
+				ctx.Writer.Flush()
+				return nil
+			}
+
+			err := n.novelService.CreateChapter(novelID, result)
+			if err != nil {
+				log.Printf("Failed to save chapter %d: %v", result.ID, err)
+				return err
+			}
+
+			chapterCount++
+			chapterStatuses[int(result.ID)] = "downloaded"
+
+		case skipped, ok := <-skippedChan:
+			if ok {
+				chapterStatuses[skipped.ChapterNo] = "skipped"
+			}
+		}
+
+		fmt.Fprintf(ctx.Writer, "event: status\ndata: %s\n\n", getStatusJSON(chapterStatuses))
+		ctx.Writer.Flush()
+	}
 }
 
 // HandleUploadNovelZip handles POST /novel/upload
@@ -489,22 +672,6 @@ func (n *NovelController) GetChaptersByNovelUpdatesID(ctx *gin.Context) {
 	})
 }
 
-func (n *NovelController) CreateChapter(ctx *gin.Context) {
-	var chapter models.Chapter
-	if err := ctx.ShouldBindJSON(&chapter); err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	createdChapter, err := n.novelService.CreateChapter(chapter)
-	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-
-	ctx.JSON(http.StatusOK, createdChapter)
-}
-
 func (n *NovelController) GetBookmarkedNovelsByUserID(ctx *gin.Context) {
 	idParam := ctx.Param("user_id")
 	id, err := utils.ParseID(idParam)
@@ -594,6 +761,15 @@ func (n *NovelController) GetBookmarkedNovelByUserIDAndNovelID(ctx *gin.Context)
 
 	novel, err := n.novelService.GetBookmarkedNovelByUserIDAndNovelID(userID, novelIDParam)
 	if err != nil {
+		var myError *types.MyError
+		if errors.As(err, &myError) {
+			switch myError.Code {
+			case types.NOVEL_NOT_FOUND_ERROR:
+				ctx.JSON(http.StatusNotFound, gin.H{"error": myError.Message})
+			}
+			return
+		}
+
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}

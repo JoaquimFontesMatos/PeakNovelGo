@@ -1,29 +1,31 @@
+import { ToastIconMap, type Toast, type ToastIcon, type ToastType } from '~/schemas/Toast';
+
 export const useToastStore = defineStore('Toast', () => {
-    const toasts = ref<{
-        id: number; message: string; type: 'error' | 'success'
-    }[]>([]);
-    const toastId = ref(1);
+  const toasts = ref<Toast[]>([]);
+  const toastId = ref(1);
 
-    const addToast = (message: string, type: 'error' | 'success') => {
-        const id = ++toastId.value;
-        toasts.value.push({ id, message, type });
+  const addToast = (message: string, type: ToastType, icon?: ToastIcon) => {
+    const id = ++toastId.value;
 
-        // Remove the toast after 3 seconds
-        setTimeout(() => {
-            removeToast(id);
-        }, 3000);
-    };
+    const iconValue = icon && ToastIconMap[icon] ? ToastIconMap[icon] : ToastIconMap['none'];
 
-    // Remove a toast by ID
-    const removeToast = (id: number) => {
-        const index = toasts.value.findIndex((toast) => toast.id === id);
-        if (index !== -1) toasts.value.splice(index, 1);
-    };
+    toasts.value.push({ id, message, type, icon: iconValue });
 
-    return { toasts, addToast, removeToast };
+    // Remove the toast after 3 seconds
+    setTimeout(() => {
+      removeToast(id);
+    }, 3000);
+  };
+
+  // Remove a toast by ID
+  const removeToast = (id: number) => {
+    const index = toasts.value.findIndex(toast => toast.id === id);
+    if (index !== -1) toasts.value.splice(index, 1);
+  };
+
+  return { toasts, addToast, removeToast };
 });
 
-
 if (import.meta.hot) {
-    import.meta.hot.accept(acceptHMRUpdate(useToastStore, import.meta.hot));
+  import.meta.hot.accept(acceptHMRUpdate(useToastStore, import.meta.hot));
 }

@@ -35,8 +35,13 @@ func init() {
 // Returns:
 //   - INTERNAL_SERVER_ERROR if the email could not be sent
 func SendVerificationEmail(user models.User, sender EmailSender) error {
+	baseUrl := os.Getenv("FRONTEND_URL")
+	if baseUrl == "" {
+		baseUrl = "http://localhost:3000"
+	}
+
 	// Create the verification URL
-	verificationURL := fmt.Sprintf("http://your-app.com/verify-email?token=%s", user.VerificationToken)
+	verificationURL := fmt.Sprintf("%s/auth/activate-account/%s", baseUrl, user.VerificationToken)
 
 	// Compose the email content
 	subject := "Email Verification"
