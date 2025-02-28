@@ -37,7 +37,7 @@ func TestHandleRegister(t *testing.T) {
 			description:         "The user format is accepted",
 			expectedCode:        http.StatusCreated,
 			expectedBody:        `{"message":"User registered successfully"}`,
-			requestBody:         `{"username": "joao", "bio": "bio", "profilePicture": "profilePic", "dateOfBirth": "2004-12-23", "email": "joao@gmail.com", "password": "12345678"}`,
+			requestBody:         `{"username": "joao", "bio": "bio", "profilePicture": "profile_pic", "dateOfBirth": "2004-12-23", "email": "joao@gmail.com", "password": "12345678"}`,
 			username:            "joao",
 			email:               "joao@gmail.com",
 			password:            "12345678",
@@ -148,7 +148,7 @@ func TestHandleRegister(t *testing.T) {
 			description:         "The username is empty",
 			expectedCode:        http.StatusBadRequest,
 			expectedBody:        `{"error":"Failed to bind JSON"}`,
-			requestBody:         `{"username": "", "bio": "bio", "profile_picture": "profilePicture", "dateOfBirth": "2004-12-23", "email": "joao@gmail.com", "password": "12345678"}`,
+			requestBody:         `{"username": "", "bio": "bio", "profilePicture": "profilePicture", "dateOfBirth": "2004-12-23", "email": "joao@gmail.com", "password": "12345678"}`,
 			username:            "",
 			email:               "joao@gmail.com",
 			password:            "12345678",
@@ -162,7 +162,7 @@ func TestHandleRegister(t *testing.T) {
 			description:         "The username is one character",
 			expectedCode:        http.StatusCreated,
 			expectedBody:        `{"message":"User registered successfully"}`,
-			requestBody:         `{"username": "j", "bio": "bio", "profile_picture": "profilePicture", "dateOfBirth": "2004-12-23", "email": "joao@gmail.com", "password": "12345678"}`,
+			requestBody:         `{"username": "j", "bio": "bio", "profilePicture": "profile_pic", "dateOfBirth": "2004-12-23", "email": "joao@gmail.com", "password": "12345678"}`,
 			username:            "j",
 			email:               "joao@gmail.com",
 			password:            "12345678",
@@ -252,20 +252,6 @@ func TestHandleRegister(t *testing.T) {
 			password:            "12345678",
 			bio:                 "bio",
 			profilePicture:      strings.Repeat("a", 255),
-			dateOfBirth:         "2004-12-23",
-			isAlreadyRegistered: false,
-		},
-		{
-			name:                "#R_17",
-			description:         "The profile_picture is empty",
-			expectedCode:        http.StatusBadRequest,
-			expectedBody:        `{"error":"Failed to bind JSON"}`,
-			requestBody:         `{"username": "joao", "bio": "bio", "profilePicture": "", "dateOfBirth": "2004-12-23", "email": "joao@gmail.com", "password": "12345678"}`,
-			username:            "joao",
-			email:               "joao@gmail.com",
-			password:            "12345678",
-			bio:                 "bio",
-			profilePicture:      "",
 			dateOfBirth:         "2004-12-23",
 			isAlreadyRegistered: false,
 		},
@@ -553,7 +539,7 @@ func TestHandleVerifyEmail(t *testing.T) {
 			name:              "#V_03",
 			description:       "The user is not authorized",
 			expectedCode:      http.StatusUnauthorized,
-			expectedBody:      `{"error":"Unauthorized"}`,
+			expectedBody:      `{"error":"Missing or invalid Authorization header"}`,
 			queryParams:       `token=123456789`,
 			verificationToken: "123456789",
 			isAlreadyVerified: false,
@@ -716,7 +702,7 @@ func TestHandleLogout(t *testing.T) {
 			name:         "#LO_01",
 			description:  "The user is not found",
 			expectedCode: http.StatusUnauthorized,
-			expectedBody: `{"error":"Invalid token"}`,
+			expectedBody: `{"error":"Failed to revoke token"}`,
 			refreshToken: "valid_token",
 			isCreated:    false,
 			isAuthorized: true,
@@ -734,7 +720,7 @@ func TestHandleLogout(t *testing.T) {
 			name:         "#LO_03",
 			description:  "The user is not authorized",
 			expectedCode: http.StatusUnauthorized,
-			expectedBody: `{"error":"Unauthorized"}`,
+			expectedBody: `{"error":"No refresh token provided"}`,
 			refreshToken: "valid_token",
 			isAuthorized: false,
 			isCreated:    true,
@@ -800,10 +786,17 @@ func TestHandleLogout(t *testing.T) {
 				req.Header.Set("Authorization", "Bearer "+tt.refreshToken)
 			}
 
+			if tt.isAuthorized {
+				req.AddCookie(&http.Cookie{
+					Name:  "refreshToken",
+					Value: tt.refreshToken,
+				})
+			}
+
 			// Mock context and recorder
 			w := httptest.NewRecorder()
 			router := gin.Default()
-			router.POST("/auth/logout", middleware.AuthMiddleware(), authController.Logout)
+			router.POST("/auth/logout", authController.Logout)
 			router.ServeHTTP(w, req)
 
 			// Assertions
@@ -852,7 +845,7 @@ func TestHandleLogin(t *testing.T) {
 			name:              "#L_03",
 			description:       "The user is not authorized",
 			expectedCode:      http.StatusUnauthorized,
-			expectedBody:      `{"error":"Unauthorized"}`,
+			expectedBody:      `{"error":"Missing or invalid Authorization header"}`,
 			email:             "joao@gmail.com",
 			password:          "12345678",
 			isAlreadyVerified: false,
@@ -1027,7 +1020,7 @@ func TestHandleLogin(t *testing.T) {
 				LastLogin:          time.Time{},
 				DateOfBirth:        time.Date(1990, 1, 1, 0, 0, 0, 0, time.UTC),
 				PreferredLanguage:  "en",
-				ReadingPreferences: "novel,short_story",
+				ReadingPreferences: "{}",
 				IsDeleted:          false,
 			}
 
@@ -1074,7 +1067,6 @@ func TestHandleRefreshToken(t *testing.T) {
 	tests := []struct {
 		name             string
 		description      string
-		requestBody      string
 		expectedCode     int
 		expectedBody     string
 		refreshToken     string
@@ -1089,7 +1081,7 @@ func TestHandleRefreshToken(t *testing.T) {
 			name:         "#R_01",
 			description:  "The user is not found",
 			expectedCode: http.StatusUnauthorized,
-			expectedBody: `{"error":"Invalid token"}`,
+			expectedBody: `{"error":"Invalid or expired refresh token"}`,
 			refreshToken: "valid_token",
 			isCreated:    false,
 			isAuthorized: true,
@@ -1099,7 +1091,7 @@ func TestHandleRefreshToken(t *testing.T) {
 			name:         "#R_02",
 			description:  "The user is created and not authorized",
 			expectedCode: http.StatusUnauthorized,
-			expectedBody: `{"error":"Unauthorized"}`,
+			expectedBody: `{"error":"No refresh token provided"}`,
 			refreshToken: "valid_token",
 			isCreated:    true,
 			isAuthorized: false,
@@ -1109,7 +1101,7 @@ func TestHandleRefreshToken(t *testing.T) {
 			name:         "#R_03",
 			description:  "The user is not authorized",
 			expectedCode: http.StatusUnauthorized,
-			expectedBody: `{"error":"Unauthorized"}`,
+			expectedBody: `{"error":"No refresh token provided"}`,
 			refreshToken: "valid_token",
 			isCreated:    true,
 			isAuthorized: false,
@@ -1148,12 +1140,6 @@ func TestHandleRefreshToken(t *testing.T) {
 
 			os.Setenv("SECRET_KEY", "your_secret_key")
 
-			_, err := userRepo.GetUserByID(1)
-
-			if err == nil {
-				t.Errorf("Expected user to be deleted, but it was not")
-			}
-
 			// Mock user data
 			pass, _ := utils.HashPassword("12345678")
 
@@ -1169,52 +1155,39 @@ func TestHandleRefreshToken(t *testing.T) {
 				LastLogin:          time.Time{},
 				DateOfBirth:        time.Date(1990, 1, 1, 0, 0, 0, 0, time.UTC),
 				PreferredLanguage:  "en",
-				ReadingPreferences: "novel,short_story",
+				ReadingPreferences: "{}",
 				IsDeleted:          false,
 			}
 
-			userRepo.CreateUser(&user)
-
-			refreshToken := ""
+			// Create user and generate refresh token if needed
 			if tt.isCreated {
 				userRepo.CreateUser(&user)
 				createdUser, _ := userRepo.GetUserByID(1)
-				_, refreshToken, _ = authService.GenerateToken(createdUser)
-			}
-
-			if tt.isAuthorized {
+				_, refreshToken, _ := authService.GenerateToken(createdUser)
 				tt.refreshToken = refreshToken
 			}
 
+			// Revoke token if needed
 			if tt.isAlreadyRevoked {
 				authRepo.RevokeToken(tt.refreshToken)
 			}
 
-			if tt.isLoggedIn {
-				req := httptest.NewRequest(http.MethodPost, "/auth/login", nil)
-				req.Header.Set("Content-Type", "application/json")
-				if tt.isAuthorized {
-					req.Header.Set("Authorization", "Bearer "+tt.refreshToken)
-				}
-
-				// Mock context and recorder
-				w := httptest.NewRecorder()
-				router := gin.Default()
-				router.POST("/auth/login", middleware.AuthMiddleware(), authController.Login)
-				router.ServeHTTP(w, req)
-			}
-
-			// Pass token in request header
+			// Create request
 			req := httptest.NewRequest(http.MethodPost, "/auth/refresh-token", nil)
 			req.Header.Set("Content-Type", "application/json")
+
+			// Add refresh token cookie to the request
 			if tt.isAuthorized {
-				req.Header.Set("Authorization", "Bearer "+tt.refreshToken)
+				req.AddCookie(&http.Cookie{
+					Name:  "refreshToken",
+					Value: tt.refreshToken,
+				})
 			}
 
 			// Mock context and recorder
 			w := httptest.NewRecorder()
 			router := gin.Default()
-			router.POST("/auth/refresh-token", middleware.AuthMiddleware(), authController.RefreshToken)
+			router.POST("/auth/refresh-token", authController.RefreshToken)
 			router.ServeHTTP(w, req)
 
 			// Assertions

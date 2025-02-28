@@ -52,11 +52,15 @@ func main() {
 	userRepo := repositories.NewUserRepository(db)
 	authRepo := repositories.NewAuthRepository(db)
 	novelRepo := repositories.NewNovelRepository(db)
+	chapterRepo := repositories.NewChapterRepository(db)
+	bookmarkRepo := repositories.NewBookmarkRepository(db)
 	logRepo := repositories.NewLogRepository(db)
 
 	userService := services.NewUserService(userRepo)
 	authService := services.NewAuthService(userRepo, authRepo)
 	novelService := services.NewNovelService(novelRepo)
+	chapterService := services.NewChapterService(chapterRepo)
+	bookmarkService := services.NewBookmarkService(bookmarkRepo)
 	logService := services.NewLogService(logRepo)
 
 	ttsService := &services.TTSService{
@@ -91,11 +95,13 @@ func main() {
 	userController := controllers.NewUserController(userService)
 	authController := controllers.NewAuthController(authService, userService)
 	novelController := controllers.NewNovelController(novelService)
+	bookmarkController := controllers.NewBookmarkController(bookmarkService)
+	chapterController := controllers.NewChapterController(chapterService, novelService)
 	ttsController := controllers.NewTTSController(ttsService)
 	logController := controllers.NewLogController(logFilePath, logService)
 
 	// Set up routes
-	routes.SetupRoutes(r, authController, userController, novelController, ttsController, logController)
+	routes.SetupRoutes(r, authController, userController, novelController, bookmarkController, chapterController, ttsController, logController)
 
 	fmt.Printf("Server running on port %s\n", port)
 	err = r.Run(":" + port)

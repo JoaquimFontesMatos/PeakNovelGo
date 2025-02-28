@@ -3,9 +3,9 @@ package controllers
 import (
 	"backend/config"
 	"backend/internal/controllers"
+	"backend/internal/dtos"
 	"backend/internal/middleware"
 	"backend/internal/models"
-	"backend/internal/dtos"
 	"backend/internal/repositories"
 	repositoryInterfaces "backend/internal/repositories/interfaces"
 	"backend/internal/services"
@@ -180,7 +180,7 @@ func TestHandleSoftDeleteUser(t *testing.T) {
 
 		// Assertions
 		assert.Equal(t, http.StatusUnauthorized, w.Code)
-		assert.Contains(t, w.Body.String(), "Unauthorized")
+		assert.Contains(t, w.Body.String(), "Missing or invalid Authorization header")
 	})
 
 	t.Run("#GSDU_04->The user is not found", func(t *testing.T) {
@@ -502,7 +502,7 @@ func TestHandleGetUser(t *testing.T) {
 			LastLogin:          time.Time{},
 			DateOfBirth:        time.Time{},
 			PreferredLanguage:  "en",
-			ReadingPreferences: "novel,short_story",
+			ReadingPreferences: "{}",
 			IsDeleted:          false,
 		}
 
@@ -703,7 +703,7 @@ func TestHandleGetUser(t *testing.T) {
 			LastLogin:          time.Time{},
 			DateOfBirth:        time.Time{},
 			PreferredLanguage:  "en",
-			ReadingPreferences: "novel,short_story",
+			ReadingPreferences: "{}",
 			IsDeleted:          false,
 		}
 
@@ -810,7 +810,7 @@ func TestGetUserByEmail(t *testing.T) {
 			LastLogin:          time.Time{},
 			DateOfBirth:        time.Time{},
 			PreferredLanguage:  "en",
-			ReadingPreferences: "novel,short_story",
+			ReadingPreferences: "{}",
 			IsDeleted:          false,
 		}
 
@@ -865,7 +865,7 @@ func TestGetUserByEmail(t *testing.T) {
 
 		// Assertions
 		assert.Equal(t, http.StatusUnauthorized, w.Code)
-		assert.Contains(t, w.Body.String(), "Unauthorized")
+		assert.Contains(t, w.Body.String(), "Missing or invalid Authorization header")
 	})
 
 	t.Run("#GUI_04->The user is authorized and the email is valid", func(t *testing.T) {
@@ -886,7 +886,7 @@ func TestGetUserByEmail(t *testing.T) {
 			LastLogin:          time.Now(),
 			DateOfBirth:        time.Date(1990, 1, 1, 0, 0, 0, 0, time.UTC),
 			PreferredLanguage:  "en",
-			ReadingPreferences: "novel,short_story",
+			ReadingPreferences: "{}",
 			IsDeleted:          false,
 		}
 
@@ -1077,7 +1077,7 @@ func TestGetUserByEmail(t *testing.T) {
 			LastLogin:          time.Time{},
 			DateOfBirth:        time.Time{},
 			PreferredLanguage:  "en",
-			ReadingPreferences: "novel,short_story",
+			ReadingPreferences: "{}",
 			IsDeleted:          false,
 		}
 
@@ -1166,7 +1166,7 @@ func TestGetUserByUsername(t *testing.T) {
 			LastLogin:          time.Time{},
 			DateOfBirth:        time.Time{},
 			PreferredLanguage:  "en",
-			ReadingPreferences: "novel,short_story",
+			ReadingPreferences: "{}",
 			IsDeleted:          false,
 		}
 
@@ -1221,7 +1221,7 @@ func TestGetUserByUsername(t *testing.T) {
 
 		// Assertions
 		assert.Equal(t, http.StatusUnauthorized, w.Code)
-		assert.Contains(t, w.Body.String(), "Unauthorized")
+		assert.Contains(t, w.Body.String(), "Missing or invalid Authorization header")
 	})
 
 	t.Run("#GUI_04->The user is not found", func(t *testing.T) {
@@ -1260,7 +1260,7 @@ func TestGetUserByUsername(t *testing.T) {
 			LastLogin:          time.Time{},
 			DateOfBirth:        time.Time{},
 			PreferredLanguage:  "en",
-			ReadingPreferences: "novel,short_story",
+			ReadingPreferences: "{}",
 			IsDeleted:          false,
 		}
 
@@ -1396,7 +1396,7 @@ func TestGetUserByUsername(t *testing.T) {
 			LastLogin:          time.Time{},
 			DateOfBirth:        time.Time{},
 			PreferredLanguage:  "en",
-			ReadingPreferences: "novel,short_story",
+			ReadingPreferences: "{}",
 			IsDeleted:          false,
 		}
 
@@ -1470,7 +1470,7 @@ func TestGetUserByUsername(t *testing.T) {
 			LastLogin:          time.Time{},
 			DateOfBirth:        time.Time{},
 			PreferredLanguage:  "en",
-			ReadingPreferences: "novel,short_story",
+			ReadingPreferences: "{}",
 			IsDeleted:          false,
 		}
 
@@ -1533,7 +1533,7 @@ func TestHandleEmailUpdate(t *testing.T) {
 			urlParam:     "1",
 			requestBody:  `{"new_email": "new@example.com"}`,
 			expectedCode: http.StatusUnauthorized,
-			expectedBody: `{"error":"Unauthorized"}`,
+			expectedBody: `{"error":"Missing or invalid Authorization header"}`,
 			createUser:   true,
 			isAuthorized: false,
 			IsDeleted:    false,
@@ -1775,7 +1775,7 @@ func TestHandleUpdatePassword(t *testing.T) {
 			urlParam:     "1",
 			requestBody:  `{"current_password": "12345678", "new_password": "newpassword"}`,
 			expectedCode: http.StatusUnauthorized,
-			expectedBody: `{"error":"Unauthorized"}`,
+			expectedBody: `{"error":"Missing or invalid Authorization header"}`,
 			createUser:   true,
 			isAuthorized: false,
 			newPassword:  "newpassword",
@@ -2034,7 +2034,7 @@ func TestHandleUpdateFields(t *testing.T) {
 			name:                  "#EUF_01",
 			description:           "User not created",
 			urlParam:              "1",
-			requestBody:           `{"username": "newusername", "bio": "newbio", "profile_picture": "https://example.com/profile.jpg", "preferred_language": "en", "reading_preferences": "novel,short_story", "date_of_birth": "1990-01-01", "roles": "admin,user"}`,
+			requestBody:           `{"username": "newusername", "bio": "newbio", "profilePicture": "https://example.com/profile.jpg", "preferredLanguage": "en", "readingPreferences": "novel,short_story", "dateOfBirth": "1990-01-01", "roles": "admin,user"}`,
 			expectedCode:          http.StatusNotFound,
 			expectedBody:          `{"error":"User not found"}`,
 			createUser:            false,
@@ -2052,7 +2052,7 @@ func TestHandleUpdateFields(t *testing.T) {
 			name:                  "#EUF_02",
 			description:           "The user is created and validated",
 			urlParam:              "1",
-			requestBody:           `{"username": "newusername", "bio": "newbio", "profile_picture": "https://example.com/profile.jpg", "preferred_language": "en", "reading_preferences": "novel,short_story", "date_of_birth": "1990-01-01", "roles": "admin,user"}`,
+			requestBody:           `{"username": "newusername", "bio": "newbio", "profilePicture": "https://example.com/profile.jpg", "preferredLanguage": "en", "readingPreferences": "{}", "dateOfBirth": "1990-01-01", "roles": "admin,user"}`,
 			expectedCode:          http.StatusOK,
 			expectedBody:          `{"message":"User updated successfully"}`,
 			createUser:            true,
@@ -2061,7 +2061,7 @@ func TestHandleUpdateFields(t *testing.T) {
 			newBio:                "newbio",
 			newProfilePicture:     "https://example.com/profile.jpg",
 			newPreferredLanguage:  "en",
-			newReadingPreferences: "novel,short_story",
+			newReadingPreferences: "{}",
 			newDateOfBirth:        "1990-01-01",
 			newRoles:              "admin,user",
 			IsDeleted:             false,
@@ -2070,9 +2070,9 @@ func TestHandleUpdateFields(t *testing.T) {
 			name:                  "#EUF_03",
 			description:           "The user is not authorized",
 			urlParam:              "1",
-			requestBody:           `{"username": "newusername", "bio": "newbio", "profile_picture": "https://example.com/profile.jpg", "preferred_language": "en", "reading_preferences": "novel,short_story", "date_of_birth": "1990-01-01", "roles": "admin,user"}`,
+			requestBody:           `{"username": "newusername", "bio": "newbio", "profilePicture": "https://example.com/profile.jpg", "preferredLanguage": "en", "readingPreferences": "novel,short_story", "dateOfBirth": "1990-01-01", "roles": "admin,user"}`,
 			expectedCode:          http.StatusUnauthorized,
-			expectedBody:          `{"error":"Unauthorized"}`,
+			expectedBody:          `{"error":"Missing or invalid Authorization header"}`,
 			createUser:            true,
 			isAuthorized:          false,
 			newUsername:           "newusername",
@@ -2088,7 +2088,7 @@ func TestHandleUpdateFields(t *testing.T) {
 			name:                  "#EUF_04",
 			description:           "The user is not found",
 			urlParam:              "2",
-			requestBody:           `{"username": "newusername", "bio": "newbio", "profile_picture": "https://example.com/profile.jpg", "preferred_language": "en", "reading_preferences": "novel,short_story", "date_of_birth": "1990-01-01", "roles": "admin,user"}`,
+			requestBody:           `{"username": "newusername", "bio": "newbio", "profilePicture": "https://example.com/profile.jpg", "preferredLanguage": "en", "readingPreferences": "novel,short_story", "dateOfBirth": "1990-01-01", "roles": "admin,user"}`,
 			expectedCode:          http.StatusNotFound,
 			expectedBody:          `{"error":"User not found"}`,
 			createUser:            true,
@@ -2106,7 +2106,7 @@ func TestHandleUpdateFields(t *testing.T) {
 			name:                  "#EUF_05",
 			description:           "There are more than one input",
 			urlParam:              "1,4",
-			requestBody:           `{"username": "newusername", "bio": "newbio", "profile_picture": "https://example.com/profile.jpg", "preferred_language": "en", "reading_preferences": "novel,short_story", "date_of_birth": "1990-01-01", "roles": "admin,user"}`,
+			requestBody:           `{"username": "newusername", "bio": "newbio", "profilePicture": "https://example.com/profile.jpg", "preferredLanguage": "en", "readingPreferences": "novel,short_story", "dateOfBirth": "1990-01-01", "roles": "admin,user"}`,
 			expectedCode:          http.StatusBadRequest,
 			expectedBody:          `{"error":"Invalid ID"}`,
 			createUser:            true,
@@ -2123,7 +2123,7 @@ func TestHandleUpdateFields(t *testing.T) {
 		{
 			name:                  "#EUF_06",
 			description:           "There are less than one input",
-			requestBody:           `{"username": "newusername", "bio": "newbio", "profile_picture": "https://example.com/profile.jpg", "preferred_language": "en", "reading_preferences": "novel,short_story", "date_of_birth": "1990-01-01", "roles": "admin,user"}`,
+			requestBody:           `{"username": "newusername", "bio": "newbio", "profilePicture": "https://example.com/profile.jpg", "preferredLanguage": "en", "readingPreferences": "novel,short_story", "dateOfBirth": "1990-01-01", "roles": "admin,user"}`,
 			expectedCode:          http.StatusBadRequest,
 			expectedBody:          `{"error":"Invalid ID"}`,
 			createUser:            true,
@@ -2141,7 +2141,7 @@ func TestHandleUpdateFields(t *testing.T) {
 			name:                  "#EUF_07",
 			description:           "User is soft deleted",
 			urlParam:              "1",
-			requestBody:           `{"username": "newusername", "bio": "newbio", "profile_picture": "https://example.com/profile.jpg", "preferred_language": "en", "reading_preferences": "novel,short_story", "date_of_birth": "1990-01-01", "roles": "admin,user"}`,
+			requestBody:           `{"username": "newusername", "bio": "newbio", "profilePicture": "https://example.com/profile.jpg", "preferredLanguage": "en", "readingPreferences": "novel,short_story", "dateOfBirth": "1990-01-01", "roles": "admin,user"}`,
 			expectedCode:          http.StatusForbidden,
 			expectedBody:          `{"error":"User account is deactivated"}`,
 			createUser:            true,
@@ -2321,7 +2321,7 @@ func TestHandleUpdateFields(t *testing.T) {
 			name:                  "#EUF_17",
 			description:           "Fields profile_picture is more than 255 characters",
 			urlParam:              "1",
-			requestBody:           fmt.Sprintf(`{"profile_picture": "%s"}`, strings.Repeat("a", 256)),
+			requestBody:           fmt.Sprintf(`{"profilePicture": "%s"}`, strings.Repeat("a", 256)),
 			expectedCode:          http.StatusBadRequest,
 			expectedBody:          `{"error":"Profile picture URL cannot be longer than 255 characters"}`,
 			createUser:            true,
@@ -2339,7 +2339,7 @@ func TestHandleUpdateFields(t *testing.T) {
 			name:                  "#EUF_18",
 			description:           "Fields profile_picture is 255 characters",
 			urlParam:              "1",
-			requestBody:           fmt.Sprintf(`{"profile_picture": "%s"}`, strings.Repeat("a", 255)),
+			requestBody:           fmt.Sprintf(`{"profilePicture": "%s"}`, strings.Repeat("a", 255)),
 			expectedCode:          http.StatusOK,
 			expectedBody:          `{"message":"User updated successfully"}`,
 			createUser:            true,
@@ -2357,7 +2357,7 @@ func TestHandleUpdateFields(t *testing.T) {
 			name:                  "#EUF_19",
 			description:           "Fields profile_picture is one character",
 			urlParam:              "1",
-			requestBody:           `{"profile_picture": "a"}`,
+			requestBody:           `{"profilePicture": "a"}`,
 			expectedCode:          http.StatusOK,
 			expectedBody:          `{"message":"User updated successfully"}`,
 			createUser:            true,
@@ -2375,7 +2375,7 @@ func TestHandleUpdateFields(t *testing.T) {
 			name:                  "#EUF_20",
 			description:           "Fields preferred_language is more than 100 characters",
 			urlParam:              "1",
-			requestBody:           fmt.Sprintf(`{"preferred_language": "%s"}`, strings.Repeat("a", 101)),
+			requestBody:           fmt.Sprintf(`{"preferredLanguage": "%s"}`, strings.Repeat("a", 101)),
 			expectedCode:          http.StatusBadRequest,
 			expectedBody:          `{"error":"Preferred language cannot be longer than 100 characters"}`,
 			createUser:            true,
@@ -2393,7 +2393,7 @@ func TestHandleUpdateFields(t *testing.T) {
 			name:                  "#EUF_21",
 			description:           "Fields preferred_language is 100 characters",
 			urlParam:              "1",
-			requestBody:           fmt.Sprintf(`{"preferred_language": "%s"}`, strings.Repeat("a", 100)),
+			requestBody:           fmt.Sprintf(`{"preferredLanguage": "%s"}`, strings.Repeat("a", 100)),
 			expectedCode:          http.StatusOK,
 			expectedBody:          `{"message":"User updated successfully"}`,
 			createUser:            true,
@@ -2409,9 +2409,9 @@ func TestHandleUpdateFields(t *testing.T) {
 		},
 		{
 			name:                  "#EUF_22",
-			description:           "Fields preferred_language is one character",
+			description:           "Fields preferredLanguage is one character",
 			urlParam:              "1",
-			requestBody:           `{"preferred_language": "a"}`,
+			requestBody:           `{"preferredLanguage": "a"}`,
 			expectedCode:          http.StatusOK,
 			expectedBody:          `{"message":"User updated successfully"}`,
 			createUser:            true,
@@ -2429,7 +2429,7 @@ func TestHandleUpdateFields(t *testing.T) {
 			name:                  "#EUF_23",
 			description:           "Fields reading_preferences is more than 255 characters",
 			urlParam:              "1",
-			requestBody:           fmt.Sprintf(`{"reading_preferences": "%s"}`, strings.Repeat("a", 256)),
+			requestBody:           fmt.Sprintf(`{"readingPreferences": "%s"}`, strings.Repeat("a", 256)),
 			expectedCode:          http.StatusBadRequest,
 			expectedBody:          `{"error":"Reading preferences cannot be longer than 255 characters"}`,
 			createUser:            true,
@@ -2445,9 +2445,9 @@ func TestHandleUpdateFields(t *testing.T) {
 		},
 		{
 			name:                  "#EUF_24",
-			description:           "Fields reading_preferences is 255 characters",
+			description:           "Fields readingPreferences is 255 characters",
 			urlParam:              "1",
-			requestBody:           fmt.Sprintf(`{"reading_preferences": "%s"}`, strings.Repeat("a", 255)),
+			requestBody:           fmt.Sprintf(`{"readingPreferences": "%s"}`, strings.Repeat("a", 255)),
 			expectedCode:          http.StatusOK,
 			expectedBody:          `{"message":"User updated successfully"}`,
 			createUser:            true,
@@ -2463,9 +2463,9 @@ func TestHandleUpdateFields(t *testing.T) {
 		},
 		{
 			name:                  "#EUF_25",
-			description:           "Fields reading_preferences is one character",
+			description:           "Fields readingPreferences is one character",
 			urlParam:              "1",
-			requestBody:           `{"reading_preferences": "a"}`,
+			requestBody:           `{"readingPreferences": "a"}`,
 			expectedCode:          http.StatusOK,
 			expectedBody:          `{"message":"User updated successfully"}`,
 			createUser:            true,
@@ -2483,7 +2483,7 @@ func TestHandleUpdateFields(t *testing.T) {
 			name:                  "#EUF_26",
 			description:           "Fields date_of_birth is less than 18 years",
 			urlParam:              "1",
-			requestBody:           `{"date_of_birth": "2009-01-01"}`,
+			requestBody:           `{"dateOfBirth": "2009-01-01"}`,
 			expectedCode:          http.StatusBadRequest,
 			expectedBody:          `{"error":"You must be at least 18 years old"}`,
 			createUser:            true,
@@ -2501,7 +2501,7 @@ func TestHandleUpdateFields(t *testing.T) {
 			name:                  "#EUF_27",
 			description:           "Fields date_of_birth is 18 years",
 			urlParam:              "1",
-			requestBody:           `{"date_of_birth": "2006-01-01"}`,
+			requestBody:           `{"dateOfBirth": "2006-01-01"}`,
 			expectedCode:          http.StatusOK,
 			expectedBody:          `{"message":"User updated successfully"}`,
 			createUser:            true,
@@ -2519,7 +2519,7 @@ func TestHandleUpdateFields(t *testing.T) {
 			name:                  "#EUF_28",
 			description:           "Fields date_of_birth is more than 18 years",
 			urlParam:              "1",
-			requestBody:           `{"date_of_birth": "2000-01-01"}`,
+			requestBody:           `{"dateOfBirth": "2000-01-01"}`,
 			expectedCode:          http.StatusOK,
 			expectedBody:          `{"message":"User updated successfully"}`,
 			createUser:            true,
@@ -2537,7 +2537,7 @@ func TestHandleUpdateFields(t *testing.T) {
 			name:                  "#EUF_29",
 			description:           "Fields date_of_birth is in the future",
 			urlParam:              "1",
-			requestBody:           `{"date_of_birth": "2027-01-01"}`,
+			requestBody:           `{"dateOfBirth": "2027-01-01"}`,
 			expectedCode:          http.StatusBadRequest,
 			expectedBody:          `{"error":"You must be at least 18 years old"}`,
 			createUser:            true,
@@ -2632,16 +2632,12 @@ func TestHandleUpdateFields(t *testing.T) {
 				LastLogin:          time.Time{},
 				DateOfBirth:        time.Date(1980, 1, 1, 0, 0, 0, 0, time.UTC),
 				PreferredLanguage:  "ru",
-				ReadingPreferences: "novel,short_story,movis",
+				ReadingPreferences: "{}",
 				IsDeleted:          false,
 			}
 
 			if tt.IsDeleted {
 				user.IsDeleted = true
-			}
-
-			if tt.createUser {
-				userRepo.CreateUser(&user)
 			}
 
 			secretKey := os.Getenv("SECRET_KEY")
@@ -2652,11 +2648,15 @@ func TestHandleUpdateFields(t *testing.T) {
 			})
 			tokenString, _ := token.SignedString([]byte(secretKey))
 
+			if tt.createUser {
+				userRepo.CreateUser(&user)
+			}
+
 			// Create a request
 			req := httptest.NewRequest(http.MethodPut, "/users/"+tt.urlParam+"/fields", strings.NewReader(tt.requestBody))
 			req.Header.Set("Content-Type", "application/json")
 			if tt.isAuthorized {
-				req.Header.Set("Authorization", "Bearer "+tokenString)
+				req.Header.Set("Authorization", "Bearer "+tokenString) // Add access token to the request header
 			}
 
 			// Mock context and recorder
