@@ -1,3 +1,6 @@
+## v1.0.6 - 2025-03-01
+* fix:fixed a hardcoded link
+* chore: update release notes and changelog for v1.0.5
 ## v1.0.5 - 2025-03-01
 * Merge branch 'development'
 * fix: fixed hopefully some cors errors
