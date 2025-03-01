@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { loginFormSchema, type LoginForm } from '~/schemas/Forms';
 
+const runtimeConfig = useRuntimeConfig();
+const url: string = runtimeConfig.public.apiUrl;
 // Use the Vee-Validate form hook
 const { handleSubmit } = useForm<LoginForm>({
   validationSchema: toTypedSchema(loginFormSchema),
@@ -32,7 +34,7 @@ const handleEnterSignUp = () => {
 };
 
 const loginWithGoogle = () => {
-  window.location.href = 'http://localhost:8081/auth/google';
+  window.location.href = url + '/auth/google';
 };
 </script>
 
