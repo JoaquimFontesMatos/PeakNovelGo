@@ -13,12 +13,15 @@ func SetupRoutes(r *gin.Engine,
 	authController *controllers.AuthController,
 	userController *controllers.UserController,
 	novelController *controllers.NovelController,
+	bookmarkController *controllers.BookmarkController,
+	chapterController *controllers.ChapterController,
 	ttsController *controllers.TTSController,
 	logController *controllers.LogController) {
 
 	r.Use(func(c *gin.Context) {
 		c.Writer.Header().Set("Access-Control-Allow-Origin", os.Getenv("FRONTEND_URL"))
 		c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
+		c.Writer.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
 		c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
 		if c.Request.Method == "OPTIONS" {
 			c.Writer.WriteHeader(http.StatusOK)
@@ -74,27 +77,24 @@ func SetupRoutes(r *gin.Engine,
 
 		chapters := novel.Group("/chapters")
 		{
-			chapters.GET("/:novel_id/scrape", novelController.HandleImportChapters)
-			chapters.POST("/:novel_id", middleware.AuthMiddleware(), novelController.HandleImportChaptersZip)
-			chapters.GET("/:novel_id", novelController.GetChaptersByNovelID)
-			chapters.GET("/chapter/:chapter_id", novelController.GetChapterByID)
-			chapters.GET("/novel/:novel_title/chapter/:chapter_no", novelController.GetChapterByNovelUpdatesIDAndChapterNo)
-			chapters.GET("/novel/:novel_title/chapters", novelController.GetChaptersByNovelUpdatesID)
+			chapters.GET("/:novel_id/scrape", chapterController.HandleImportChapters)
+			chapters.GET("/novel/:novel_title/chapter/:chapter_no", chapterController.GetChapterByNovelUpdatesIDAndChapterNo)
+			chapters.GET("/novel/:novel_title/chapters", chapterController.GetChaptersByNovelUpdatesID)
 		}
 
 		bookmarked := novel.Group("/bookmarked")
 		{
-			bookmarked.POST("/", middleware.AuthMiddleware(), novelController.CreateBookmarkedNovel)
-			bookmarked.PUT("/", middleware.AuthMiddleware(), novelController.UpdateBookmarkedNovel)
-			bookmarked.GET("/:user_id", middleware.AuthMiddleware(), novelController.GetBookmarkedNovelsByUserID)
-			bookmarked.GET("/user/:user_id/novel/:novel_id", middleware.AuthMiddleware(), novelController.GetBookmarkedNovelByUserIDAndNovelID)
-			bookmarked.DELETE("/user/:user_id/novel/:novel_id", middleware.AuthMiddleware(), novelController.UnbookmarkNovel)
+			bookmarked.POST("/", middleware.AuthMiddleware(), bookmarkController.CreateBookmark)
+			bookmarked.PUT("/", middleware.AuthMiddleware(), bookmarkController.UpdateBookmark)
+			bookmarked.GET("/:user_id", middleware.AuthMiddleware(), bookmarkController.GetBookmarkedNovelsByUserID)
+			bookmarked.GET("/user/:user_id/novel/:novel_id", middleware.AuthMiddleware(), bookmarkController.GetBookmarkByUserIDAndNovelID)
+			bookmarked.DELETE("/user/:user_id/novel/:novel_id", middleware.AuthMiddleware(), bookmarkController.UnbookmarkNovel)
 		}
 
 		tts := novel.Group("/tts")
 		{
 			tts.POST("/", middleware.AuthMiddleware(), ttsController.GenerateTTS)
-			tts.GET("/voices", middleware.AuthMiddleware(), ttsController.GetVoices)
+			tts.GET("/voices", ttsController.GetVoices)
 		}
 	}
 

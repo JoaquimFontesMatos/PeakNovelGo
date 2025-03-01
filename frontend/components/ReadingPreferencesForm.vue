@@ -100,6 +100,9 @@ const handleChangeReadingPreferences = async () => {
             <option value="es-ES-ElviraNeural">es-ES-ElviraNeural</option>
             <option value="en-US-SteffanNeural">en-US-SteffanNeural</option>
             <option value="en-US-JennyNeural">en-US-JennyNeural</option>
+            <option value="en-US-GuyNeural">en-US-GuyNeural</option>
+            <option value="en-US-RogerNeural">en-US-RogerNeural</option>
+            <option value="en-US-AvaMultilingualNeural">en-US-AvaMultilingualNeural</option>
           </select>
         </div>
 

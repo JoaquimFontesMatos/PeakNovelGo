@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/gorilla/sessions"
@@ -18,7 +19,9 @@ func NewAuth() {
 
 	gothic.Store = store
 
+	googleCallback := fmt.Sprintf("%s/auth/google/callback", os.Getenv("BACKEND_URL"))
+
 	goth.UseProviders(
-		google.New(os.Getenv("GOOGLE_CLIENT_ID"), os.Getenv("GOOGLE_CLIENT_SECRET"), "http://localhost:8081/auth/google/callback", "email", "profile"),
+		google.New(os.Getenv("GOOGLE_CLIENT_ID"), os.Getenv("GOOGLE_CLIENT_SECRET"), googleCallback, "email", "profile"),
 	)
 }
