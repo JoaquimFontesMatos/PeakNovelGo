@@ -1,3 +1,9 @@
+## v1.0.5 - 2025-03-01
+* Merge branch 'development'
+* fix: fixed hopefully some cors errors
+* fix: fixed the failing tests
+* fix: added a skip to tts generation if files already present
+* chore: update release notes and changelog for v1.0.4
 ## v1.0.4 - 2025-02-27
 * Merge remote-tracking branch 'origin/main'
 * fix: hotfix 5
