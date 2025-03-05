@@ -35,6 +35,8 @@ func WrapError(code ErrorType, message string, err error) *MyError {
 type ErrorType string
 
 const (
+	DATABASE_ERROR              ErrorType = "DATABASE_ERROR"
+	SCRIPT_ERROR                ErrorType = "SCRIPT_ERROR"
 	VALIDATION_ERROR            ErrorType = "VALIDATION_ERROR"
 	REPOSITORY_ERROR            ErrorType = "REPOSITORY_ERROR"
 	SERVICE_ERROR               ErrorType = "SERVICE_ERROR"

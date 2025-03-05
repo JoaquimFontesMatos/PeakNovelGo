@@ -1,7 +1,6 @@
 package controllers
 
 import (
-	"backend/internal/middleware"
 	"backend/internal/models"
 	"backend/internal/utils"
 	"fmt"
@@ -669,7 +668,7 @@ func TestHandleVerifyEmail(t *testing.T) {
 			// Mock context and recorder
 			w := httptest.NewRecorder()
 			router := gin.Default()
-			router.POST("/auth/verify-email", middleware.AuthMiddleware(), authController.VerifyEmail)
+			router.POST("/auth/verify-email", myMiddleware.AuthMiddleware(), authController.VerifyEmail)
 			router.ServeHTTP(w, req)
 
 			// Assertions
@@ -1050,7 +1049,7 @@ func TestHandleLogin(t *testing.T) {
 			// Mock context and recorder
 			w := httptest.NewRecorder()
 			router := gin.Default()
-			router.POST("/auth/login", middleware.AuthMiddleware(), authController.Login)
+			router.POST("/auth/login", myMiddleware.AuthMiddleware(), authController.Login)
 			router.ServeHTTP(w, req)
 
 			// Assertions

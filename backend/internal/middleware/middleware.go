@@ -1,6 +1,9 @@
 package middleware
 
 import (
+	"backend/internal/models"
+	"backend/internal/permissions"
+	"backend/internal/services/interfaces"
 	"log"
 	"net/http"
 	"os"
@@ -11,8 +14,19 @@ import (
 	"github.com/golang-jwt/jwt"
 )
 
-func AuthMiddleware() gin.HandlerFunc {
-	// Load environment variables once
+// Middleware struct holds dependencies for the middleware
+type Middleware struct {
+	userService interfaces.UserServiceInterface
+}
+
+// NewMiddleware creates a new instance of the Middleware
+func NewMiddleware(userService interfaces.UserServiceInterface) *Middleware {
+	return &Middleware{
+		userService: userService,
+	}
+}
+
+func (m *Middleware) AuthMiddleware() gin.HandlerFunc {
 	secretKey := os.Getenv("SECRET_KEY")
 	if secretKey == "" {
 		log.Fatal("SECRET_KEY not set in environment variables")
@@ -29,7 +43,6 @@ func AuthMiddleware() gin.HandlerFunc {
 		// Extract and parse the token
 		tokenStr := strings.TrimPrefix(authHeader, "Bearer ")
 		token, err := jwt.Parse(tokenStr, func(token *jwt.Token) (interface{}, error) {
-			// Ensure the signing method is as expected
 			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 				return nil, jwt.ErrSignatureInvalid
 			}
@@ -56,8 +69,24 @@ func AuthMiddleware() gin.HandlerFunc {
 				return
 			}
 
-			// You can set the user information in the context here
-			// e.g., c.Set("userID", claims["sub"])
+			// Extract user information from claims
+			userID, ok := claims["user_id"].(float64)
+			if !ok {
+				c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid user ID in token"})
+				c.Abort()
+				return
+			}
+
+			// Fetch the user from the database (or wherever you store user data)
+			user, err := m.userService.GetUser(uint(userID))
+			if err != nil {
+				c.JSON(http.StatusUnauthorized, gin.H{"error": "User not found"})
+				c.Abort()
+				return
+			}
+
+			// Set the user in the Gin context
+			c.Set("user", user)
 		} else {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token claims"})
 			c.Abort()
@@ -69,7 +98,8 @@ func AuthMiddleware() gin.HandlerFunc {
 	}
 }
 
-func RefreshTokenMiddleware() gin.HandlerFunc {
+// RefreshTokenMiddleware returns a Gin middleware for refreshing tokens
+func (m *Middleware) RefreshTokenMiddleware() gin.HandlerFunc {
 	secretKey := os.Getenv("SECRET_KEY")
 	if secretKey == "" {
 		log.Fatal("SECRET_KEY not set in environment variables")
@@ -102,3 +132,33 @@ func RefreshTokenMiddleware() gin.HandlerFunc {
 	}
 }
 
+// PermissionMiddleware returns a Gin middleware to check permissions for a specific resource and action
+func (m *Middleware) PermissionMiddleware(resource string, action string) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		// Get the user from the Gin context (assuming you set it in a previous middleware, e.g., AuthMiddleware)
+		user, exists := c.Get("user")
+		if !exists {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+			c.Abort()
+			return
+		}
+
+		// Type assert the user to models.User
+		userModel, ok := user.(*models.User)
+		if !ok {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid user data"})
+			c.Abort()
+			return
+		}
+
+		// Check if the user has permission
+		if !permissions.HasPermission(*userModel, resource, action, nil) {
+			c.JSON(http.StatusForbidden, gin.H{"error": "Forbidden"})
+			c.Abort()
+			return
+		}
+
+		// Proceed to the next handler if the user has permission
+		c.Next()
+	}
+}

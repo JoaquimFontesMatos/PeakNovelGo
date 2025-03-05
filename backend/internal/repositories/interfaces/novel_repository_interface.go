@@ -5,6 +5,9 @@ import (
 )
 
 type NovelRepositoryInterface interface {
+	// IsDown checks if the database is offline by pinging it
+	IsDown() bool
+
 	// CreateNovel creates a new novel in the database.
 	//
 	// Parameters:

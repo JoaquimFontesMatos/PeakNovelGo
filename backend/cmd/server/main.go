@@ -4,6 +4,7 @@ import (
 	"backend/config"
 	"backend/internal/auth"
 	"backend/internal/controllers"
+	"backend/internal/middleware"
 	"backend/internal/models"
 	"backend/internal/repositories"
 	"backend/internal/routes"
@@ -56,9 +57,11 @@ func main() {
 	bookmarkRepo := repositories.NewBookmarkRepository(db)
 	logRepo := repositories.NewLogRepository(db)
 
+	scriptExecutor := &utils.RealScriptExecutor{}
+
 	userService := services.NewUserService(userRepo)
 	authService := services.NewAuthService(userRepo, authRepo)
-	novelService := services.NewNovelService(novelRepo)
+	novelService := services.NewNovelService(novelRepo, scriptExecutor)
 	chapterService := services.NewChapterService(chapterRepo)
 	bookmarkService := services.NewBookmarkService(bookmarkRepo)
 	logService := services.NewLogService(logRepo)
@@ -100,8 +103,11 @@ func main() {
 	ttsController := controllers.NewTTSController(ttsService)
 	logController := controllers.NewLogController(logFilePath, logService)
 
+	// Set up middleware
+	middleware := middleware.NewMiddleware(userService)
+
 	// Set up routes
-	routes.SetupRoutes(r, authController, userController, novelController, bookmarkController, chapterController, ttsController, logController)
+	routes.SetupRoutes(r, authController, userController, novelController, bookmarkController, chapterController, ttsController, logController, middleware)
 
 	fmt.Printf("Server running on port %s\n", port)
 	err = r.Run(":" + port)

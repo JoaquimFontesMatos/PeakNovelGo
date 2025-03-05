@@ -31,20 +31,37 @@ import (
 var db *gorm.DB
 var userRepo repositoryInterfaces.UserRepositoryInterface
 var authRepo repositoryInterfaces.AuthRepositoryInterface
+var novelRepo repositoryInterfaces.NovelRepositoryInterface
+var novelService serviceInterfaces.NovelServiceInterface
 var userService serviceInterfaces.UserServiceInterface
 var authService serviceInterfaces.AuthServiceInterface
 var userController controllers.UserController
+var novelController controllers.NovelController
 var authController controllers.AuthController
+var myMiddleware middleware.Middleware
+var scriptExecutor utils.ScriptExecutor
 
 func cleanDB() {
 	os.Setenv("SECRET_KEY", "your_secret_key")
+	os.Setenv("PYTHON", "python")
 
 	// Reset all tables by deleting rows (works for both SQLite and PostgreSQL)
 	if err := db.Exec("DELETE FROM users").Error; err != nil {
 		log.Fatalf("Failed to clean up the database: %v", err)
 	}
-
+	if err := db.Exec("DELETE FROM novels").Error; err != nil {
+		log.Fatalf("Failed to clean up the database: %v", err)
+	}
 	if err := db.Exec("DELETE FROM revoked_tokens").Error; err != nil {
+		log.Fatalf("Failed to clean up the database: %v", err)
+	}
+	if err := db.Exec("DELETE FROM novel_authors").Error; err != nil {
+		log.Fatalf("Failed to clean up the database: %v", err)
+	}
+	if err := db.Exec("DELETE FROM novel_genres").Error; err != nil {
+		log.Fatalf("Failed to clean up the database: %v", err)
+	}
+	if err := db.Exec("DELETE FROM novel_tags").Error; err != nil {
 		log.Fatalf("Failed to clean up the database: %v", err)
 	}
 
@@ -56,18 +73,35 @@ func cleanDB() {
 		if err := db.Exec("DELETE FROM sqlite_sequence WHERE name='revoked_tokens'").Error; err != nil {
 			log.Fatalf("Failed to reset auto-increment for revoked_tokens table: %v", err)
 		}
+		if err := db.Exec("DELETE FROM sqlite_sequence WHERE name='novels'").Error; err != nil {
+			log.Fatalf("Failed to reset auto-increment for novels table: %v", err)
+		}
+		if err := db.Exec("DELETE FROM sqlite_sequence WHERE name='novels_authors'").Error; err != nil {
+			log.Fatalf("Failed to reset auto-increment for novels_authors table: %v", err)
+		}
+		if err := db.Exec("DELETE FROM sqlite_sequence WHERE name='novels_genres'").Error; err != nil {
+			log.Fatalf("Failed to reset auto-increment for novels_genres table: %v", err)
+		}
+		if err := db.Exec("DELETE FROM sqlite_sequence WHERE name='novels_tags'").Error; err != nil {
+			log.Fatalf("Failed to reset auto-increment for novels_tags table: %v", err)
+		}
 	}
 
 	userRepo = repositories.NewUserRepository(db)
 	authRepo = repositories.NewAuthRepository(db)
+	novelRepo = repositories.NewNovelRepository(db)
+	scriptExecutor = &utils.RealScriptExecutor{}
 
 	userService = services.NewUserService(userRepo)
-
+	novelService = services.NewNovelService(novelRepo, scriptExecutor)
 	authService = services.NewAuthService(userRepo, authRepo)
 
 	userController = *controllers.NewUserController(userService)
-
 	authController = *controllers.NewAuthController(authService, userService)
+
+	novelController = *controllers.NewNovelController(novelService)
+
+	myMiddleware = *middleware.NewMiddleware(userService)
 }
 
 func TestMain(m *testing.M) {
@@ -170,7 +204,7 @@ func TestHandleSoftDeleteUser(t *testing.T) {
 
 		// Create a test request
 		r := gin.Default()
-		r.Use(middleware.AuthMiddleware()) // Attach the middleware
+		r.Use(myMiddleware.AuthMiddleware()) // Attach the middleware
 		r.GET("/users/id/:id", userController.HandleDeleteUser)
 
 		// Create a test request with missing Authorization header
@@ -253,7 +287,7 @@ func TestHandleSoftDeleteUser(t *testing.T) {
 
 		// Set up a test router with middleware
 		r := gin.Default()
-		r.Use(middleware.AuthMiddleware()) // Attach the middleware
+		r.Use(myMiddleware.AuthMiddleware()) // Attach the middleware
 		r.GET("/users/id/:id", userController.HandleDeleteUser)
 		// Create a test request with missing Authorization header
 		req, _ := http.NewRequest("GET", "/users/id/1", nil)
@@ -855,7 +889,7 @@ func TestGetUserByEmail(t *testing.T) {
 
 		// Create a test request
 		r := gin.Default()
-		r.Use(middleware.AuthMiddleware()) // Attach the middleware
+		r.Use(myMiddleware.AuthMiddleware()) // Attach the middleware
 		r.GET("/users/email/:email", userController.HandleGetUserByEmail)
 
 		// Create a test request with missing Authorization header
@@ -903,7 +937,7 @@ func TestGetUserByEmail(t *testing.T) {
 
 		// Set up a test router with middleware
 		r := gin.Default()
-		r.Use(middleware.AuthMiddleware()) // Attach the middleware
+		r.Use(myMiddleware.AuthMiddleware()) // Attach the middleware
 		r.GET("/users/email/:email", userController.HandleGetUserByEmail)
 
 		// Create a test request with a valid Authorization header
@@ -1211,7 +1245,7 @@ func TestGetUserByUsername(t *testing.T) {
 
 		// Create a test request
 		r := gin.Default()
-		r.Use(middleware.AuthMiddleware()) // Attach the middleware
+		r.Use(myMiddleware.AuthMiddleware()) // Attach the middleware
 		r.GET("/users/username/:username", userController.HandleGetUserByUsername)
 
 		// Create a test request with missing Authorization header
@@ -1277,7 +1311,7 @@ func TestGetUserByUsername(t *testing.T) {
 
 		// Set up a test router with middleware
 		r := gin.Default()
-		r.Use(middleware.AuthMiddleware()) // Attach the middleware
+		r.Use(myMiddleware.AuthMiddleware()) // Attach the middleware
 		r.GET("/users/username/:username", userController.HandleGetUserByUsername)
 
 		// Create a test request with a valid Authorization header
@@ -1715,7 +1749,7 @@ func TestHandleEmailUpdate(t *testing.T) {
 			// Mock context and recorder
 			w := httptest.NewRecorder()
 			router := gin.Default()
-			router.PUT("/users/:id/email", middleware.AuthMiddleware(), userController.UpdateEmail)
+			router.PUT("/users/:id/email", myMiddleware.AuthMiddleware(), userController.UpdateEmail)
 			router.ServeHTTP(w, req)
 
 			// Assertions
@@ -1995,7 +2029,7 @@ func TestHandleUpdatePassword(t *testing.T) {
 			// Mock context and recorder
 			w := httptest.NewRecorder()
 			router := gin.Default()
-			router.PUT("/users/:id/password", middleware.AuthMiddleware(), userController.UpdatePassword)
+			router.PUT("/users/:id/password", myMiddleware.AuthMiddleware(), userController.UpdatePassword)
 			router.ServeHTTP(w, req)
 
 			// Assertions
@@ -2662,7 +2696,7 @@ func TestHandleUpdateFields(t *testing.T) {
 			// Mock context and recorder
 			w := httptest.NewRecorder()
 			router := gin.Default()
-			router.PUT("/users/:id/fields", middleware.AuthMiddleware(), userController.UpdateUserFields)
+			router.PUT("/users/:id/fields", myMiddleware.AuthMiddleware(), userController.UpdateUserFields)
 			router.ServeHTTP(w, req)
 
 			// Assertions

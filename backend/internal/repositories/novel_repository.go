@@ -25,6 +25,17 @@ func NewNovelRepository(db *gorm.DB) *NovelRepository {
 	return &NovelRepository{db: db}
 }
 
+// IsDown checks if the database is offline by pinging it
+func (n *NovelRepository) IsDown() bool {
+	db, err := n.db.DB()
+	if err != nil {
+		return true // Assume the database is down if we can't get the underlying DB object
+	}
+
+	err = db.Ping()
+	return err != nil // If Ping returns an error, the database is down
+}
+
 // CreateNovel creates a new novel in the database.
 //
 // Parameters:
@@ -35,10 +46,14 @@ func NewNovelRepository(db *gorm.DB) *NovelRepository {
 //   - CONFLICT_ERROR if the novel already exists
 //   - INTERNAL_SERVER_ERROR if the novel could not be created
 func (n *NovelRepository) CreateNovel(novel models.Novel) (*models.Novel, error) {
+	if n.IsDown() {
+		return nil, types.WrapError(types.DATABASE_ERROR, "Database offline", nil)
+	}
+
 	n.db.Logger = n.db.Logger.LogMode(logger.Silent)
 
 	if IsNovelCreated := n.isNovelCreated(novel); IsNovelCreated {
-		return nil, types.WrapError("CONFLICT_ERROR", "Novel already exists", nil)
+		return nil, types.WrapError(types.CONFLICT_ERROR, "Novel already exists", nil)
 	}
 
 	// Initialize slices for the new relationships
@@ -146,6 +161,10 @@ func (n *NovelRepository) isNovelCreated(novel models.Novel) bool {
 //   - INTERNAL_SERVER_ERROR if the novels could not be fetched
 //   - NO_NOVELS_ERROR if the novels could not be fetched
 func (n *NovelRepository) GetNovels(page, limit int) ([]models.Novel, int64, error) {
+	if n.IsDown() {
+		return nil, 0, types.WrapError(types.DATABASE_ERROR, "Database offline", nil)
+	}
+
 	var novels []models.Novel
 	var total int64
 
@@ -191,6 +210,10 @@ func (n *NovelRepository) GetNovels(page, limit int) ([]models.Novel, int64, err
 //   - INTERNAL_SERVER_ERROR if the novels could not be fetched
 //   - NO_NOVELS_ERROR if the novels could not be fetched
 func (n *NovelRepository) GetNovelsByGenreName(genreName string, page, limit int) ([]models.Novel, int64, error) {
+	if n.IsDown() {
+		return nil, 0, types.WrapError(types.DATABASE_ERROR, "Database offline", nil)
+	}
+
 	var novels []models.Novel
 	var total int64
 
@@ -244,6 +267,10 @@ func (n *NovelRepository) GetNovelsByGenreName(genreName string, page, limit int
 //   - INTERNAL_SERVER_ERROR if the novels could not be fetched
 //   - NO_NOVELS_ERROR if the novels could not be fetched
 func (n *NovelRepository) GetNovelsByTagName(tagName string, page, limit int) ([]models.Novel, int64, error) {
+	if n.IsDown() {
+		return nil, 0, types.WrapError(types.DATABASE_ERROR, "Database offline", nil)
+	}
+
 	var novels []models.Novel
 	var total int64
 
@@ -297,6 +324,10 @@ func (n *NovelRepository) GetNovelsByTagName(tagName string, page, limit int) ([
 //   - INTERNAL_SERVER_ERROR if the novels could not be fetched
 //   - NO_NOVELS_ERROR if the novels could not be fetched
 func (n *NovelRepository) GetNovelsByAuthorName(authorName string, page, limit int) ([]models.Novel, int64, error) {
+	if n.IsDown() {
+		return nil, 0, types.WrapError(types.DATABASE_ERROR, "Database offline", nil)
+	}
+
 	var novels []models.Novel
 	var total int64
 
@@ -345,6 +376,10 @@ func (n *NovelRepository) GetNovelsByAuthorName(authorName string, page, limit i
 //   - INTERNAL_SERVER_ERROR if the novel could not be fetched
 //   - NOVEL_NOT_FOUND_ERROR if the novel could not be fetched
 func (n *NovelRepository) GetNovelByID(id uint) (*models.Novel, error) {
+	if n.IsDown() {
+		return nil, types.WrapError(types.DATABASE_ERROR, "Database offline", nil)
+	}
+
 	var novel models.Novel
 	if err := n.db.Where("id = ?", id).
 		Preload("Authors").
@@ -372,6 +407,10 @@ func (n *NovelRepository) GetNovelByID(id uint) (*models.Novel, error) {
 //   - INTERNAL_SERVER_ERROR if the novel could not be fetched
 //   - NOVEL_NOT_FOUND_ERROR if the novel could not be fetched
 func (n *NovelRepository) GetNovelByUpdatesID(title string) (*models.Novel, error) {
+	if n.IsDown() {
+		return nil, types.WrapError(types.DATABASE_ERROR, "Database offline", nil)
+	}
+
 	var novel models.Novel
 	if err := n.db.Where("novel_updates_id = ?", title).
 		Preload("Authors").

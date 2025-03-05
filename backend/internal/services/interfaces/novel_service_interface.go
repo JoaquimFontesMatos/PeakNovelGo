@@ -11,5 +11,5 @@ type NovelServiceInterface interface {
 	GetNovels(page, limit int) ([]models.Novel, int64, error)
 	GetNovelByID(id uint) (*models.Novel, error)
 	GetNovelByUpdatesID(title string) (*models.Novel, error)
-	CreateNovel(novel models.Novel) (*models.Novel, error)
+	CreateNovel(novelUpdatesID string) (*models.Novel, error)
 }

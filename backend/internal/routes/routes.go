@@ -16,7 +16,8 @@ func SetupRoutes(r *gin.Engine,
 	bookmarkController *controllers.BookmarkController,
 	chapterController *controllers.ChapterController,
 	ttsController *controllers.TTSController,
-	logController *controllers.LogController) {
+	logController *controllers.LogController,
+	middleware *middleware.Middleware) {
 
 	r.Use(func(c *gin.Context) {
 		c.Writer.Header().Set("Access-Control-Allow-Origin", os.Getenv("FRONTEND_URL"))
@@ -66,8 +67,7 @@ func SetupRoutes(r *gin.Engine,
 
 	novel := r.Group("/novels")
 	{
-		novel.POST("/", middleware.AuthMiddleware(), novelController.HandleImportNovel)
-		novel.POST("/:novel_updates_id", middleware.AuthMiddleware(), novelController.HandleImportNovelByNovelUpdatesID)
+		novel.POST("/:novel_updates_id", middleware.AuthMiddleware(), middleware.PermissionMiddleware("novels", "create"), novelController.HandleImportNovelByNovelUpdatesID)
 		novel.GET("/", novelController.GetNovels)
 		novel.GET("/authors/:author_name", novelController.GetNovelsByAuthorName)
 		novel.GET("/genres/:genre_name", novelController.GetNovelsByGenreName)

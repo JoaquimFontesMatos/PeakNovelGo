@@ -260,6 +260,7 @@ func (ac *AuthController) GoogleCallback(c *gin.Context) {
 	// Complete the OAuth2 flow and get the user's Google profile
 	user, err := gothic.CompleteUserAuth(c.Writer, c.Request)
 	if err != nil {
+		log.Println(err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to authenticate with Google"})
 		return
 	}
