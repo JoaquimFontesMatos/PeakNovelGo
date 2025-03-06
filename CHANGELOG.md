@@ -1,3 +1,6 @@
+## v1.0.7 - 2025-03-06
+* fix: hotfix 6 tried to fix refresh token cookie so it stays in the website
+* chore: update release notes and changelog for v1.0.6
 ## v1.0.6 - 2025-03-01
 * fix:fixed a hardcoded link
 * chore: update release notes and changelog for v1.0.5
