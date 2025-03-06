@@ -102,15 +102,21 @@ func (ac *AuthController) Login(c *gin.Context) {
 		secure = false // Default value if parsing fails
 	}
 	// Store refreshToken in HttpOnly cookie
-	c.SetCookie(
-		"refreshToken", // Name
-		refreshToken,   // Value
-		7*24*60*60,     // MaxAge: 7 days
-		"/",            // Path
-		"",             // Domain
-		secure,         // Secure: Only send over HTTPS
-		true,           // HttpOnly: Inaccessible to JavaScript
-	)
+	sameSite := http.SameSiteLaxMode
+	if secure {
+		sameSite = http.SameSiteNoneMode // Required for cross-site in HTTPS
+	}
+
+	http.SetCookie(c.Writer, &http.Cookie{
+		Name:     "refreshToken",
+		Value:    refreshToken,
+		MaxAge:   7 * 24 * 60 * 60,
+		Path:     "/",
+		Domain:   os.Getenv("COOKIE_DOMAIN"),
+		Secure:   secure,
+		HttpOnly: true,
+		SameSite: sameSite,
+	})
 
 	userDto, err := dtos.ConvertUserModelToDTO(*user)
 
@@ -162,15 +168,21 @@ func (ac *AuthController) RefreshToken(ctx *gin.Context) {
 	}
 
 	// Send the new tokens back to the client
-	ctx.SetCookie(
-		"refreshToken",  // Name
-		newRefreshToken, // Value
-		7*24*60*60,      // MaxAge: 7 days
-		"/",             // Path
-		"",              // Domain
-		secure,          // Secure: Only send over HTTPS
-		true,            // HttpOnly: Inaccessible to JavaScript
-	)
+	sameSite := http.SameSiteLaxMode
+	if secure {
+		sameSite = http.SameSiteNoneMode // Required for cross-site in HTTPS
+	}
+
+	http.SetCookie(ctx.Writer, &http.Cookie{
+		Name:     "refreshToken",
+		Value:    newRefreshToken,
+		MaxAge:   7 * 24 * 60 * 60,
+		Path:     "/",
+		Domain:   os.Getenv("COOKIE_DOMAIN"),
+		Secure:   secure,
+		HttpOnly: true,
+		SameSite: sameSite,
+	})
 
 	userDto, err := dtos.ConvertUserModelToDTO(*user)
 
@@ -304,15 +316,22 @@ func (ac *AuthController) GoogleCallback(c *gin.Context) {
 	if err != nil {
 		secure = false // Default to false if parsing fails
 	}
-	c.SetCookie(
-		"refreshToken", // Name
-		refreshToken,   // Value
-		7*24*60*60,     // MaxAge: 7 days
-		"/",            // Path
-		"",             // Domain
-		secure,         // Secure: Only send over HTTPS
-		true,           // HttpOnly: Inaccessible to JavaScript
-	)
+
+	sameSite := http.SameSiteLaxMode
+	if secure {
+		sameSite = http.SameSiteNoneMode // Required for cross-site in HTTPS
+	}
+
+	http.SetCookie(c.Writer, &http.Cookie{
+		Name:     "refreshToken",
+		Value:    refreshToken,
+		MaxAge:   7 * 24 * 60 * 60,
+		Path:     "/",
+		Domain:   os.Getenv("COOKIE_DOMAIN"),
+		Secure:   secure,
+		HttpOnly: true,
+		SameSite: sameSite,
+	})
 
 	userDto, err := dtos.ConvertUserModelToDTO(*existingUser)
 
