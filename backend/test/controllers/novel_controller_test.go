@@ -311,7 +311,7 @@ func TestHandleImportNovel(t *testing.T) {
 				mockRepo.On("IsDown").Return(true)
 
 				novelService = services.NewNovelService(mockRepo, scriptExecutor)
-				mockRepo.On("CreateNovel", mock.AnythingOfType("models.Novel")).Return((*models.Novel)(nil), types.WrapError(types.DATABASE_ERROR, "Failed to create novel", nil))
+				mockRepo.On("CreateNovel", mock.AnythingOfType("models.Novel")).Return((*models.Novel)(nil), types.ErrDatabaseOffline)
 			}
 
 			novelController = *controllers.NewNovelController(novelService)
@@ -505,7 +505,7 @@ func TestHandleGetNovelByNovelUpdatesID(t *testing.T) {
 				mockRepo.On("IsDown").Return(true)
 
 				novelService = services.NewNovelService(mockRepo, scriptExecutor)
-				mockRepo.On("GetNovelByUpdatesID", mock.AnythingOfType("string")).Return((*models.Novel)(nil), types.WrapError(types.DATABASE_ERROR, "Database offline", nil))
+				mockRepo.On("GetNovelByUpdatesID", mock.AnythingOfType("string")).Return((*models.Novel)(nil), types.ErrDatabaseOffline)
 			}
 
 			novelController = *controllers.NewNovelController(novelService)
@@ -810,7 +810,7 @@ func TestHandleGetNovelsByAuthor(t *testing.T) {
 			if !tt.isDatabaseOnline {
 				mockRepo := new(mocks.MockNovelRepository)
 				mockRepo.On("IsDown").Return(true)
-				mockRepo.On("GetNovelsByAuthorName", mock.Anything, mock.Anything, mock.Anything).Return(([]models.Novel)(nil), (int64)(0), types.WrapError(types.DATABASE_ERROR, "Database is offline", nil))
+				mockRepo.On("GetNovelsByAuthorName", mock.Anything, mock.Anything, mock.Anything).Return(([]models.Novel)(nil), (int64)(0), types.ErrDatabaseOffline)
 				novelService = services.NewNovelService(mockRepo, scriptExecutor)
 			}
 
@@ -1152,7 +1152,7 @@ func TestHandleGetNovelsByGenre(t *testing.T) {
 			if !tt.isDatabaseOnline {
 				mockRepo := new(mocks.MockNovelRepository)
 				mockRepo.On("IsDown").Return(true)
-				mockRepo.On("GetNovelsByGenreName", mock.Anything, mock.Anything, mock.Anything).Return(([]models.Novel)(nil), (int64)(0), types.WrapError(types.DATABASE_ERROR, "Database is offline", nil))
+				mockRepo.On("GetNovelsByGenreName", mock.Anything, mock.Anything, mock.Anything).Return(([]models.Novel)(nil), (int64)(0), types.ErrDatabaseOffline)
 				novelService = services.NewNovelService(mockRepo, scriptExecutor)
 			}
 
@@ -1494,7 +1494,7 @@ func TestHandleGetNovelsByTag(t *testing.T) {
 			if !tt.isDatabaseOnline {
 				mockRepo := new(mocks.MockNovelRepository)
 				mockRepo.On("IsDown").Return(true)
-				mockRepo.On("GetNovelsByTagName", mock.Anything, mock.Anything, mock.Anything).Return(([]models.Novel)(nil), (int64)(0), types.WrapError(types.DATABASE_ERROR, "Database is offline", nil))
+				mockRepo.On("GetNovelsByTagName", mock.Anything, mock.Anything, mock.Anything).Return(([]models.Novel)(nil), (int64)(0), types.ErrDatabaseOffline)
 				novelService = services.NewNovelService(mockRepo, scriptExecutor)
 			}
 
@@ -1766,7 +1766,7 @@ func TestHandleGetNovels(t *testing.T) {
 			if !tt.isDatabaseOnline {
 				mockRepo := new(mocks.MockNovelRepository)
 				mockRepo.On("IsDown").Return(true)
-				mockRepo.On("GetNovels", mock.Anything, mock.Anything).Return(([]models.Novel)(nil), (int64)(0), types.WrapError(types.DATABASE_ERROR, "Database is offline", nil))
+				mockRepo.On("GetNovels", mock.Anything, mock.Anything).Return(([]models.Novel)(nil), (int64)(0), types.ErrDatabaseOffline)
 				novelService = services.NewNovelService(mockRepo, scriptExecutor)
 			}
 

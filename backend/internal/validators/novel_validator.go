@@ -1,51 +1,56 @@
 package validators
 
-import "backend/internal/types"
+import (
+	"backend/internal/types/errors"
+)
 
 func ValidateAuthor(author string) error {
 	if author == "" {
-		return types.WrapError(types.VALIDATION_ERROR, "Author is required", nil)
+		return errors.ErrAuthorRequired
 	}
 	if author == " " {
-		return types.WrapError(types.VALIDATION_ERROR, "Author is required", nil)
+		return errors.ErrAuthorRequired
 	}
 	if len(author) < 1 {
-		return types.WrapError(types.VALIDATION_ERROR, "Author must be at least 1 characters long", nil)
+		return errors.ErrAuthorTooShort
 	}
 	if len(author) > 255 {
-		return types.WrapError(types.VALIDATION_ERROR, "Author cannot be longer than 255 characters", nil)
+		return errors.ErrAuthorTooLong
 	}
+
 	return nil
 }
 
 func ValidateTag(tag string) error {
 	if tag == "" {
-		return types.WrapError(types.VALIDATION_ERROR, "Tag is required", nil)
+		return errors.ErrTagRequired
 	}
 	if tag == " " {
-		return types.WrapError(types.VALIDATION_ERROR, "Tag is required", nil)
+		return errors.ErrTagRequired
 	}
 	if len(tag) < 1 {
-		return types.WrapError(types.VALIDATION_ERROR, "Tag must be at least 1 characters long", nil)
+		return errors.ErrTagTooShort
 	}
 	if len(tag) > 255 {
-		return types.WrapError(types.VALIDATION_ERROR, "Tag cannot be longer than 255 characters", nil)
+		return errors.ErrTagTooLong
 	}
+
 	return nil
 }
 
 func ValidateGenre(genre string) error {
 	if genre == "" {
-		return types.WrapError(types.VALIDATION_ERROR, "Genre is required", nil)
+		return errors.ErrGenreRequired
 	}
 	if genre == " " {
-		return types.WrapError(types.VALIDATION_ERROR, "Genre is required", nil)
+		return errors.ErrGenreRequired
 	}
 	if len(genre) < 1 {
-		return types.WrapError(types.VALIDATION_ERROR, "Genre must be at least 1 characters long", nil)
+		return errors.ErrGenreTooShort
 	}
 	if len(genre) > 255 {
-		return types.WrapError(types.VALIDATION_ERROR, "Genre cannot be longer than 255 characters", nil)
+		return errors.ErrGenreTooLong
 	}
+
 	return nil
 }

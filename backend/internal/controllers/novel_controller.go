@@ -2,13 +2,11 @@ package controllers
 
 import (
 	"backend/internal/services/interfaces"
-	"backend/internal/types"
+	"backend/internal/types/errors"
 	"backend/internal/utils"
-	"errors"
 
 	"log"
 	"net/http"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
@@ -25,32 +23,9 @@ func NewNovelController(novelService interfaces.NovelServiceInterface) *NovelCon
 func (n *NovelController) HandleImportNovelByNovelUpdatesID(ctx *gin.Context) {
 	novelUpdatesID := ctx.Param("novel_updates_id")
 
-	if novelUpdatesID == "" {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "No novel updates ID provided"})
-		return
-	}
-
 	createdNovel, err := n.novelService.CreateNovel(novelUpdatesID)
 	if err != nil {
-		var myError *types.MyError
-		if errors.As(err, &myError) {
-			switch myError.Code {
-			case types.VALIDATION_ERROR:
-				ctx.JSON(http.StatusBadRequest, gin.H{"error": myError.Message})
-			case types.CONFLICT_ERROR:
-				ctx.JSON(http.StatusConflict, gin.H{"error": myError.Message})
-			case types.DATABASE_ERROR:
-				ctx.JSON(http.StatusServiceUnavailable, gin.H{"error": myError.Message})
-			case types.NOVEL_NOT_FOUND_ERROR:
-				ctx.JSON(http.StatusNotFound, gin.H{"error": myError.Message})
-			case types.SCRIPT_ERROR:
-				ctx.JSON(http.StatusServiceUnavailable, gin.H{"error": myError.Message})
-			}
-			log.Println(err)
-			return
-		}
-
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		utils.HandleError(ctx, err)
 		return
 	}
 
@@ -62,239 +37,148 @@ func (n *NovelController) HandleImportNovelByNovelUpdatesID(ctx *gin.Context) {
 func (n *NovelController) GetNovelsByAuthorName(ctx *gin.Context) {
 	authorName := ctx.Param("author_name")
 
-	// Parse and validate page parameter
-	pageStr := ctx.DefaultQuery("page", "1")
-	page, err := strconv.Atoi(pageStr)
-	if err != nil || page < 1 || page > 1000 {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid page parameter"})
+	// Parse parameters
+	page, err := utils.ParsePage(ctx.Query("page"))
+	if err != nil {
+		utils.HandleError(ctx, err)
 		return
 	}
 
-	// Parse and validate limit parameter
-	limitStr := ctx.DefaultQuery("limit", "10")
-	limit, err := strconv.Atoi(limitStr)
-	if err != nil || limit < 10 || limit > 100 {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid limit parameter"})
+	limit, err := utils.ParseLimit(ctx.Query("limit"))
+	if err != nil {
+		utils.HandleError(ctx, err)
 		return
 	}
 
 	novels, total, err := n.novelService.GetNovelsByAuthorName(authorName, page, limit)
 	if err != nil {
-		var myError *types.MyError
-		if errors.As(err, &myError) {
-			switch myError.Code {
-			case types.VALIDATION_ERROR:
-				ctx.JSON(http.StatusBadRequest, gin.H{"error": myError.Message})
-			case types.DATABASE_ERROR:
-				ctx.JSON(http.StatusServiceUnavailable, gin.H{"error": myError.Message})
-			case types.NO_NOVELS_ERROR:
-				ctx.JSON(http.StatusNotFound, gin.H{"error": myError.Message})
-			}
-			return
-		}
-
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		utils.HandleError(ctx, err)
 		return
 	}
 
-	totalPages := (total + int64(limit) - 1) / int64(limit)
-
+	// Validate results
 	if total == 0 {
-		ctx.JSON(http.StatusNotFound, gin.H{"error": "No novels found for the author"})
+		utils.HandleError(ctx, errors.ErrNoResults)
 		return
 	}
 
-	if int64(page) > totalPages {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Page out of range"})
+	if utils.IsPageOutOfRange(page, total, limit) {
+		utils.HandleError(ctx, errors.ErrPageOutOfRange)
 		return
 	}
 
-	// Build response with pagination metadata
-	ctx.JSON(http.StatusOK, gin.H{
-		"data":       novels,
-		"total":      total,
-		"page":       page,
-		"limit":      limit,
-		"totalPages": totalPages,
-	})
+	// Build response
+	utils.BuildPaginatedResponse(ctx, novels, total, page, limit)
 }
 
 func (n *NovelController) GetNovelsByGenreName(ctx *gin.Context) {
 	genreName := ctx.Param("genre_name")
 
-	// Parse and validate page parameter
-	pageStr := ctx.DefaultQuery("page", "1")
-	page, err := strconv.Atoi(pageStr)
-	if err != nil || page < 1 || page > 1000 {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid page parameter"})
+	// Parse parameters
+	page, err := utils.ParsePage(ctx.Query("page"))
+	if err != nil {
+		utils.HandleError(ctx, err)
 		return
 	}
 
-	// Parse and validate limit parameter
-	limitStr := ctx.DefaultQuery("limit", "10")
-	limit, err := strconv.Atoi(limitStr)
-	if err != nil || limit < 10 || limit > 100 {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid limit parameter"})
+	limit, err := utils.ParseLimit(ctx.Query("limit"))
+	if err != nil {
+		utils.HandleError(ctx, err)
 		return
 	}
 
 	novels, total, err := n.novelService.GetNovelsByGenreName(genreName, page, limit)
 	if err != nil {
-		var myError *types.MyError
-		if errors.As(err, &myError) {
-			switch myError.Code {
-			case types.VALIDATION_ERROR:
-				ctx.JSON(http.StatusBadRequest, gin.H{"error": myError.Message})
-			case types.DATABASE_ERROR:
-				ctx.JSON(http.StatusServiceUnavailable, gin.H{"error": myError.Message})
-			case types.NO_NOVELS_ERROR:
-				ctx.JSON(http.StatusNotFound, gin.H{"error": myError.Message})
-			}
-			return
-		}
-
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		utils.HandleError(ctx, err)
 		return
 	}
 
-	totalPages := (total + int64(limit) - 1) / int64(limit)
-
+	// Validate results
 	if total == 0 {
-		ctx.JSON(http.StatusNotFound, gin.H{"error": "No novels found for the genre"})
+		utils.HandleError(ctx, errors.ErrNoResults)
 		return
 	}
 
-	if int64(page) > totalPages {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Page out of range"})
+	if utils.IsPageOutOfRange(page, total, limit) {
+		utils.HandleError(ctx, errors.ErrPageOutOfRange)
 		return
 	}
 
-	// Build response with pagination metadata
-	ctx.JSON(http.StatusOK, gin.H{
-		"data":       novels,
-		"total":      total,
-		"page":       page,
-		"limit":      limit,
-		"totalPages": totalPages,
-	})
+	// Build response
+	utils.BuildPaginatedResponse(ctx, novels, total, page, limit)
 }
 
 func (n *NovelController) GetNovelsByTagName(ctx *gin.Context) {
 	tagName := ctx.Param("tag_name")
 
-	// Parse and validate page parameter
-	pageStr := ctx.DefaultQuery("page", "1")
-	page, err := strconv.Atoi(pageStr)
-	if err != nil || page < 1 || page > 1000 {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid page parameter"})
+	// Parse parameters
+	page, err := utils.ParsePage(ctx.Query("page"))
+	if err != nil {
+		utils.HandleError(ctx, err)
 		return
 	}
 
-	// Parse and validate limit parameter
-	limitStr := ctx.DefaultQuery("limit", "10")
-	limit, err := strconv.Atoi(limitStr)
-	if err != nil || limit < 10 || limit > 100 {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid limit parameter"})
+	limit, err := utils.ParseLimit(ctx.Query("limit"))
+	if err != nil {
+		utils.HandleError(ctx, err)
 		return
 	}
 
 	novels, total, err := n.novelService.GetNovelsByTagName(tagName, page, limit)
 	if err != nil {
-		var myError *types.MyError
-		if errors.As(err, &myError) {
-			switch myError.Code {
-			case types.VALIDATION_ERROR:
-				ctx.JSON(http.StatusBadRequest, gin.H{"error": myError.Message})
-			case types.DATABASE_ERROR:
-				ctx.JSON(http.StatusServiceUnavailable, gin.H{"error": myError.Message})
-			case types.NO_NOVELS_ERROR:
-				ctx.JSON(http.StatusNotFound, gin.H{"error": myError.Message})
-			}
-			return
-		}
-
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		utils.HandleError(ctx, err)
 		return
 	}
 
-	totalPages := (total + int64(limit) - 1) / int64(limit)
-
+	// Validate results
 	if total == 0 {
-		ctx.JSON(http.StatusNotFound, gin.H{"error": "No novels found for the tag"})
+		utils.HandleError(ctx, errors.ErrNoResults)
 		return
 	}
 
-	if int64(page) > totalPages {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Page out of range"})
+	if utils.IsPageOutOfRange(page, total, limit) {
+		utils.HandleError(ctx, errors.ErrPageOutOfRange)
 		return
 	}
 
-	// Build response with pagination metadata
-	ctx.JSON(http.StatusOK, gin.H{
-		"data":       novels,
-		"total":      total,
-		"page":       page,
-		"limit":      limit,
-		"totalPages": totalPages,
-	})
+	// Build response
+	utils.BuildPaginatedResponse(ctx, novels, total, page, limit)
 }
 
 func (n *NovelController) GetNovels(ctx *gin.Context) {
-	// Parse and validate page parameter
-	pageStr := ctx.DefaultQuery("page", "1")
-	page, err := strconv.Atoi(pageStr)
-	if err != nil || page < 1 || page > 1000 {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid page parameter"})
+	// Parse parameters
+	page, err := utils.ParsePage(ctx.Query("page"))
+	if err != nil {
+		utils.HandleError(ctx, err)
 		return
 	}
 
-	// Parse and validate limit parameter
-	limitStr := ctx.DefaultQuery("limit", "10")
-	limit, err := strconv.Atoi(limitStr)
-	if err != nil || limit < 10 || limit > 100 {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid limit parameter"})
+	limit, err := utils.ParseLimit(ctx.Query("limit"))
+	if err != nil {
+		utils.HandleError(ctx, err)
 		return
 	}
 
+	// Get data
 	novels, total, err := n.novelService.GetNovels(page, limit)
 	if err != nil {
-		var myError *types.MyError
-		if errors.As(err, &myError) {
-			switch myError.Code {
-			case types.VALIDATION_ERROR:
-				ctx.JSON(http.StatusBadRequest, gin.H{"error": myError.Message})
-			case types.DATABASE_ERROR:
-				ctx.JSON(http.StatusServiceUnavailable, gin.H{"error": myError.Message})
-			case types.NO_NOVELS_ERROR:
-				ctx.JSON(http.StatusNotFound, gin.H{"error": myError.Message})
-			}
-			return
-		}
-
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		utils.HandleError(ctx, err)
 		return
 	}
 
-	totalPages := (total + int64(limit) - 1) / int64(limit)
-
+	// Validate results
 	if total == 0 {
-		ctx.JSON(http.StatusNotFound, gin.H{"error": "No novels found"})
+		utils.HandleError(ctx, errors.ErrNoResults)
 		return
 	}
 
-	if int64(page) > totalPages {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Page out of range"})
+	if utils.IsPageOutOfRange(page, total, limit) {
+		utils.HandleError(ctx, errors.ErrPageOutOfRange)
 		return
 	}
 
-	// Build response with pagination metadata
-	ctx.JSON(http.StatusOK, gin.H{
-		"data":       novels,
-		"total":      total,
-		"page":       page,
-		"limit":      limit,
-		"totalPages": totalPages,
-	})
+	// Build response
+	utils.BuildPaginatedResponse(ctx, novels, total, page, limit)
 }
 
 func (n *NovelController) GetNovelByID(ctx *gin.Context) {
@@ -307,7 +191,7 @@ func (n *NovelController) GetNovelByID(ctx *gin.Context) {
 
 	novel, err := n.novelService.GetNovelByID(id)
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		utils.HandleError(ctx, err)
 		return
 	}
 
@@ -319,21 +203,7 @@ func (n *NovelController) GetNovelByUpdatesID(ctx *gin.Context) {
 
 	novel, err := n.novelService.GetNovelByUpdatesID(title)
 	if err != nil {
-		var myError *types.MyError
-		if errors.As(err, &myError) {
-			switch myError.Code {
-			case types.VALIDATION_ERROR:
-				ctx.JSON(http.StatusBadRequest, gin.H{"error": myError.Message})
-			case types.DATABASE_ERROR:
-				ctx.JSON(http.StatusServiceUnavailable, gin.H{"error": myError.Message})
-			case types.NOVEL_NOT_FOUND_ERROR:
-				ctx.JSON(http.StatusNotFound, gin.H{"error": myError.Message})
-			}
-			log.Println(err)
-			return
-		}
-
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		utils.HandleError(ctx, err)
 		return
 	}
 

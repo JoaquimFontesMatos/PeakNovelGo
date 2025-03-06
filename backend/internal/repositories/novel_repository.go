@@ -3,6 +3,7 @@ package repositories
 import (
 	"backend/internal/models"
 	"backend/internal/types"
+	"backend/internal/types/errors"
 	"log"
 
 	"gorm.io/gorm"
@@ -47,13 +48,13 @@ func (n *NovelRepository) IsDown() bool {
 //   - INTERNAL_SERVER_ERROR if the novel could not be created
 func (n *NovelRepository) CreateNovel(novel models.Novel) (*models.Novel, error) {
 	if n.IsDown() {
-		return nil, types.WrapError(types.DATABASE_ERROR, "Database offline", nil)
+		return nil, types.ErrDatabaseOffline
 	}
 
 	n.db.Logger = n.db.Logger.LogMode(logger.Silent)
 
 	if IsNovelCreated := n.isNovelCreated(novel); IsNovelCreated {
-		return nil, types.WrapError(types.CONFLICT_ERROR, "Novel already exists", nil)
+		return nil, errors.ErrNovelAlreadyImported
 	}
 
 	// Initialize slices for the new relationships
@@ -75,7 +76,7 @@ func (n *NovelRepository) CreateNovel(novel models.Novel) (*models.Novel, error)
 		}).Error
 
 		if err != nil {
-			return nil, types.WrapError(types.INTERNAL_SERVER_ERROR, "Failed to associate tag", err)
+			return nil, errors.HandleAssociationError(err)
 		}
 
 		newTags = append(newTags, existingTag) // Append to the newTags slice
@@ -94,7 +95,7 @@ func (n *NovelRepository) CreateNovel(novel models.Novel) (*models.Novel, error)
 		}).Error
 
 		if err != nil {
-			return nil, types.WrapError(types.INTERNAL_SERVER_ERROR, "Failed to associate author", err)
+			return nil, errors.HandleAssociationError(err)
 		}
 
 		newAuthors = append(newAuthors, existingAuthor) // Append to the newAuthors slice
@@ -114,7 +115,7 @@ func (n *NovelRepository) CreateNovel(novel models.Novel) (*models.Novel, error)
 		}).Error
 
 		if err != nil {
-			return nil, types.WrapError(types.INTERNAL_SERVER_ERROR, "Failed to associate genre", err)
+			return nil, errors.HandleAssociationError(err)
 		}
 
 		newGenres = append(newGenres, existingGenre) // Append to the newGenres slice
@@ -128,7 +129,7 @@ func (n *NovelRepository) CreateNovel(novel models.Novel) (*models.Novel, error)
 	// Save the novel with relationships
 	if err := n.db.Create(&novel).Error; err != nil {
 		log.Println(err)
-		return nil, types.WrapError("INTERNAL_SERVER_ERROR", "Failed to create novel", err)
+		return nil, errors.ErrImportingNovel
 	}
 
 	return &novel, nil
@@ -162,7 +163,7 @@ func (n *NovelRepository) isNovelCreated(novel models.Novel) bool {
 //   - NO_NOVELS_ERROR if the novels could not be fetched
 func (n *NovelRepository) GetNovels(page, limit int) ([]models.Novel, int64, error) {
 	if n.IsDown() {
-		return nil, 0, types.WrapError(types.DATABASE_ERROR, "Database offline", nil)
+		return nil, 0, types.ErrDatabaseOffline
 	}
 
 	var novels []models.Novel
@@ -173,10 +174,10 @@ func (n *NovelRepository) GetNovels(page, limit int) ([]models.Novel, int64, err
 		Count(&total).Error; err != nil {
 
 		if err.Error() == "record not found" {
-			return nil, 0, types.WrapError(types.NO_NOVELS_ERROR, "No novels found", nil)
+			return nil, 0, errors.ErrNoNovels
 		}
 
-		return nil, 0, types.WrapError(types.INTERNAL_SERVER_ERROR, "Failed to get the total number of novels", err)
+		return nil, 0, errors.ErrGettingTotalNovels
 	}
 
 	// Apply pagination and ordering
@@ -189,10 +190,10 @@ func (n *NovelRepository) GetNovels(page, limit int) ([]models.Novel, int64, err
 		Find(&novels).Error; err != nil {
 
 		if err.Error() == "record not found" {
-			return nil, 0, types.WrapError(types.NO_NOVELS_ERROR, "No novels found", nil)
+			return nil, 0, errors.ErrNoNovels
 		}
 
-		return nil, 0, types.WrapError(types.INTERNAL_SERVER_ERROR, "Failed to fetch novels", err)
+		return nil, 0, errors.ErrGettingNovels
 	}
 	return novels, total, nil
 }
@@ -211,7 +212,7 @@ func (n *NovelRepository) GetNovels(page, limit int) ([]models.Novel, int64, err
 //   - NO_NOVELS_ERROR if the novels could not be fetched
 func (n *NovelRepository) GetNovelsByGenreName(genreName string, page, limit int) ([]models.Novel, int64, error) {
 	if n.IsDown() {
-		return nil, 0, types.WrapError(types.DATABASE_ERROR, "Database offline", nil)
+		return nil, 0, types.ErrDatabaseOffline
 	}
 
 	var novels []models.Novel
@@ -225,10 +226,10 @@ func (n *NovelRepository) GetNovelsByGenreName(genreName string, page, limit int
 		Count(&total).Error; err != nil {
 
 		if err.Error() == "record not found" {
-			return nil, 0, types.WrapError(types.NO_NOVELS_ERROR, "No novels found", nil)
+			return nil, 0, errors.ErrNoNovels
 		}
 
-		return nil, 0, types.WrapError(types.INTERNAL_SERVER_ERROR, "Failed to get the total number of novels", err)
+		return nil, 0, errors.ErrGettingTotalNovels
 	}
 
 	// Apply pagination and ordering
@@ -245,10 +246,10 @@ func (n *NovelRepository) GetNovelsByGenreName(genreName string, page, limit int
 		Find(&novels).Error; err != nil {
 
 		if err.Error() == "record not found" {
-			return nil, 0, types.WrapError(types.NO_NOVELS_ERROR, "No novels found", nil)
+			return nil, 0, errors.ErrNoNovels
 		}
 
-		return nil, 0, types.WrapError(types.INTERNAL_SERVER_ERROR, "Failed to fetch novels", err)
+		return nil, 0, errors.ErrGettingNovels
 	}
 
 	return novels, total, nil
@@ -268,7 +269,7 @@ func (n *NovelRepository) GetNovelsByGenreName(genreName string, page, limit int
 //   - NO_NOVELS_ERROR if the novels could not be fetched
 func (n *NovelRepository) GetNovelsByTagName(tagName string, page, limit int) ([]models.Novel, int64, error) {
 	if n.IsDown() {
-		return nil, 0, types.WrapError(types.DATABASE_ERROR, "Database offline", nil)
+		return nil, 0, types.ErrDatabaseOffline
 	}
 
 	var novels []models.Novel
@@ -282,10 +283,10 @@ func (n *NovelRepository) GetNovelsByTagName(tagName string, page, limit int) ([
 		Count(&total).Error; err != nil {
 
 		if err.Error() == "record not found" {
-			return nil, 0, types.WrapError(types.NO_NOVELS_ERROR, "No novels found", nil)
+			return nil, 0, errors.ErrNoNovels
 		}
 
-		return nil, 0, types.WrapError(types.INTERNAL_SERVER_ERROR, "Failed to get the total number of novels", err)
+		return nil, 0, errors.ErrGettingTotalNovels
 	}
 
 	// Apply pagination and ordering
@@ -302,10 +303,10 @@ func (n *NovelRepository) GetNovelsByTagName(tagName string, page, limit int) ([
 		Find(&novels).Error; err != nil {
 
 		if err.Error() == "record not found" {
-			return nil, 0, types.WrapError(types.NO_NOVELS_ERROR, "No novels found", nil)
+			return nil, 0, errors.ErrNoNovels
 		}
 
-		return nil, 0, types.WrapError(types.INTERNAL_SERVER_ERROR, "Failed to fetch novels", err)
+		return nil, 0, errors.ErrGettingNovels
 	}
 
 	return novels, total, nil
@@ -325,7 +326,7 @@ func (n *NovelRepository) GetNovelsByTagName(tagName string, page, limit int) ([
 //   - NO_NOVELS_ERROR if the novels could not be fetched
 func (n *NovelRepository) GetNovelsByAuthorName(authorName string, page, limit int) ([]models.Novel, int64, error) {
 	if n.IsDown() {
-		return nil, 0, types.WrapError(types.DATABASE_ERROR, "Database offline", nil)
+		return nil, 0, types.ErrDatabaseOffline
 	}
 
 	var novels []models.Novel
@@ -339,10 +340,10 @@ func (n *NovelRepository) GetNovelsByAuthorName(authorName string, page, limit i
 		Count(&total).Error; err != nil {
 
 		if err.Error() == "record not found" {
-			return nil, 0, types.WrapError(types.NO_NOVELS_ERROR, "No novels found", nil)
+			return nil, 0, errors.ErrNoNovels
 		}
 
-		return nil, 0, types.WrapError(types.INTERNAL_SERVER_ERROR, "Failed to get the total number of novels", err)
+		return nil, 0, errors.ErrGettingTotalNovels
 	}
 
 	// Apply pagination and ordering
@@ -358,10 +359,10 @@ func (n *NovelRepository) GetNovelsByAuthorName(authorName string, page, limit i
 		Find(&novels).Error; err != nil {
 
 		if err.Error() == "record not found" {
-			return nil, 0, types.WrapError(types.NO_NOVELS_ERROR, "No novels found", nil)
+			return nil, 0, errors.ErrNoNovels
 		}
 
-		return nil, 0, types.WrapError(types.INTERNAL_SERVER_ERROR, "Failed to fetch novels", err)
+		return nil, 0, errors.ErrGettingNovels
 	}
 	return novels, total, nil
 }
@@ -377,7 +378,7 @@ func (n *NovelRepository) GetNovelsByAuthorName(authorName string, page, limit i
 //   - NOVEL_NOT_FOUND_ERROR if the novel could not be fetched
 func (n *NovelRepository) GetNovelByID(id uint) (*models.Novel, error) {
 	if n.IsDown() {
-		return nil, types.WrapError(types.DATABASE_ERROR, "Database offline", nil)
+		return nil, types.ErrDatabaseOffline
 	}
 
 	var novel models.Novel
@@ -389,10 +390,10 @@ func (n *NovelRepository) GetNovelByID(id uint) (*models.Novel, error) {
 		Error; err != nil {
 
 		if err.Error() == "record not found" {
-			return nil, types.WrapError(types.NOVEL_NOT_FOUND_ERROR, "No novels found", nil)
+			return nil, errors.ErrNovelNotFound
 		}
 
-		return nil, types.WrapError(types.INTERNAL_SERVER_ERROR, "Failed to fetch novel", err)
+		return nil, errors.ErrGettingNovel
 	}
 	return &novel, nil
 }
@@ -408,7 +409,7 @@ func (n *NovelRepository) GetNovelByID(id uint) (*models.Novel, error) {
 //   - NOVEL_NOT_FOUND_ERROR if the novel could not be fetched
 func (n *NovelRepository) GetNovelByUpdatesID(title string) (*models.Novel, error) {
 	if n.IsDown() {
-		return nil, types.WrapError(types.DATABASE_ERROR, "Database offline", nil)
+		return nil, types.ErrDatabaseOffline
 	}
 
 	var novel models.Novel
@@ -418,10 +419,10 @@ func (n *NovelRepository) GetNovelByUpdatesID(title string) (*models.Novel, erro
 		Preload("Tags").
 		First(&novel).Error; err != nil {
 		if err.Error() == "record not found" {
-			return nil, types.WrapError(types.NOVEL_NOT_FOUND_ERROR, "No novels found", nil)
+			return nil, errors.ErrNovelNotFound
 		}
 
-		return nil, types.WrapError(types.INTERNAL_SERVER_ERROR, "Failed to fetch novel", err)
+		return nil, errors.ErrGettingNovel
 	}
 	return &novel, nil
 }

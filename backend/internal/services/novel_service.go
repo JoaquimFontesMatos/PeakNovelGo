@@ -4,6 +4,7 @@ import (
 	"backend/internal/models"
 	"backend/internal/repositories/interfaces"
 	"backend/internal/types"
+	"backend/internal/types/errors"
 	"backend/internal/utils"
 	"backend/internal/validators"
 	"encoding/json"
@@ -99,7 +100,7 @@ func (s *NovelService) CreateNovel(novelUpdatesID string) (*models.Novel, error)
 	language := strings.ReplaceAll(result.Language.Name, "\n", "")
 	latestChapter, err := utils.ParseInt(result.LatestChapter)
 	if err != nil {
-		return nil, types.WrapError("Internal Server Error", "Failed to parse latest chapter: "+err.Error(), err)
+		return nil, errors.ErrInvalidLatestChapter
 	}
 
 	novel := models.Novel{
