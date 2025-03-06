@@ -1,3 +1,6 @@
+## v1.0.10 - 2025-03-06
+* Revert "fix:"
+* chore: update release notes and changelog for v1.0.9
 ## v1.0.9 - 2025-03-06
 * Merge remote-tracking branch 'origin/main'
 * fix:
