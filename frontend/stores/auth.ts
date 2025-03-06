@@ -77,28 +77,6 @@ export const useAuthStore = defineStore('Auth', () => {
     }
   };
 
-  const setCookie = async (): Promise<void> => {
-    loadingLogin.value = true;
-
-    try {
-      const response = await fetch(url + '/auth/cookie', {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: 'Bearer ' + accessToken.value,
-        },
-        credentials: 'include',
-      });
-
-      console.log(response);
-    } catch (error) {
-      $errorHandler.handleError(error, { location: 'auth.ts -> login' });
-      throw error;
-    } finally {
-      loadingLogin.value = false;
-    }
-  };
-
   const scheduleTokenRefresh = (expiresIn: number) => {
     setTimeout(async () => {
       await refreshAccessToken();
@@ -199,7 +177,6 @@ export const useAuthStore = defineStore('Auth', () => {
     verifyToken,
     setSession,
     clearSession,
-    setCookie,
     isUserLoggedIn,
   };
 });

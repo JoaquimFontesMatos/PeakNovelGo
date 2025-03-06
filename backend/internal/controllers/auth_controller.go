@@ -338,26 +338,3 @@ func (ac *AuthController) GoogleCallback(c *gin.Context) {
 	)
 	c.Redirect(http.StatusFound, redirectURL)
 }
-
-func (ac *AuthController) SetCookie(c *gin.Context) {
-	// Set the refresh token in an HttpOnly cookie
-	secure, err := strconv.ParseBool(os.Getenv("COOKIES_SECURE"))
-	if err != nil {
-		secure = false
-	}
-
-	c.SetCookie(
-		"user",
-		"John Doe",
-		7*24*60*60,
-		"/",
-		os.Getenv("COOKIE_DOMAIN"),
-		secure,
-		true,
-	)
-
-	log.Println("Cookie set")
-	log.Println(c.Cookie("user"))
-
-	c.String(http.StatusOK, "Cookie has been set")
-}
