@@ -1,3 +1,6 @@
+## v1.0.11 - 2025-03-06
+* fix: hotfix18
+* chore: update release notes and changelog for v1.0.10
 ## v1.0.10 - 2025-03-06
 * Revert "fix:"
 * chore: update release notes and changelog for v1.0.9
