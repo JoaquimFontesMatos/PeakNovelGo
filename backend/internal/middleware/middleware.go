@@ -12,7 +12,6 @@ import (
 )
 
 func AuthMiddleware() gin.HandlerFunc {
-	// Load environment variables once
 	secretKey := os.Getenv("SECRET_KEY")
 	if secretKey == "" {
 		log.Fatal("SECRET_KEY not set in environment variables")
@@ -26,29 +25,23 @@ func AuthMiddleware() gin.HandlerFunc {
 			return
 		}
 
-		// Extract and parse the token
+		// Extract the token
 		tokenStr := strings.TrimPrefix(authHeader, "Bearer ")
 		token, err := jwt.Parse(tokenStr, func(token *jwt.Token) (interface{}, error) {
-			// Ensure the signing method is as expected
 			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 				return nil, jwt.ErrSignatureInvalid
 			}
 			return []byte(secretKey), nil
 		})
 
-		// Handle token parsing errors
-		if err != nil {
-			if err == jwt.ErrSignatureInvalid {
-				c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token signature"})
-			} else {
-				c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
-			}
+		if err != nil || !token.Valid {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid or expired token"})
 			c.Abort()
 			return
 		}
 
-		// Validate token claims (e.g., expiration)
-		if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
+		// Validate token claims
+		if claims, ok := token.Claims.(jwt.MapClaims); ok {
 			expiration, ok := claims["exp"].(float64)
 			if !ok || time.Unix(int64(expiration), 0).Before(time.Now()) {
 				c.JSON(http.StatusUnauthorized, gin.H{"error": "Token has expired"})
@@ -56,15 +49,14 @@ func AuthMiddleware() gin.HandlerFunc {
 				return
 			}
 
-			// You can set the user information in the context here
-			// e.g., c.Set("userID", claims["sub"])
+			// Set user ID in context (optional)
+			c.Set("userID", claims["sub"])
 		} else {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token claims"})
 			c.Abort()
 			return
 		}
 
-		// Proceed to the next handler
 		c.Next()
 	}
 }
@@ -76,16 +68,18 @@ func RefreshTokenMiddleware() gin.HandlerFunc {
 	}
 
 	return func(c *gin.Context) {
-		// Check for refresh token in cookies
-		refreshToken, err := c.Cookie("refreshToken")
-		if err != nil {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Refresh token not provided"})
+		authHeader := c.GetHeader("Authorization")
+		if authHeader == "" || !strings.HasPrefix(authHeader, "Bearer ") {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Missing or invalid refresh token header"})
 			c.Abort()
 			return
 		}
 
-		// Parse and validate the refresh token
-		_, err = jwt.Parse(refreshToken, func(token *jwt.Token) (interface{}, error) {
+		// Extract the refresh token from the header
+		refreshToken := strings.TrimPrefix(authHeader, "Bearer ")
+
+		// Validate the refresh token
+		_, err := jwt.Parse(refreshToken, func(token *jwt.Token) (interface{}, error) {
 			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 				return nil, jwt.ErrSignatureInvalid
 			}
@@ -101,4 +95,3 @@ func RefreshTokenMiddleware() gin.HandlerFunc {
 		c.Next()
 	}
 }
-

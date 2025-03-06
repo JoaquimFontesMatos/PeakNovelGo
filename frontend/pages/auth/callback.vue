@@ -8,10 +8,11 @@ const toastStore = useToastStore();
 
 onMounted(() => {
   // Extract query parameters
-  const token = route.query.accessToken as string; // Use 'accessToken' instead of 'token'
+  const accessToken = route.query.accessToken as string;
+  const refreshToken = route.query.refreshToken as string;
   const user = route.query.user ? JSON.parse(decodeURIComponent(route.query.user as string)) : null;
 
-  if (!token || !user) {
+  if (!accessToken || !refreshToken || !user) {
     toastStore.addToast('Error: Failed to log in', 'error');
     navigateTo('/auth/login');
 
@@ -19,7 +20,7 @@ onMounted(() => {
   }
 
   // Store the session data
-  authStore.setSession({ user, accessToken: token });
+  authStore.setSession({ user: user, accessToken: accessToken, refreshToken: refreshToken });
 
   // Optionally, redirect the user to another page
   navigateTo('/'); // Or another route

@@ -165,7 +165,7 @@ export class BaseAuthService implements AuthService {
     }
   }
 
-  async refreshAccessToken(): Promise<AuthSession> {
+  async refreshAccessToken(refreshToken: string): Promise<AuthSession> {
     let response;
     let errorMessage = 'An unexpected error occurred';
 
@@ -173,6 +173,9 @@ export class BaseAuthService implements AuthService {
       response = await this.httpClient.request(`${this.baseUrl}/auth/refresh-token`, {
         method: 'POST',
         credentials: 'include',
+        headers: {
+          Authorization: `Bearer ${refreshToken}`,
+        },
       });
     } catch (error) {
       throw new ProjectError({
@@ -318,7 +321,7 @@ export class BaseAuthService implements AuthService {
     }
   }
 
-  async logout(): Promise<SuccessServerResponse> {
+  async logout(refreshToken: string): Promise<SuccessServerResponse> {
     let response;
     let errorMessage = 'An unexpected error occurred';
 
@@ -326,6 +329,9 @@ export class BaseAuthService implements AuthService {
       response = await this.httpClient.request(`${this.baseUrl}/auth/logout`, {
         method: 'POST',
         credentials: 'include',
+        headers: {
+          Authorization: `Bearer ${refreshToken}`,
+        },
       });
     } catch (error) {
       throw new ProjectError({

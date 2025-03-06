@@ -12,9 +12,13 @@ export class BaseFileTransport implements FileTransport {
     try {
       if (this.url === '') return;
 
+      const accessToken = localStorage.getItem('accessToken') || '';
+
       await $fetch(this.url + '/log/', {
         method: 'POST',
-        body: entry,
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        }
       });
     } catch (error) {
       console.error('Failed to send log:', error);

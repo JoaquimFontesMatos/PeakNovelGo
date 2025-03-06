@@ -5,7 +5,7 @@ import type { SuccessServerResponse } from '~/schemas/SuccessServerResponse';
 export interface AuthService {
   login(form: LoginForm): Promise<AuthSession>;
   signUp(form: SignUpForm): Promise<SuccessServerResponse>;
-  refreshAccessToken(): Promise<AuthSession>;
+  refreshAccessToken(refreshToken: string): Promise<AuthSession>;
   verifyToken(token: string): Promise<SuccessServerResponse>;
-  logout(): Promise<SuccessServerResponse>;
+  logout(refreshToken: string): Promise<SuccessServerResponse>;
 }
