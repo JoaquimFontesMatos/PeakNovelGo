@@ -138,6 +138,7 @@ export const useAuthStore = defineStore('Auth', () => {
       clearSession();
     } catch (error) {
       $errorHandler.handleError(error, { user: user, accessToken: accessToken, location: 'auth.ts -> logout' });
+      clearSession();
       throw error;
     } finally {
       loadingLogout.value = false;

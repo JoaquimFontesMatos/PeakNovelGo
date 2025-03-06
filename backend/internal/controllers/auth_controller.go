@@ -101,22 +101,16 @@ func (ac *AuthController) Login(c *gin.Context) {
 		// Handle the error (e.g., log it or use a default value)
 		secure = false // Default value if parsing fails
 	}
-	// Store refreshToken in HttpOnly cookie
-	sameSite := http.SameSiteLaxMode
-	if secure {
-		sameSite = http.SameSiteNoneMode // Required for cross-site in HTTPS
-	}
 
-	http.SetCookie(c.Writer, &http.Cookie{
-		Name:     "refreshToken",
-		Value:    refreshToken,
-		MaxAge:   7 * 24 * 60 * 60,
-		Path:     "/",
-		Domain:   os.Getenv("COOKIE_DOMAIN"),
-		Secure:   secure,
-		HttpOnly: true,
-		SameSite: sameSite,
-	})
+	c.SetCookie(
+		"refreshToken",
+		refreshToken,
+		7*24*60*60,
+		"/",
+		os.Getenv("COOKIE_DOMAIN"),
+		secure,
+		true,
+	)
 
 	userDto, err := dtos.ConvertUserModelToDTO(*user)
 
@@ -167,22 +161,15 @@ func (ac *AuthController) RefreshToken(ctx *gin.Context) {
 		secure = false // Default value if parsing fails
 	}
 
-	// Send the new tokens back to the client
-	sameSite := http.SameSiteLaxMode
-	if secure {
-		sameSite = http.SameSiteNoneMode // Required for cross-site in HTTPS
-	}
-
-	http.SetCookie(ctx.Writer, &http.Cookie{
-		Name:     "refreshToken",
-		Value:    newRefreshToken,
-		MaxAge:   7 * 24 * 60 * 60,
-		Path:     "/",
-		Domain:   os.Getenv("COOKIE_DOMAIN"),
-		Secure:   secure,
-		HttpOnly: true,
-		SameSite: sameSite,
-	})
+	ctx.SetCookie(
+		"refreshToken",
+		newRefreshToken,
+		7*24*60*60,
+		"/",
+		os.Getenv("COOKIE_DOMAIN"),
+		secure,
+		true,
+	)
 
 	userDto, err := dtos.ConvertUserModelToDTO(*user)
 
@@ -314,24 +301,18 @@ func (ac *AuthController) GoogleCallback(c *gin.Context) {
 	// Set the refresh token in an HttpOnly cookie
 	secure, err := strconv.ParseBool(os.Getenv("COOKIES_SECURE"))
 	if err != nil {
-		secure = false // Default to false if parsing fails
+		secure = false
 	}
 
-	sameSite := http.SameSiteLaxMode
-	if secure {
-		sameSite = http.SameSiteNoneMode // Required for cross-site in HTTPS
-	}
-
-	http.SetCookie(c.Writer, &http.Cookie{
-		Name:     "refreshToken",
-		Value:    refreshToken,
-		MaxAge:   7 * 24 * 60 * 60,
-		Path:     "/",
-		Domain:   os.Getenv("COOKIE_DOMAIN"),
-		Secure:   secure,
-		HttpOnly: true,
-		SameSite: sameSite,
-	})
+	c.SetCookie(
+		"refreshToken",
+		refreshToken,
+		7*24*60*60,
+		"/",
+		os.Getenv("COOKIE_DOMAIN"),
+		secure,
+		true,
+	)
 
 	userDto, err := dtos.ConvertUserModelToDTO(*existingUser)
 
