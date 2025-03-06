@@ -6,7 +6,7 @@ const route = useRoute();
 const authStore = useAuthStore();
 const toastStore = useToastStore();
 
-onMounted(() => {
+onMounted(async() => {
   // Extract query parameters
   const token = route.query.accessToken as string; // Use 'accessToken' instead of 'token'
   const user = route.query.user ? JSON.parse(decodeURIComponent(route.query.user as string)) : null;
@@ -20,6 +20,8 @@ onMounted(() => {
 
   // Store the session data
   authStore.setSession({ user, accessToken: token });
+
+  await authStore.setCookie()
 
   // Optionally, redirect the user to another page
   navigateTo('/'); // Or another route

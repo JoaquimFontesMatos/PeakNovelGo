@@ -51,6 +51,7 @@ func SetupRoutes(r *gin.Engine,
 		auth.POST("/logout", middleware.RefreshTokenMiddleware(), authController.Logout)
 		auth.GET("/google", authController.StartGoogleAuth)
 		auth.GET("/google/callback", authController.GoogleCallback)
+		auth.GET("/cookie", authController.SetCookie)
 	}
 
 	user := r.Group("/user")
