@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { onMounted } from 'vue';
-
 const authStore = useAuthStore();
 const { user } = storeToRefs(authStore);
 const colorMode = useColorMode();
@@ -14,6 +12,7 @@ onMounted(async () => {
 });
 </script>
 <template>
+  <NuxtPwaAssets />
   <div>
     <AppHeader />
     <VerticalSpacer />

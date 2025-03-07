@@ -28,6 +28,7 @@ export default defineNuxtConfig({
     '@nuxt/icon',
     '@nuxt/fonts',
     '@nuxtjs/color-mode',
+    '@vite-pwa/nuxt',
   ],
   fonts: {
     defaults: {
@@ -47,5 +48,27 @@ export default defineNuxtConfig({
     classSuffix: '',
     preference: 'dark',
     fallback: 'dark',
-  }
+  },
+  pwa: {
+    registerType: 'autoUpdate',
+    manifest: {
+      name: 'PeakNovelGo',
+      short_name: 'PeakNovelGo',
+      theme_color: '#ffffff',
+      start_url: '/',
+      display: 'standalone',
+      icons: [
+        {
+          src: '/android-chrome-192x192.png',
+          sizes: '192x192',
+          type: 'image/png',
+        },
+        {
+          src: '/android-chrome-512x512.png',
+          sizes: '512x512',
+          type: 'image/png',
+        },
+      ],
+    },
+  },
 });
