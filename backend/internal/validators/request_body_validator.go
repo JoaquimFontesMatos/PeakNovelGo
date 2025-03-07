@@ -2,7 +2,9 @@ package validators
 
 import (
 	"backend/internal/types"
-	
+	"backend/internal/types/errors"
+	"net/http"
+
 	"bytes"
 	"encoding/json"
 	"io"
@@ -23,12 +25,12 @@ func ValidateBody(ctx *gin.Context, body interface{}) error {
 	// Read the raw body
 	rawBody, err := ctx.GetRawData()
 	if err != nil {
-		return types.WrapError(types.INVALID_BODY_ERROR, "Failed to read request body", err)
+		return types.WrapError(errors.INVALID_BODY_ERROR, "Failed to read request body", http.StatusBadRequest, err)
 	}
 
 	// Check if it's valid JSON
 	if !json.Valid(rawBody) {
-		return types.WrapError(types.INVALID_BODY_ERROR, "Invalid JSON", nil)
+		return types.WrapError(errors.INVALID_BODY_ERROR, "Invalid JSON", http.StatusBadRequest, nil)
 	}
 
 	// Reassign the raw body so ShouldBindJSON can read it
@@ -36,12 +38,12 @@ func ValidateBody(ctx *gin.Context, body interface{}) error {
 
 	// Bind the JSON
 	if err := ctx.ShouldBindJSON(body); err != nil {
-		return types.WrapError(types.INVALID_BODY_ERROR, "Failed to bind JSON", err)
+		return types.WrapError(errors.INVALID_BODY_ERROR, "Failed to bind JSON", http.StatusBadRequest, err)
 	}
 
 	// Custom validation: ensure at least one field is non-empty
 	if !hasAtLeastOneNonEmptyField(body) {
-		return types.WrapError(types.INVALID_BODY_ERROR, "No fields provided", nil)
+		return types.WrapError(errors.INVALID_BODY_ERROR, "No fields provided", http.StatusBadRequest, nil)
 	}
 
 	return nil

@@ -3,8 +3,10 @@ package dtos
 import (
 	"backend/internal/models"
 	"backend/internal/types"
+	"backend/internal/types/errors"
 	"encoding/json"
 	"log"
+	"net/http"
 	"time"
 
 	"gorm.io/gorm"
@@ -31,7 +33,7 @@ func ConvertUserModelToDTO(user models.User) (UserDTO, error) {
 		err := json.Unmarshal([]byte(user.ReadingPreferences), &readingPreferences)
 		if err != nil {
 			log.Printf("Error parsing ReadingPreferences: %s, Error: %v", user.ReadingPreferences, err)
-			return UserDTO{}, types.WrapError(types.INTERNAL_SERVER_ERROR, "Error parsing reading preferences", err)
+			return UserDTO{}, types.WrapError(errors.INVALID_READING_PREFERENCES, "Error parsing reading preferences", http.StatusBadRequest, err)
 		}
 	}
 
@@ -59,7 +61,7 @@ func ConvertUserModelToDTO(user models.User) (UserDTO, error) {
 func ConvertUserDTOToModel(dto UserDTO) (models.User, error) {
 	readingPreferencesJSON, err := json.Marshal(dto.ReadingPreferences)
 	if err != nil {
-		return models.User{}, types.WrapError(types.INTERNAL_SERVER_ERROR, "Error parsing reading preferences", err)
+		return models.User{}, types.WrapError(errors.INVALID_READING_PREFERENCES, "Error parsing reading preferences", http.StatusBadRequest, err)
 	}
 
 	return models.User{

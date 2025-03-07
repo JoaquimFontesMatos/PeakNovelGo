@@ -3,8 +3,11 @@ package repositories
 import (
 	"backend/internal/models"
 	"backend/internal/types"
+	myErrors "backend/internal/types/errors"
 	"errors"
+	"net/http"
 	"time"
+
 	"gorm.io/gorm"
 )
 
@@ -54,7 +57,7 @@ func (repo *AuthRepository) RevokeToken(refreshToken string) error {
 	}
 	if !errors.Is(err, gorm.ErrRecordNotFound) {
 		// Unexpected error
-		return types.WrapError(types.INTERNAL_SERVER_ERROR, "Occured an error revoking the token", err)
+		return types.WrapError(myErrors.REVOKING_TOKEN, "Failed to revoke token", http.StatusInternalServerError, err)
 	}
 
 	// Token not found, proceed to insert

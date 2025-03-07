@@ -2,6 +2,9 @@ package utils
 
 import (
 	"backend/internal/types"
+	"backend/internal/types/errors"
+	"net/http"
+
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -18,7 +21,7 @@ const MaxPasswordLength = 72
 func HashPassword(password string) (string, error) {
 	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
-		return "", types.WrapError(types.INTERNAL_SERVER_ERROR, "Failed to hash password", err)
+		return "", types.WrapError(errors.HASH_PASSWORD, "Failed to hash password", http.StatusInternalServerError, err)
 	}
 	return string(hash), nil
 }

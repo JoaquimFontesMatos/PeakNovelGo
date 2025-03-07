@@ -3,9 +3,7 @@ package controllers
 import (
 	"backend/internal/models"
 	"backend/internal/services/interfaces"
-	"backend/internal/types"
 	"backend/internal/utils"
-	"errors"
 	"log"
 	"net/http"
 	"strconv"
@@ -110,17 +108,8 @@ func (b *BookmarkController) GetBookmarkByUserIDAndNovelID(ctx *gin.Context) {
 
 	novel, err := b.bookmarkService.GetBookmarkByUserIDAndNovelID(userID, novelIDParam)
 	if err != nil {
-		var myError *types.MyError
-		if errors.As(err, &myError) {
-			switch myError.Code {
-			case types.NOVEL_NOT_FOUND_ERROR:
-				ctx.JSON(http.StatusNotFound, gin.H{"error": myError.Message})
-			}
-			return
-		}
-
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
+		utils.HandleError(ctx, err)
+        return
 	}
 
 	ctx.JSON(http.StatusOK, novel)
@@ -145,14 +134,8 @@ func (b *BookmarkController) UnbookmarkNovel(ctx *gin.Context) {
 
 	err = b.bookmarkService.UnbookmarkNovel(uint(userID), uint(novelID))
 	if err != nil {
-		error := err.(*types.MyError)
-		if error.Code == types.NOVEL_NOT_FOUND_ERROR {
-			ctx.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
-			return
-		}
-
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
+		utils.HandleError(ctx, err)
+        return
 	}
 
 	ctx.JSON(http.StatusOK, gin.H{"message": "Novel successfully unbookmarked"})

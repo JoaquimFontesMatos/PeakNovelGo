@@ -9,6 +9,7 @@ import (
 	"backend/internal/validators"
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"os"
 	"strings"
 )
@@ -75,7 +76,7 @@ func (s *NovelService) CreateNovel(novelUpdatesID string) (*models.Novel, error)
 	// Execute the Python script
 	output, err := s.scriptExecutor.ExecuteScript(os.Getenv("PYTHON"), "-m", "novel_updates_scraper.client", "import-novel", novelUpdatesID)
 	if err != nil {
-		return nil, types.WrapError(types.SCRIPT_ERROR, "Failed to execute Python script: "+err.Error(), err)
+		return nil, types.WrapError(errors.SCRIPT_ERROR, "Failed to execute Python script: "+err.Error(), http.StatusServiceUnavailable, err)
 	}
 
 	var scriptError utils.ScriptError
@@ -83,16 +84,16 @@ func (s *NovelService) CreateNovel(novelUpdatesID string) (*models.Novel, error)
 	// Check if the script returned a specific error
 	if json.Unmarshal(output, &scriptError) == nil {
 		if scriptError.Status == 404 {
-			return nil, types.WrapError(types.NOVEL_NOT_FOUND_ERROR, "Novel not found", nil)
+			return nil, errors.ErrNovelNotFound
 		}
-		return nil, types.WrapError(types.SCRIPT_ERROR, scriptError.Error, nil)
+		return nil, types.WrapError(errors.SCRIPT_ERROR, scriptError.Error, http.StatusServiceUnavailable, nil)
 	}
 
 	// Ensure the output is unmarshaled into a valid JSON object
 	var result models.ImportedNovel
 	err = json.Unmarshal(output, &result)
 	if err != nil {
-		return nil, types.WrapError(types.INTERNAL_SERVER_ERROR, "An error occurred while importing the novel: "+err.Error(), err)
+		return nil, types.WrapError(errors.IMPORTING_NOVEL, "An error occurred while importing the novel: "+err.Error(), http.StatusInternalServerError, err)
 	}
 
 	year := strings.ReplaceAll(result.Year, "\n", "")

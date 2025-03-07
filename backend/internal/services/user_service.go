@@ -5,8 +5,10 @@ import (
 	"backend/internal/models"
 	"backend/internal/repositories/interfaces"
 	"backend/internal/types"
+	"backend/internal/types/errors"
 	"backend/internal/utils"
 	"backend/internal/validators"
+	"net/http"
 	"os"
 	"time"
 )
@@ -43,12 +45,12 @@ func (s *UserService) GetUser(id uint) (*models.User, error) {
 func (s *UserService) RegisterUser(userFields *dtos.RegisterRequest) error {
 	_, err := s.repo.GetUserByEmail(userFields.Email)
 	if err == nil {
-		return types.WrapError(types.CONFLICT_ERROR, "User already registered", nil)
+		return errors.ErrUserAlreadyExists
 	}
 
 	birthDate, err := time.Parse("2006-01-02", userFields.DateOfBirth)
 	if err != nil {
-		return types.WrapError(types.INTERNAL_SERVER_ERROR, "Failed to parse date of birth", err)
+		return types.WrapError(errors.INVALID_DATE_OF_BIRTH, "Failed to parse date of birth", http.StatusBadRequest, err)
 	}
 
 	user := models.User{
@@ -119,7 +121,7 @@ func (s *UserService) VerifyEmail(token string) error {
 	}
 
 	if validators.IsVerificationTokenExpired(user.CreatedAt, user.EmailVerified) {
-		return types.WrapError(types.INVALID_TOKEN_ERROR, "Invalid token or token expired", nil)
+		return types.WrapError(errors.INVALID_TOKEN, "Invalid token or token expired", http.StatusUnauthorized, nil)
 	}
 
 	user.EmailVerified = true
@@ -184,7 +186,7 @@ func (s *UserService) UpdatePassword(userID uint, currentPassword string, newPas
 	}
 
 	if !utils.ComparePassword(user.Password, currentPassword) {
-		return types.WrapError(types.INVALID_PASSWORD_ERROR, "Invalid password", nil)
+		return errors.ErrPasswordDoesNotMatch
 	}
 
 	if err := validators.ValidateIsNewPasswordTheSame(currentPassword, newPassword); err != nil {

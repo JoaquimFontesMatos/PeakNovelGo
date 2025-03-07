@@ -1,7 +1,7 @@
 package utils
 
 import (
-	"backend/internal/types"
+	"backend/internal/types/errors"
 	"crypto/rand"
 	"encoding/base64"
 	"log"
@@ -32,7 +32,7 @@ func GenerateVerificationToken() string {
 //   - INVALID_TOKEN_ERROR if the token is invalid
 func ExtractToken(headerValue string) (string, error) {
 	if !strings.HasPrefix(headerValue, "Bearer ") {
-		return "", types.WrapError(types.INVALID_TOKEN_ERROR, "Invalid token format", nil)
+		return "", errors.ErrInvalidToken
 	}
 	return strings.TrimPrefix(headerValue, "Bearer "), nil
 }

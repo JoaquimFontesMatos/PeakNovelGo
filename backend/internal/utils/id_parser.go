@@ -2,6 +2,8 @@ package utils
 
 import (
 	"backend/internal/types"
+	"backend/internal/types/errors"
+	"net/http"
 	"strconv"
 	"strings"
 )
@@ -18,7 +20,7 @@ func ParseID(idParam string) (uint, error) {
 	id, err := strconv.Atoi(idParam)
 
 	if err != nil || id <= 0 {
-		return 0, types.WrapError(types.INVALID_ID_ERROR, "Invalid ID", err)
+		return 0, types.WrapError(errors.PARSE_UINT_ERROR, "Invalid ID", http.StatusBadRequest, err)
 	}
 
 	// Convert the id from int to uint (assuming id can be positive)
@@ -30,11 +32,11 @@ func ParseID(idParam string) (uint, error) {
 func ParseInt(int string) (int, error) {
 	int = strings.TrimSpace(int)
 	int = strings.ReplaceAll(int, "\n", "")
-	
+
 	num, err := strconv.Atoi(int)
 
 	if err != nil || num <= 0 {
-		return 0, types.WrapError(types.VALIDATION_ERROR, "Invalid Conversion", err)
+		return 0, types.WrapError(errors.PARSE_INT_ERROR, "Invalid Conversion", http.StatusBadRequest, err)
 	}
 
 	return num, nil

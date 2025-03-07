@@ -4,11 +4,13 @@ import (
 	"fmt"
 	"html/template"
 	"log"
+	"net/http"
 	"net/smtp"
 	"os"
 
 	"backend/internal/models"
 	"backend/internal/types"
+	"backend/internal/types/errors"
 )
 
 // EmailSender interface allows mocking of SMTP SendMail
@@ -66,7 +68,7 @@ func SendVerificationEmail(user models.User, sender EmailSender) error {
 	err := sender.SendMail(os.Getenv("SMTP_HOST")+":"+os.Getenv("SMTP_PORT"), auth, from, to, message)
 	if err != nil {
 		log.Printf("Failed to send verification email: %v", err)
-		return types.WrapError(types.INTERNAL_SERVER_ERROR, "Failed to send verification email", err)
+		return types.WrapError(errors.EMAIL_SEND, "Failed to send verification email", http.StatusInternalServerError, err)
 	}
 
 	log.Println("Verification email sent successfully to", user.Email)
