@@ -1,3 +1,6 @@
+## v1.0.12 - 2025-03-07
+* fix: fixed manifest for pwas
+* chore: update release notes and changelog for v1.0.11
 ## v1.0.11 - 2025-03-06
 * fix: hotfix18
 * chore: update release notes and changelog for v1.0.10
