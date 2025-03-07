@@ -1,3 +1,19 @@
+## v1.0.11 - 2025-03-06
+* fix: hotfix18
+* chore: update release notes and changelog for v1.0.10
+## v1.0.10 - 2025-03-06
+* Revert "fix:"
+* chore: update release notes and changelog for v1.0.9
+## v1.0.9 - 2025-03-06
+* Merge remote-tracking branch 'origin/main'
+* fix:
+* chore: update release notes and changelog for v1.0.8
+## v1.0.8 - 2025-03-06
+* fix: hotfix 2
+* chore: update release notes and changelog for v1.0.7
+## v1.0.7 - 2025-03-06
+* fix: hotfix 6 tried to fix refresh token cookie so it stays in the website
+* chore: update release notes and changelog for v1.0.6
 ## v1.0.6 - 2025-03-01
 * fix:fixed a hardcoded link
 * chore: update release notes and changelog for v1.0.5

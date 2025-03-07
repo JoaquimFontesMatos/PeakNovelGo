@@ -9,7 +9,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"strconv"
+	"strings"
 
 	"backend/internal/dtos"
 	"backend/internal/services/interfaces"
@@ -96,22 +96,6 @@ func (ac *AuthController) Login(c *gin.Context) {
 		return
 	}
 
-	secure, err := strconv.ParseBool(os.Getenv("COOKIES_SECURE"))
-	if err != nil {
-		// Handle the error (e.g., log it or use a default value)
-		secure = false // Default value if parsing fails
-	}
-	// Store refreshToken in HttpOnly cookie
-	c.SetCookie(
-		"refreshToken", // Name
-		refreshToken,   // Value
-		7*24*60*60,     // MaxAge: 7 days
-		"/",            // Path
-		"",             // Domain
-		secure,         // Secure: Only send over HTTPS
-		true,           // HttpOnly: Inaccessible to JavaScript
-	)
-
 	userDto, err := dtos.ConvertUserModelToDTO(*user)
 
 	if err != nil {
@@ -121,17 +105,20 @@ func (ac *AuthController) Login(c *gin.Context) {
 
 	// Respond with the access token and user info
 	c.JSON(http.StatusOK, gin.H{
-		"accessToken": accessToken,
-		"user":        userDto,
+		"accessToken":  accessToken,
+		"refreshToken": refreshToken,
+		"user":         userDto,
 	})
 }
 
 func (ac *AuthController) RefreshToken(ctx *gin.Context) {
-	refreshToken, err := ctx.Cookie("refreshToken")
-	if err != nil {
-		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "No refresh token provided"})
+	authHeader := ctx.GetHeader("Authorization")
+	if authHeader == "" || !strings.HasPrefix(authHeader, "Bearer ") {
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Missing or invalid refresh token header"})
 		return
 	}
+
+	refreshToken := strings.TrimPrefix(authHeader, "Bearer ")
 
 	// Call the service to refresh the token
 	newAccessToken, newRefreshToken, user, err := ac.AuthService.RefreshToken(refreshToken)
@@ -155,23 +142,6 @@ func (ac *AuthController) RefreshToken(ctx *gin.Context) {
 		return
 	}
 
-	secure, err := strconv.ParseBool(os.Getenv("COOKIES_SECURE"))
-	if err != nil {
-		// Handle the error (e.g., log it or use a default value)
-		secure = false // Default value if parsing fails
-	}
-
-	// Send the new tokens back to the client
-	ctx.SetCookie(
-		"refreshToken",  // Name
-		newRefreshToken, // Value
-		7*24*60*60,      // MaxAge: 7 days
-		"/",             // Path
-		"",              // Domain
-		secure,          // Secure: Only send over HTTPS
-		true,            // HttpOnly: Inaccessible to JavaScript
-	)
-
 	userDto, err := dtos.ConvertUserModelToDTO(*user)
 
 	if err != nil {
@@ -181,38 +151,25 @@ func (ac *AuthController) RefreshToken(ctx *gin.Context) {
 
 	// Respond with the access token and user info
 	ctx.JSON(http.StatusOK, gin.H{
-		"accessToken": newAccessToken,
-		"user":        userDto,
+		"refreshToken": newRefreshToken,
+		"accessToken":  newAccessToken,
+		"user":         userDto,
 	})
 }
 
 func (ac *AuthController) Logout(ctx *gin.Context) {
-	refreshToken, err := ctx.Cookie("refreshToken")
-	if err != nil {
-		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "No refresh token provided"})
+	authHeader := ctx.GetHeader("Authorization")
+	if authHeader == "" || !strings.HasPrefix(authHeader, "Bearer ") {
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Missing or invalid refresh token header"})
 		return
 	}
+
+	refreshToken := strings.TrimPrefix(authHeader, "Bearer ")
 
 	if err := ac.AuthService.Logout(refreshToken); err != nil {
 		ctx.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
 	}
-
-	secure, err := strconv.ParseBool(os.Getenv("COOKIES_SECURE"))
-	if err != nil {
-		// Handle the error (e.g., log it or use a default value)
-		secure = false // Default value if parsing fails
-	}
-
-	ctx.SetCookie(
-		"refreshToken",
-		"",
-		-1,
-		"/",
-		"",
-		secure,
-		true, // Set MaxAge to -1 to delete the cookie
-	)
 
 	ctx.JSON(http.StatusOK, gin.H{"message": "Logged out successfully"})
 }
@@ -300,21 +257,6 @@ func (ac *AuthController) GoogleCallback(c *gin.Context) {
 		return
 	}
 
-	// Set the refresh token in an HttpOnly cookie
-	secure, err := strconv.ParseBool(os.Getenv("COOKIES_SECURE"))
-	if err != nil {
-		secure = false // Default to false if parsing fails
-	}
-	c.SetCookie(
-		"refreshToken", // Name
-		refreshToken,   // Value
-		7*24*60*60,     // MaxAge: 7 days
-		"/",            // Path
-		"",             // Domain
-		secure,         // Secure: Only send over HTTPS
-		true,           // HttpOnly: Inaccessible to JavaScript
-	)
-
 	userDto, err := dtos.ConvertUserModelToDTO(*existingUser)
 
 	if err != nil {
@@ -332,9 +274,10 @@ func (ac *AuthController) GoogleCallback(c *gin.Context) {
 	// Redirect to the frontend callback route with the OAuth data
 	frontendCallbackURL := os.Getenv("FRONTEND_URL") + "/auth/callback"
 	redirectURL := fmt.Sprintf(
-		"%s?accessToken=%s&user=%s",
+		"%s?accessToken=%s&refreshToken=%s&user=%s",
 		frontendCallbackURL,
 		accessToken,
+		refreshToken,
 		url.QueryEscape(string(userDtoJSON)),
 	)
 	c.Redirect(http.StatusFound, redirectURL)

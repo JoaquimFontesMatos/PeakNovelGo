@@ -19,6 +19,7 @@ export const useAuthStore = defineStore('Auth', () => {
   // Auth Session Info
   const user = ref<User | null>(null);
   const accessToken = ref<string | null>(null);
+  const refreshToken = ref<string | null>(null);
 
   // Handling Login Variables
   const loadingLogin = ref<boolean>(false);
@@ -39,20 +40,24 @@ export const useAuthStore = defineStore('Auth', () => {
   const setSession = (loginResponse: AuthSession) => {
     accessToken.value = loginResponse.accessToken;
     user.value = loginResponse.user;
+    refreshToken.value = loginResponse.refreshToken;
 
     if (import.meta.client) {
       localStorage.setItem('user', JSON.stringify(loginResponse.user));
       localStorage.setItem('accessToken', loginResponse.accessToken);
+      localStorage.setItem('refreshToken', loginResponse.refreshToken);
     }
   };
 
   const clearSession = (): void => {
     accessToken.value = null;
     user.value = null;
+    refreshToken.value = null;
 
     if (import.meta.client) {
       localStorage.removeItem('user');
       localStorage.removeItem('accessToken');
+      localStorage.removeItem('refreshToken');
     }
   };
 
@@ -85,7 +90,11 @@ export const useAuthStore = defineStore('Auth', () => {
 
   const refreshAccessToken = async (): Promise<void> => {
     try {
-      const loginResponse: AuthSession = await $authService.refreshAccessToken();
+      if (!refreshToken.value) {
+        throw new Error('No refresh token found');
+      }
+
+      const loginResponse: AuthSession = await $authService.refreshAccessToken(refreshToken.value);
 
       setSession(loginResponse);
 
@@ -131,13 +140,18 @@ export const useAuthStore = defineStore('Auth', () => {
   const logout = async (): Promise<void> => {
     loadingLogout.value = true;
 
+    if (!refreshToken.value) {
+      throw new Error('No refresh token found');
+    }
+
     try {
-      const successServerResponse: SuccessServerResponse = await $authService.logout();
+      const successServerResponse: SuccessServerResponse = await $authService.logout(refreshToken.value);
       logoutMessage.value = successServerResponse.message;
 
       clearSession();
     } catch (error) {
       $errorHandler.handleError(error, { user: user, accessToken: accessToken, location: 'auth.ts -> logout' });
+      clearSession();
       throw error;
     } finally {
       loadingLogout.value = false;
@@ -148,11 +162,13 @@ export const useAuthStore = defineStore('Auth', () => {
     if (import.meta.client) {
       const storedUser = localStorage.getItem('user');
       const storedAccessToken = localStorage.getItem('accessToken');
+      const storedRefreshToken = localStorage.getItem('refreshToken');
 
       if (storedUser) user.value = JSON.parse(storedUser);
       if (storedAccessToken) accessToken.value = storedAccessToken;
+      if (storedRefreshToken) refreshToken.value = storedRefreshToken;
 
-      if (!accessToken.value) {
+      if (!accessToken.value && refreshToken.value) {
         // If no access token, try refreshing the session
         await refreshAccessToken();
       }
@@ -162,6 +178,7 @@ export const useAuthStore = defineStore('Auth', () => {
   return {
     user,
     accessToken,
+    refreshToken,
     loadingLogin,
     loadingSignUp,
     signUpMessage,
