@@ -30,3 +30,5 @@ backend/build/
 tts-files/
 
 backend/logs/
+
+backend/novel_updates_scraper/__pycache__/
