@@ -21,7 +21,7 @@ func NewBookmarkController(bookmarkService interfaces.BookmarkServiceInterface) 
 
 func (b *BookmarkController) GetBookmarkedNovelsByUserID(ctx *gin.Context) {
 	idParam := ctx.Param("user_id")
-	id, err := utils.ParseID(idParam)
+	id, err := utils.ParseUintID(idParam)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -100,7 +100,7 @@ func (b *BookmarkController) GetBookmarkByUserIDAndNovelID(ctx *gin.Context) {
 	userIDParam := ctx.Param("user_id")
 	novelIDParam := ctx.Param("novel_id")
 
-	userID, err := utils.ParseID(userIDParam)
+	userID, err := utils.ParseUintID(userIDParam)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -117,7 +117,7 @@ func (b *BookmarkController) GetBookmarkByUserIDAndNovelID(ctx *gin.Context) {
 
 func (b *BookmarkController) UnbookmarkNovel(ctx *gin.Context) {
 
-	userID, err := utils.ParseID(ctx.Param("user_id"))
+	userID, err := utils.ParseUintID(ctx.Param("user_id"))
 
 	if err != nil {
 		log.Println(err)
@@ -125,7 +125,7 @@ func (b *BookmarkController) UnbookmarkNovel(ctx *gin.Context) {
 		return
 	}
 
-	novelID, err := utils.ParseID(ctx.Param("novel_id"))
+	novelID, err := utils.ParseUintID(ctx.Param("novel_id"))
 
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})

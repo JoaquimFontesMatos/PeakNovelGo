@@ -17,7 +17,7 @@ const MaxPasswordLength = 72
 //
 // Returns:
 //   - string (hashed password)
-//   - INTERNAL_ERROR if there is an error hashing the password
+//   - error (error with status code: http.StatusInternalServerError if the password could not be encrypted)
 func HashPassword(password string) (string, error) {
 	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {

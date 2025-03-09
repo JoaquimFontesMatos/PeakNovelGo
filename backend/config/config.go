@@ -11,7 +11,17 @@ import (
 	"gorm.io/gorm"
 )
 
-// ConnectDB connects to the database, either PostgreSQL or SQLite in-memory, based on an environment variable.
+// ConnectDB establishes a database connection based on the provided boolean flag.  If `isTest` is true, it uses an in-memory
+// SQLite database for testing; otherwise, it connects to a PostgreSQL database using environment variables.
+//
+// Parameters:
+//   - isTest (bool): Indicates whether to connect to an in-memory SQLite database (true) or a PostgreSQL database (false).
+//
+// Returns:
+//   - *gorm.DB: A pointer to the established GORM database connection.
+//
+// Error types:
+//   - error: If connection to the database fails, a fatal error is logged, and the program terminates.
 func ConnectDB(isTest bool) *gorm.DB {
 	var db *gorm.DB
 	var dsn string
@@ -61,6 +71,21 @@ func ConnectDB(isTest bool) *gorm.DB {
 	return db
 }
 
+// autoMigrate performs database migrations for all defined models.
+//
+// This function uses GORM's AutoMigrate function to create or update database tables
+// based on the Go structs defined in the models package. It migrates tables for Users,
+// RevokedTokens, Novels, Chapters, Tags, NovelTags, NovelAuthors, Authors, BookmarkedNovels,
+// NovelGenres, Genres, and LogEntries. Failure to migrate results in a fatal error.
+//
+// Parameters:
+//   - db (*gorm.DB): A pointer to a GORM database connection.
+//
+// Returns:
+//   - : No explicit return value.
+//
+// Error types:
+//   - error:  A fatal error is logged and the program exits if database migration fails.
 func autoMigrate(db *gorm.DB) {
 	err := db.AutoMigrate(&models.User{}, &models.RevokedToken{}, &models.Novel{},
 		&models.Chapter{}, &models.Tag{}, &models.NovelTag{}, &models.NovelAuthor{}, &models.Author{},

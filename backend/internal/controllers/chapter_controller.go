@@ -160,7 +160,7 @@ func (c *ChapterController) GetChapterByNovelUpdatesIDAndChapterNo(ctx *gin.Cont
 	novelTitle := ctx.Param("novel_title")
 	chapterNo := ctx.Param("chapter_no")
 
-	chapterNoUint, err := utils.ParseID(chapterNo)
+	chapterNoUint, err := utils.ParseUintID(chapterNo)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return

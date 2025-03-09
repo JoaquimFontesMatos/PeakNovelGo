@@ -1,7 +1,7 @@
 package controllers
 
 import (
-	"context"
+	"backend/internal/types"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -148,19 +148,25 @@ func (ac *AuthController) VerifyEmail(c *gin.Context) {
 // StartGoogleAuth initiates the Google OAuth2 flow
 func (ac *AuthController) StartGoogleAuth(c *gin.Context) {
 	// Add the provider name to the request context
-	c.Request = c.Request.WithContext(context.WithValue(c.Request.Context(), "provider", "google"))
-
+	q := c.Request.URL.Query()
+	q.Add("provider", "google") // Add the provider name to the query parameters
+	c.Request.URL.RawQuery = q.Encode()
 	// Start the OAuth2 flow
 	gothic.BeginAuthHandler(c.Writer, c.Request)
 }
 
 // GoogleCallback handles the callback from Google after OAuth2 login
 func (ac *AuthController) GoogleCallback(c *gin.Context) {
+	q := c.Request.URL.Query()
+	q.Add("provider", "google") // Add the provider name to the query parameters
+	c.Request.URL.RawQuery = q.Encode()
+
 	// Complete the OAuth2 flow and get the user's Google profile
 	user, err := gothic.CompleteUserAuth(c.Writer, c.Request)
 	if err != nil {
-		log.Println(err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to authenticate with Google"})
+		log.Println("Error: ", err)
+		utils.HandleError(c, types.WrapError("GOOGLE_CALLBACK", "Failed to authenticate with Google",
+			http.StatusInternalServerError, err))
 		return
 	}
 
@@ -209,7 +215,8 @@ func (ac *AuthController) GoogleCallback(c *gin.Context) {
 	// Serialize the userDto to JSON
 	userDtoJSON, err := json.Marshal(userDto)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to serialize user data"})
+		utils.HandleError(c, types.WrapError("SERIALIZE_SER_DATA", "Failed to serialize user data",
+			http.StatusInternalServerError, err))
 		return
 	}
 

@@ -8,34 +8,34 @@ import (
 	"net/smtp"
 	"os"
 
+	"backend/internal/interfaces"
 	"backend/internal/models"
 	"backend/internal/types"
 	"backend/internal/types/errors"
 )
 
-// EmailSender interface allows mocking of SMTP SendMail
-type EmailSender interface {
-	SendMail(addr string, auth smtp.Auth, from string, to []string, msg []byte) error
-}
-
-// SendVerificationEmail sends a verification email to the user.
+// SendVerificationEmail sends a verification email to the given user.
+//
+// It generates a verification URL based on the FRONTEND_URL environment variable (or defaults to "http://localhost:3000") and the user's verification token.
+// The email includes a link to the verification URL, which the user can click to activate their account.
+// If an EmailSender is provided, it uses that to send the email. Otherwise, it falls back to a default SMTP sender using environment variables for SMTP configuration.
 //
 // Parameters:
-//   - user models.User (User struct)
-//   - sender EmailSender (EmailSender interface)
+//  - user (models.User) - The user to whom the verification email should be sent.
+//  - sender (interfaces.EmailSender) - The EmailSender interface to use for sending the email. If nil, a default SMTP sender will be used.
 //
 // Returns:
-//   - INTERNAL_SERVER_ERROR if the email could not be sent
-func SendVerificationEmail(user models.User, sender EmailSender) error {
+//  - error - An error object indicating whether the email was sent successfully.  Returns types.WrapError(errors.EMAIL_SEND, "Failed to send verification email", http.StatusInternalServerError, err) if the email fails to send.
+//
+// Generated on 2024-07-26
+func SendVerificationEmail(user models.User, sender interfaces.EmailSender) error {
 	baseUrl := os.Getenv("FRONTEND_URL")
 	if baseUrl == "" {
 		baseUrl = "http://localhost:3000"
 	}
 
-	// Create the verification URL
 	verificationURL := fmt.Sprintf("%s/auth/activate-account/%s", baseUrl, user.VerificationToken)
 
-	// Compose the email content
 	subject := "Email Verification"
 	escapedUsername := template.HTMLEscapeString(user.Username)
 	escapedVerificationURL := template.HTMLEscapeString(verificationURL)
@@ -46,7 +46,6 @@ func SendVerificationEmail(user models.User, sender EmailSender) error {
 		<p>If you did not request this, please ignore this email.</p>
 	`, escapedUsername, escapedVerificationURL, escapedVerificationURL)
 
-	// Set up the email message
 	from := os.Getenv("SMTP_USERNAME")
 	to := []string{user.Email}
 	message := []byte("To: " + user.Email + "\r\n" +
@@ -55,16 +54,12 @@ func SendVerificationEmail(user models.User, sender EmailSender) error {
 		"\r\n" +
 		body + "\r\n")
 
-	// Create SMTP auth
 	auth := smtp.PlainAuth("", from, os.Getenv("SMTP_PASSWORD"), os.Getenv("SMTP_HOST"))
 
-	// Check if sender is provided, if not, fall back to default sender
 	if sender == nil {
-		// Fall back to a default sender, like an SMTP sender
 		sender = &types.SmtpEmailSender{}
 	}
 
-	// Send the email using the provided EmailSender
 	err := sender.SendMail(os.Getenv("SMTP_HOST")+":"+os.Getenv("SMTP_PORT"), auth, from, to, message)
 	if err != nil {
 		log.Printf("Failed to send verification email: %v", err)

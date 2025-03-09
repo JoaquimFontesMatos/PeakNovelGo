@@ -11,14 +11,25 @@ import (
 	"backend/internal/services"
 	"backend/internal/utils"
 	"fmt"
+	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
 	"log"
 	"os"
 	"path/filepath"
-
-	"github.com/gin-gonic/gin"
-	"github.com/joho/godotenv"
 )
 
+// main is the entry point of the application. It initializes the database connection, sets up routes, and starts the server.
+// It also handles creation of the admin user if it doesn't exist.
+//
+// Parameters:
+//   - None
+//
+// Returns:
+//   - None
+//
+// Error types:
+//   - error:  Various errors can occur during database connection, environment variable loading, file system operations,
+//     or server startup. These are logged but not explicitly returned.
 func main() {
 	err := godotenv.Load()
 	if err != nil {
@@ -113,5 +124,5 @@ func main() {
 	err = r.Run(":" + port)
 	if err != nil {
 		return
-	} // Start server on port 8080
+	}
 }

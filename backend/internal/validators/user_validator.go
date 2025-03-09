@@ -10,14 +10,17 @@ import (
 	"time"
 )
 
-// ValidateUser validates the user input and returns an error if the user is invalid.
+// ValidateUser validates a user model.
+// It checks the email, password, and other user fields for validity.
 //
 // Parameters:
-//   - user (*models.User): A pointer to the User struct containing user information.
+//   - user (*models.User): The user model to validate.
 //
 // Returns:
-//   - VALIDATION_ERROR if the user input is invalid.
-//   - USER_DEACTIVATED if the user's account is deactivated.
+//   - error: An error if any validation fails, nil otherwise.
+//
+// Error types:
+//   - wrapped http.StatusBadRequest errors
 func ValidateUser(user *models.User) error {
 	if err := ValidateEmail(user.Email); err != nil {
 		return err
@@ -44,13 +47,18 @@ func ValidateUser(user *models.User) error {
 	return nil
 }
 
-// ValidatePassword validates if the password is valid
+// ValidatePassword checks if the provided password meets certain criteria.
 //
 // Parameters:
-//   - password string (password)
+//   - password (string): The password to validate.
 //
 // Returns:
-//   - VALIDATION_ERROR if the password is invalid
+//   - error: nil if the password is valid, otherwise an error indicating the reason for invalidity.
+//
+// Error types:
+//   - errors.ErrRequiredPassword: Returned if the password is empty.
+//   - errors.ErrShortPassword: Returned if the password is less than 8 characters long.
+//   - errors.ErrLongPassword: Returned if the password is longer than 72 characters.
 func ValidatePassword(password string) error {
 	if password == "" {
 		return errors.ErrRequiredPassword
@@ -64,13 +72,19 @@ func ValidatePassword(password string) error {
 	return nil
 }
 
-// ValidateEmail validates if the email is valid
+// ValidateEmail checks if the provided email is valid.
 //
 // Parameters:
-//   - email string (email)
+//   - email (string): The email address to validate.
 //
 // Returns:
-//   - VALIDATION_ERROR if the email is invalid
+//   - error: An error if the email is invalid, nil otherwise.
+//
+// Error types:
+//   - errors.ErrEmailRequired: If the email is empty.
+//   - errors.ErrEmailTooLong: If the email is longer than 255 characters.
+//   - errors.ErrInvalidEmailFormat: If the email format is invalid.
+//   - types.WrapError(errors.INVALID_EMAIL, ..., http.StatusBadRequest, ...): If an error occurred during regex matching.
 func ValidateEmail(email string) error {
 	if email == "" {
 		return errors.ErrEmailRequired
@@ -92,13 +106,17 @@ func ValidateEmail(email string) error {
 	return nil
 }
 
-// ValidateUsername validates if the username is valid
+// ValidateUsername checks if the provided username is valid.
 //
 // Parameters:
-//   - username string (username)
+//   - username (string): The username to validate.
 //
 // Returns:
-//   - VALIDATION_ERROR if the username is invalid
+//   - error: An error if the username is invalid, nil otherwise.
+//
+// Error types:
+//   - errors.ErrUsernameRequired: Returned if the username is empty.
+//   - errors.ErrUsernameTooLong: Returned if the username is longer than 255 characters.
 func ValidateUsername(username string) error {
 	if username == "" {
 		return errors.ErrUsernameRequired
@@ -109,14 +127,24 @@ func ValidateUsername(username string) error {
 	return nil
 }
 
-// ValidateUserFields validates the fields being updated and ensures they meet validation criteria.
-// ValidateUserFields validates an UpdateFields struct.
+// ValidateUserFields validates the fields of a user update request.
+// It checks the length of various string fields and validates the date of birth.
 //
 // Parameters:
-//   - fields dtos.UpdateRequest (UpdateRequest struct)
+//   - fields (dtos.UpdateRequest): The user update request fields.
 //
 // Returns:
-//   - VALIDATION_ERROR if the fields are invalid
+//   - error: An error if any of the validations fail, nil otherwise.
+//
+// Error types:
+//   - errors.ErrUsernameTooLong: If the username is too long.
+//   - errors.ErrBioTooLong: If the bio is too long.
+//   - errors.ErrProfilePictureTooLong: If the profile picture URL is too long.
+//   - errors.ErrPreferredLanguageTooLong: If the preferred language is too long.
+//   - errors.ErrReadingPreferencesTooLong: If the reading preferences are too long.
+//   - errors.ErrRolesTooLong: If the roles string is too long.
+//   - errors.INVALID_DATE_OF_BIRTH: If the date of birth is not a valid date or is in the wrong format.
+//   - errors.ErrBirthDateTooYoung: If the user is younger than 18 based on provided date of birth.
 func ValidateUserFields(fields dtos.UpdateRequest) error {
 	// Check the username length
 	if len(fields.Username) > 255 {
@@ -162,13 +190,13 @@ func ValidateUserFields(fields dtos.UpdateRequest) error {
 	return nil
 }
 
-// ValidateIsDeleted validates if the user is deactivated
+// ValidateIsDeleted checks if the user is deleted.
 //
 // Parameters:
-//   - user models.User (User struct)
+//   - user (models.User): The user to check.
 //
 // Returns:
-//   - ErrUserDeactivated if the user is deactivated
+//   - error: errors.ErrUserDeactivatedError if the user is deleted, nil otherwise.
 func ValidateIsDeleted(user models.User) error {
 	if user.IsDeleted {
 		return errors.ErrUserDeactivatedError
@@ -177,14 +205,14 @@ func ValidateIsDeleted(user models.User) error {
 	return nil
 }
 
-// ValidateIsNewPasswordTheSame validates if the new password is the same as the current password
+// ValidateIsNewPasswordTheSame checks if the new password is different from the current password.
 //
 // Parameters:
-//   - currentPassword string (current password)
-//   - newPassword string (new password)
+//   - currentPassword (string): The current user's password.
+//   - newPassword (string): The new password entered by the user.
 //
 // Returns:
-//   - ErrPasswordDiff if the new password is the same as the current password
+//   - error: errors.ErrPasswordDiff if the new password is the same as the current password, nil otherwise.
 func ValidateIsNewPasswordTheSame(currentPassword string, newPassword string) error {
 	if currentPassword == newPassword {
 		return errors.ErrPasswordDiff

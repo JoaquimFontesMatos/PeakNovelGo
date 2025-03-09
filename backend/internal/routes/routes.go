@@ -9,6 +9,18 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// SetupRoutes sets up all the routes for the application.
+//
+// Parameters:
+//   - r (*gin.Engine): The Gin engine to register routes on.
+//   - authController (*controllers.AuthController): The authentication controller.
+//   - userController (*controllers.UserController): The user controller.
+//   - novelController (*controllers.NovelController): The novel controller.
+//   - bookmarkController (*controllers.BookmarkController): The bookmark controller.
+//   - chapterController (*controllers.ChapterController): The chapter controller.
+//   - ttsController (*controllers.TTSController): The TTS controller.
+//   - logController (*controllers.LogController): The log controller.
+//   - middleware (*middleware.Middleware): The middleware to use for authentication and authorization.
 func SetupRoutes(r *gin.Engine,
 	authController *controllers.AuthController,
 	userController *controllers.UserController,

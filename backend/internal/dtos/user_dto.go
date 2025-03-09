@@ -5,13 +5,25 @@ import (
 	"backend/internal/types"
 	"backend/internal/types/errors"
 	"encoding/json"
+	"gorm.io/gorm"
 	"log"
 	"net/http"
 	"time"
-
-	"gorm.io/gorm"
 )
 
+// UserDTO represents a user data transfer object.
+//
+// Fields:
+//   - Username (string): The username of the user.
+//   - Email (string): The email address of the user.
+//   - EmailVerified (bool): Indicates whether the user's email address is verified.
+//   - ProfilePicture (string): The URL of the user's profile picture (optional).
+//   - Bio (string): A short biography of the user (optional).
+//   - Roles (string): A string representing the user's roles (optional).
+//   - LastLogin (time.Time): The timestamp of the user's last login.
+//   - DateOfBirth (time.Time): The user's date of birth.
+//   - PreferredLanguage (string): The user's preferred language (optional).
+//   - ReadingPreferences (ReadingPreferences): The user's reading preferences (optional).
 type UserDTO struct {
 	gorm.Model
 	Username           string             `json:"username"`
@@ -26,7 +38,20 @@ type UserDTO struct {
 	ReadingPreferences ReadingPreferences `json:"readingPreferences,omitempty"`
 }
 
-// ConvertUserModelToDTO converts a User model to a UserDTO.
+// ConvertUserModelToDTO converts a models.User to a UserDTO.  Handles potential errors during JSON unmarshalling of
+// ReadingPreferences.
+//
+// Parameters:
+//   - user (models.User): The user model to convert.
+//
+// Returns:
+//   - UserDTO: The converted UserDTO.
+//   - error: An error occurred during conversion, specifically if the ReadingPreferences field cannot be unmarshalled.
+//     The error type will be either types.Error or an underlying error from json.Unmarshal.
+//
+// Error types:
+//   - types.Error: Wrapped error indicating invalid reading preferences. The original error will be included in the wrapped
+//     error.
 func ConvertUserModelToDTO(user models.User) (UserDTO, error) {
 	var readingPreferences ReadingPreferences
 	if user.ReadingPreferences != "" && user.ReadingPreferences != "null" {
@@ -58,6 +83,17 @@ func ConvertUserModelToDTO(user models.User) (UserDTO, error) {
 }
 
 // ConvertUserDTOToModel converts a UserDTO to a User model.
+//
+// Parameters:
+//   - dto (UserDTO): The UserDTO to convert.
+//
+// Returns:
+//   - models.User: The converted User model.
+//   - error: An error if the conversion fails.  This may include errors related to parsing reading preferences.
+//
+// Error types:
+//   - types.Error:  Wraps underlying errors.  Specifically, errors with code `errors.INVALID_READING_PREFERENCES` will
+//     be returned if the reading preferences JSON cannot be marshaled.  The HTTP status code will be 400 (Bad Request).
 func ConvertUserDTOToModel(dto UserDTO) (models.User, error) {
 	readingPreferencesJSON, err := json.Marshal(dto.ReadingPreferences)
 	if err != nil {

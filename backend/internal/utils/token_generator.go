@@ -28,8 +28,8 @@ func GenerateVerificationToken() string {
 //   - headerValue string (Authorization header value)
 //
 // Returns:
-//   - string (token)
-//   - INVALID_TOKEN_ERROR if the token is invalid
+//   - string (token extracted)
+//   - error (errors.ErrInvalidToken)
 func ExtractToken(headerValue string) (string, error) {
 	if !strings.HasPrefix(headerValue, "Bearer ") {
 		return "", errors.ErrInvalidToken
