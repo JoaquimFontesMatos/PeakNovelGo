@@ -2,9 +2,11 @@ package auth
 
 import (
 	"fmt"
+	"net/http"
+	"os"
+
 	"github.com/gorilla/sessions"
 	"github.com/markbates/goth/gothic"
-	"os"
 
 	"github.com/markbates/goth"
 	"github.com/markbates/goth/providers/google"
@@ -31,10 +33,10 @@ func NewAuth() {
 	store.Options.Path = "/"
 	store.Options.HttpOnly = true
 	store.Options.Secure = os.Getenv("ENVIRONMENT") == "production"
-
+	store.Options.SameSite = http.SameSiteLaxMode
 	gothic.Store = store
 
-	googleCallback := fmt.Sprintf("%s/auth/google/callback", os.Getenv("BACKEND_URL"))
+	googleCallback := fmt.Sprintf("%s/auth/oauth2/google/callback", os.Getenv("BACKEND_URL"))
 
 	goth.UseProviders(
 		google.New(os.Getenv("GOOGLE_CLIENT_ID"), os.Getenv("GOOGLE_CLIENT_SECRET"), googleCallback, "email", "profile"),

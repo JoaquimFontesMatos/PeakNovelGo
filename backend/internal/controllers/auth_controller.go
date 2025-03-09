@@ -1,11 +1,8 @@
 package controllers
 
 import (
-	"backend/internal/types"
-	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"net/url"
 	"os"
@@ -73,7 +70,6 @@ func (ac *AuthController) Login(c *gin.Context) {
 	}
 
 	userDto, err := dtos.ConvertUserModelToDTO(*user)
-
 	if err != nil {
 		utils.HandleError(c, err)
 		return
@@ -104,7 +100,6 @@ func (ac *AuthController) RefreshToken(ctx *gin.Context) {
 	}
 
 	userDto, err := dtos.ConvertUserModelToDTO(*user)
-
 	if err != nil {
 		utils.HandleError(ctx, err)
 		return
@@ -147,31 +142,29 @@ func (ac *AuthController) VerifyEmail(c *gin.Context) {
 }
 
 // StartGoogleAuth initiates the Google OAuth2 flow
-func (ac *AuthController) StartGoogleAuth(c *gin.Context) {
-	// Set provider explicitly in the context
-	c.Request = c.Request.WithContext(context.WithValue(c.Request.Context(), "provider", "google"))
+func (ac *AuthController) StartOAuth2(c *gin.Context) {
+	provider := c.Param("provider")
+	q := c.Request.URL.Query()
+	q.Add("provider", provider)
+	c.Request.URL.RawQuery = q.Encode()
 
-	session, _ := gothic.Store.Get(r, gothic.SessionName)
+	session, _ := gothic.Store.Get(c.Request, gothic.SessionName)
 	session.Values["provider"] = provider
-	err := session.Save(c.Writer, c.Request)
-	if err != nil {
-		return 
-	}
+	session.Save(c.Request, c.Writer)
 
-	// Start OAuth2 flow
 	gothic.BeginAuthHandler(c.Writer, c.Request)
 }
 
 // GoogleCallback handles the callback from Google after OAuth2 login
 func (ac *AuthController) GoogleCallback(c *gin.Context) {
-	gothic.GetProviderName = func(r *http.Request) (string, error) { return "google", nil }
+	provider := c.Param("provider")
+	q := c.Request.URL.Query()
+	q.Add("provider", provider)
+	c.Request.URL.RawQuery = q.Encode()
 
-	// Complete the OAuth2 flow and get the user's Google profile
 	user, err := gothic.CompleteUserAuth(c.Writer, c.Request)
 	if err != nil {
-		log.Println("Error: ", err)
-		utils.HandleError(c, types.WrapError("GOOGLE_CALLBACK", "Failed to authenticate with Google",
-			http.StatusInternalServerError, err))
+		c.String(http.StatusBadRequest, fmt.Sprint(err))
 		return
 	}
 
@@ -190,13 +183,13 @@ func (ac *AuthController) GoogleCallback(c *gin.Context) {
 			Provider:       user.Provider,
 		}
 		if err := ac.UserService.RegisterUser(newUser); err != nil {
-			utils.HandleError(c, err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create user"})
 			return
 		}
 
 		createdUser, err := ac.UserService.GetUserByEmail(user.Email)
 		if err != nil {
-			utils.HandleError(c, err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get user"})
 			return
 		}
 
@@ -206,22 +199,20 @@ func (ac *AuthController) GoogleCallback(c *gin.Context) {
 	// Generate JWT tokens for the user
 	accessToken, refreshToken, err := ac.AuthService.GenerateToken(existingUser)
 	if err != nil {
-		utils.HandleError(c, err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate tokens"})
 		return
 	}
 
 	userDto, err := dtos.ConvertUserModelToDTO(*existingUser)
-
 	if err != nil {
-		utils.HandleError(c, err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
 	// Serialize the userDto to JSON
 	userDtoJSON, err := json.Marshal(userDto)
 	if err != nil {
-		utils.HandleError(c, types.WrapError("SERIALIZE_SER_DATA", "Failed to serialize user data",
-			http.StatusInternalServerError, err))
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to serialize user data"})
 		return
 	}
 
