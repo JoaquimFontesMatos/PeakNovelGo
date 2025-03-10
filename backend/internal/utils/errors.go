@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"backend/internal/dtos"
 	"backend/internal/types"
 	"errors"
 	"net/http"
@@ -12,22 +13,22 @@ import (
 // If the error implements HTTPError, it uses its status and error code; otherwise, it returns a generic 500 error response.
 //
 // Parameters:
-// 	- c *gin.Context (context of the request)
-// 	- err error (error to be handled)
+//   - c *gin.Context (context of the request)
+//   - err error (error to be handled)
 func HandleError(c *gin.Context, err error) {
 	var httpErr types.HTTPError
 
+	errorResponse := dtos.ErrorResponse{
+		Error: "Internal server error",
+		Code:  "INTERNAL_ERROR",
+	}
+
 	if errors.As(err, &httpErr) {
-		c.JSON(httpErr.HTTPStatus(), gin.H{
-			"error": httpErr.Error(),
-			"code":  httpErr.ErrorCode(),
-		})
+		errorResponse.Code = httpErr.ErrorCode()
+		errorResponse.Error = httpErr.Error()
+		c.JSON(httpErr.HTTPStatus(), errorResponse)
 		return
 	}
 
-	// Fallback for untyped errors
-	c.JSON(http.StatusInternalServerError, gin.H{
-		"error": "Internal server error",
-		"code":  "INTERNAL_ERROR",
-	})
+	c.JSON(http.StatusInternalServerError, errorResponse)
 }

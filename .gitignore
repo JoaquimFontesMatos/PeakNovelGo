@@ -36,3 +36,5 @@ backend/novel_updates_scraper/__pycache__/
 backend/novel_updates_scraper/.idea/
 
 .idea/
+/backend/docs/
+/backend/tmp/

@@ -2,6 +2,7 @@ package main
 
 import (
 	"backend/config"
+	_ "backend/docs"
 	"backend/internal/auth"
 	"backend/internal/controllers"
 	"backend/internal/middleware"
@@ -18,18 +19,36 @@ import (
 	"path/filepath"
 )
 
-// main is the entry point of the application. It initializes the database connection, sets up routes, and starts the server.
-// It also handles creation of the admin user if it doesn't exist.
-//
-// Parameters:
-//   - None
-//
-// Returns:
-//   - None
-//
-// Error types:
-//   - error:  Various errors can occur during database connection, environment variable loading, file system operations,
-//     or server startup. These are logged but not explicitly returned.
+// gin-swagger middleware
+// swagger embed files
+
+//	@title			PeakNovelGo API
+//	@version		1.0.12
+//	@description	This is the api of the peaknovelgo website.
+//	@termsOfService	http://swagger.io/terms/
+
+//	@contact.name	API Support
+//	@contact.url	http://www.swagger.io/support
+//	@contact.email	support@swagger.io
+
+//	@license.name	Apache 2.0
+//	@license.url	http://www.apache.org/licenses/LICENSE-2.0.html
+
+//	@host		localhost:8081
+//	@BasePath	/
+
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
+// @description Type "Bearer" followed by a space and the JWT token.
+
+// @securityDefinitions.apikey RefreshBearerAuth
+// @in header
+// @name Authorization
+// @description Type "Bearer" followed by a space and the refresh token.
+
+// @externalDocs.description	OpenAPI
+// @externalDocs.url			https://swagger.io/resources/open-api/
 func main() {
 	err := godotenv.Load()
 	if err != nil {

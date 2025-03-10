@@ -3,10 +3,11 @@ package routes
 import (
 	"backend/internal/controllers"
 	"backend/internal/middleware"
+	"github.com/gin-gonic/gin"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 	"net/http"
 	"os"
-
-	"github.com/gin-gonic/gin"
 )
 
 // SetupRoutes sets up all the routes for the application.
@@ -47,6 +48,8 @@ func SetupRoutes(r *gin.Engine,
 	r.Static("/tts-files", "./tts-files")
 
 	r.StaticFile("/", "./static/index.html")
+
+	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	log := r.Group("/log")
 	{

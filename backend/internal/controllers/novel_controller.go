@@ -45,6 +45,23 @@ func NewNovelController(novelService interfaces.NovelServiceInterface) *NovelCon
 // Error types:
 //   - error:  Any error that occurs during the creation of the novel.  This will result in an appropriate HTTP error
 //     response being sent.
+
+// HandleImportNovelByNovelUpdatesID handles the import of a novel using its NovelUpdates ID.
+//
+// @Summary Get novel by ID
+// @Description This function retrieves a novel's data from NovelUpdates using its ID, creates a new novel entry in the database, and returns the created novel. If an error occurs during the process, it logs the error and returns an appropriate HTTP error response.
+// @Tags Novels
+// @Accept json
+// @Produce json
+// @Param novel_updates_id path string true "NovelUpdatesID"
+// @Success 200 {object} models.Novel
+// @Failure 400 {object} dtos.ErrorResponse
+// @Failure 404 {object} dtos.ErrorResponse
+// @Failure 409 {object} dtos.ErrorResponse
+// @Failure 500 {object} dtos.ErrorResponse
+// @Failure 503 {object} dtos.ErrorResponse
+// @Security BearerAuth
+// @Router /novels/{novel_updates_id} [post]
 func (n *NovelController) HandleImportNovelByNovelUpdatesID(ctx *gin.Context) {
 	novelUpdatesID := ctx.Param("novel_updates_id")
 
@@ -61,16 +78,20 @@ func (n *NovelController) HandleImportNovelByNovelUpdatesID(ctx *gin.Context) {
 
 // GetNovelsByAuthorName retrieves novels by author name, handling pagination and validation.
 //
-// Parameters:
-//   - ctx (*gin.Context): Gin context.
-//
-// Returns:
-//   - :  Paginated list of novels is sent as a JSON response. An error response is sent if any error occurs.
-//
-// Error types:
-//   - errors.ErrNoResults: Returned when no novels are found for the given author.
-//   - errors.ErrPageOutOfRange: Returned when the requested page is out of range.
-//   - error:  Various other errors during database interaction or parameter parsing.
+// @Summary Get novels by author name
+// @Description Retrieves a paginated list of novels written by a specific author.
+// @Tags Novels
+// @Accept json
+// @Produce json
+// @Param author_name path string true "Author name"
+// @Param page query int false "Page number (default: 1)"
+// @Param limit query int false "Number of items per page (default: 10)"
+// @Success 200 {object} dtos.PaginatedResponse
+// @Failure 400 {object} dtos.ErrorResponse
+// @Failure 404 {object} dtos.ErrorResponse
+// @Failure 500 {object} dtos.ErrorResponse
+// @Failure 503 {object} dtos.ErrorResponse
+// @Router /novels/authors/{author_name} [get]
 func (n *NovelController) GetNovelsByAuthorName(ctx *gin.Context) {
 	authorName := ctx.Param("author_name")
 
@@ -108,18 +129,22 @@ func (n *NovelController) GetNovelsByAuthorName(ctx *gin.Context) {
 	utils.BuildPaginatedResponse(ctx, novels, total, page, limit)
 }
 
-// GetNovelsByGenreName retrieves novels based on genre name, pagination, and limit.
+// GetNovelsByGenreName retrieves novels by genre name, handling pagination and validation.
 //
-// Parameters:
-//   - ctx (*gin.Context): the Gin context.
-//
-// Returns:
-//   - :  Paginated list of novels is sent as a JSON response. An error response is sent if any error occurs.
-//
-// Error types:
-//   - errors.ErrNoResults: Returned when no novels are found for the given genre.
-//   - errors.ErrPageOutOfRange: Returned when the requested page is out of range.
-//   - error:  Various other errors during database interaction or parameter parsing.
+// @Summary Get novels by genre name
+// @Description Retrieves a paginated list of novels written by a specific genre.
+// @Tags Novels
+// @Accept json
+// @Produce json
+// @Param genre_name path string true "Genre name"
+// @Param page query int false "Page number (default: 1)"
+// @Param limit query int false "Number of items per page (default: 10)"
+// @Success 200 {object} dtos.PaginatedResponse
+// @Failure 400 {object} dtos.ErrorResponse
+// @Failure 404 {object} dtos.ErrorResponse
+// @Failure 500 {object} dtos.ErrorResponse
+// @Failure 503 {object} dtos.ErrorResponse
+// @Router /novels/genres/{genre_name} [get]
 func (n *NovelController) GetNovelsByGenreName(ctx *gin.Context) {
 	genreName := ctx.Param("genre_name")
 
@@ -157,18 +182,22 @@ func (n *NovelController) GetNovelsByGenreName(ctx *gin.Context) {
 	utils.BuildPaginatedResponse(ctx, novels, total, page, limit)
 }
 
-// GetNovelsByTagName retrieves novels based on tag name, pagination, and limit.
+// GetNovelsByTagName retrieves novels by tag name, handling pagination and validation.
 //
-// Parameters:
-//   - ctx (*gin.Context): the Gin context.
-//
-// Returns:
-//   - :  Paginated list of novels is sent as a JSON response. An error response is sent if any error occurs.
-//
-// Error types:
-//   - errors.ErrNoResults: Returned when no novels are found for the given tag.
-//   - errors.ErrPageOutOfRange: Returned when the requested page is out of range.
-//   - error:  Various other errors during database interaction or parameter parsing.
+// @Summary Get novels by tag name
+// @Description Retrieves a paginated list of novels written by a specific tag.
+// @Tags Novels
+// @Accept json
+// @Produce json
+// @Param tag_name path string true "Tag name"
+// @Param page query int false "Page number (default: 1)"
+// @Param limit query int false "Number of items per page (default: 10)"
+// @Success 200 {object} dtos.PaginatedResponse
+// @Failure 400 {object} dtos.ErrorResponse
+// @Failure 404 {object} dtos.ErrorResponse
+// @Failure 500 {object} dtos.ErrorResponse
+// @Failure 503 {object} dtos.ErrorResponse
+// @Router /novels/tags/{tag_name} [get]
 func (n *NovelController) GetNovelsByTagName(ctx *gin.Context) {
 	tagName := ctx.Param("tag_name")
 
@@ -208,16 +237,19 @@ func (n *NovelController) GetNovelsByTagName(ctx *gin.Context) {
 
 // GetNovels retrieves a paginated list of novels.
 //
-// Parameters:
-//   - ctx (*gin.Context): the Gin context.
-//
-// Returns:
-//   - : a paginated list of novels. Returns a JSON response containing the novels, total count, page number, and limit.
-//     Error responses are handled within the function.
-//
-// Error types:
-//   - *errors.Error: Various error types are handled, including database errors, invalid parameters, and out-of-range
-//     page requests. Specific error types are defined in the `errors` package.
+// @Summary Get novels
+// @Description Retrieves a paginated list of novels.
+// @Tags Novels
+// @Accept json
+// @Produce json
+// @Param page query int false "Page number (default: 1)"
+// @Param limit query int false "Number of items per page (default: 10)"
+// @Success 200 {object} dtos.PaginatedResponse
+// @Failure 400 {object} dtos.ErrorResponse
+// @Failure 404 {object} dtos.ErrorResponse
+// @Failure 500 {object} dtos.ErrorResponse
+// @Failure 503 {object} dtos.ErrorResponse
+// @Router /novels/ [get]
 func (n *NovelController) GetNovels(ctx *gin.Context) {
 	// Parse parameters
 	page, err := utils.ParsePage(ctx.Query("page"))
@@ -256,17 +288,18 @@ func (n *NovelController) GetNovels(ctx *gin.Context) {
 
 // GetNovelByID retrieves a novel by its ID.
 //
-// Parameters:
-//   - ctx (*gin.Context): the Gin context.
-//
-// Returns:
-//   - : a novel. Returns a JSON response containing the fetched novel.
-//     Error responses are handled within the function.
-//
-// Error types:
-//   - *utils.Error: if the novel is not found or another error occurs during retrieval.  The specific error will be
-//     handled and responded to via `utils.HandleError`.
-//   - error: if the provided novel ID is invalid.  A 400 Bad Request response will be returned with the error message.
+// @Summary Get novel by ID
+// @Description Retrieves a novel by its ID.
+// @Tags Novels
+// @Accept json
+// @Produce json
+// @Param novel_id path string true "Novel ID"
+// @Success 200 {object} models.Novel
+// @Failure 400 {object} dtos.ErrorResponse
+// @Failure 404 {object} dtos.ErrorResponse
+// @Failure 500 {object} dtos.ErrorResponse
+// @Failure 503 {object} dtos.ErrorResponse
+// @Router /novels/{novel_id} [get]
 func (n *NovelController) GetNovelByID(ctx *gin.Context) {
 	idParam := ctx.Param("novel_id")
 	id, err := utils.ParseUintID(idParam)
@@ -286,16 +319,18 @@ func (n *NovelController) GetNovelByID(ctx *gin.Context) {
 
 // GetNovelByUpdatesID retrieves a novel based on its title (which acts as the updates ID).
 //
-// Parameters:
-//   - ctx (*gin.Context): the Gin context.
-//
-// Returns:
-//   - : a novel. Returns a JSON response containing the fetched novel.
-//     Error responses are handled within the function.
-//
-// Error types:
-//   - error: various errors may occur during database retrieval or other operations.  The specific error will be handled
-//     and returned via the Gin context.
+// @Summary Get novel by NovelByUpdatesID
+// @Description Retrieves a novel based on its title (which acts as the updates ID).
+// @Tags Novels
+// @Accept json
+// @Produce json
+// @Param title path string true "NovelUpdatesID"
+// @Success 200 {object} models.Novel
+// @Failure 400 {object} dtos.ErrorResponse
+// @Failure 404 {object} dtos.ErrorResponse
+// @Failure 500 {object} dtos.ErrorResponse
+// @Failure 503 {object} dtos.ErrorResponse
+// @Router /novels/title/{title} [get]
 func (n *NovelController) GetNovelByUpdatesID(ctx *gin.Context) {
 	title := ctx.Param("title")
 

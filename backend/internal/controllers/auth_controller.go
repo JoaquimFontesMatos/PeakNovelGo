@@ -46,6 +46,19 @@ func (ac *AuthController) Register(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{"message": "User registered successfully"})
 }
 
+// Login handles user login and returns a JWT token.
+//
+// @Summary User login
+// @Description Authenticates a user and returns a JWT token.
+// @Tags Auth
+// @Accept json
+// @Produce json
+// @Param credentials body dtos.LoginRequest true "Login credentials"
+// @Success 200 {object} dtos.AuthSession
+// @Failure 400 {object} dtos.ErrorResponse
+// @Failure 401 {object} dtos.ErrorResponse
+// @Failure 500 {object} dtos.ErrorResponse
+// @Router /auth/login [post]
 func (ac *AuthController) Login(c *gin.Context) {
 	var req dtos.LoginRequest // Define a login request struct
 
@@ -75,12 +88,14 @@ func (ac *AuthController) Login(c *gin.Context) {
 		return
 	}
 
+	authSession := dtos.AuthSession{
+		User:         userDto,
+		RefreshToken: refreshToken,
+		AccessToken:  accessToken,
+	}
+
 	// Respond with the access token and user info
-	c.JSON(http.StatusOK, gin.H{
-		"accessToken":  accessToken,
-		"refreshToken": refreshToken,
-		"user":         userDto,
-	})
+	c.JSON(http.StatusOK, authSession)
 }
 
 func (ac *AuthController) RefreshToken(ctx *gin.Context) {

@@ -171,12 +171,12 @@ func (s *NovelService) GetNovels(page, limit int) ([]models.Novel, int64, error)
 //   - errors.ErrNovelNotFound: Returned if no novel with the given NovelUpdates ID exists in the database.
 //   - errors.ErrGettingNovel: Returned if an error occurred while retrieving the novel from the database.
 func (s *NovelService) GetNovelByUpdatesID(novelUpdatesID string) (*models.Novel, error) {
-	novelUpdatesID, err := utils.NewNovelUpdatesIDParser().Parse(novelUpdatesID)
+	parsedNovelUpdatesID, err := utils.NewNovelUpdatesIDParser().Parse(novelUpdatesID)
 	if err != nil {
 		return nil, err
 	}
 
-	return s.repo.GetNovelByUpdatesID(novelUpdatesID)
+	return s.repo.GetNovelByUpdatesID(parsedNovelUpdatesID)
 }
 
 // GetNovelByID retrieves a novel from the repository based on its ID.
