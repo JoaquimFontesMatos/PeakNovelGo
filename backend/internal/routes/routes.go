@@ -3,12 +3,25 @@ package routes
 import (
 	"backend/internal/controllers"
 	"backend/internal/middleware"
+	"github.com/gin-gonic/gin"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 	"net/http"
 	"os"
-
-	"github.com/gin-gonic/gin"
 )
 
+// SetupRoutes sets up all the routes for the application.
+//
+// Parameters:
+//   - r (*gin.Engine): The Gin engine to register routes on.
+//   - authController (*controllers.AuthController): The authentication controller.
+//   - userController (*controllers.UserController): The user controller.
+//   - novelController (*controllers.NovelController): The novel controller.
+//   - bookmarkController (*controllers.BookmarkController): The bookmark controller.
+//   - chapterController (*controllers.ChapterController): The chapter controller.
+//   - ttsController (*controllers.TTSController): The TTS controller.
+//   - logController (*controllers.LogController): The log controller.
+//   - middleware (*middleware.Middleware): The middleware to use for authentication and authorization.
 func SetupRoutes(r *gin.Engine,
 	authController *controllers.AuthController,
 	userController *controllers.UserController,
@@ -16,7 +29,8 @@ func SetupRoutes(r *gin.Engine,
 	bookmarkController *controllers.BookmarkController,
 	chapterController *controllers.ChapterController,
 	ttsController *controllers.TTSController,
-	logController *controllers.LogController) {
+	logController *controllers.LogController,
+	middleware *middleware.Middleware) {
 
 	r.Use(func(c *gin.Context) {
 		c.Writer.Header().Set("Access-Control-Allow-Origin", os.Getenv("FRONTEND_URL"))
@@ -35,6 +49,8 @@ func SetupRoutes(r *gin.Engine,
 
 	r.StaticFile("/", "./static/index.html")
 
+	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+
 	log := r.Group("/log")
 	{
 		log.POST("/", logController.SaveLog)
@@ -49,8 +65,8 @@ func SetupRoutes(r *gin.Engine,
 		auth.POST("/refresh-token", middleware.RefreshTokenMiddleware(), authController.RefreshToken)
 		auth.GET("/verify-email", authController.VerifyEmail)
 		auth.POST("/logout", middleware.RefreshTokenMiddleware(), authController.Logout)
-		auth.GET("/google", authController.StartGoogleAuth)
-		auth.GET("/google/callback", authController.GoogleCallback)
+		auth.GET("/oauth2/:provider", authController.StartOAuth2)
+		auth.GET("/oauth2/:provider/callback", authController.Oauth2Callback)
 	}
 
 	user := r.Group("/user")
@@ -66,14 +82,14 @@ func SetupRoutes(r *gin.Engine,
 
 	novel := r.Group("/novels")
 	{
-		novel.POST("/", middleware.AuthMiddleware(), novelController.HandleImportNovel)
-		novel.POST("/:novel_updates_id", middleware.AuthMiddleware(), novelController.HandleImportNovelByNovelUpdatesID)
+		novel.POST("/:novel_updates_id", middleware.AuthMiddleware(), middleware.PermissionMiddleware("novels", "create"), novelController.HandleImportNovelByNovelUpdatesID)
 		novel.GET("/", novelController.GetNovels)
 		novel.GET("/authors/:author_name", novelController.GetNovelsByAuthorName)
 		novel.GET("/genres/:genre_name", novelController.GetNovelsByGenreName)
 		novel.GET("/tags/:tag_name", novelController.GetNovelsByTagName)
 		novel.GET("/:novel_id", novelController.GetNovelByID)
 		novel.GET("/title/:title", novelController.GetNovelByUpdatesID)
+		novel.GET("/update", middleware.AuthMiddleware(), middleware.PermissionMiddleware("novels", "update"), novelController.HandleBatchUpdateNovels)
 
 		chapters := novel.Group("/chapters")
 		{

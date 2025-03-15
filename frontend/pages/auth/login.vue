@@ -34,7 +34,7 @@ const handleEnterSignUp = () => {
 };
 
 const loginWithGoogle = () => {
-  window.location.href = url + '/auth/google';
+  window.location.href = url + '/auth/oauth2/google';
 };
 </script>
 

@@ -3,117 +3,113 @@ package repositories
 import (
 	"backend/internal/models"
 	"backend/internal/types"
+	"backend/internal/types/errors"
 	"log"
+	"net/http"
 
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 )
 
-// NovelRepository struct represents a repository for novel management.
+// NovelRepository represents a repository for interacting with novel data.
+// It embeds the BaseRepository to inherit common database operations.
 type NovelRepository struct {
-	db *gorm.DB
+	*BaseRepository
 }
 
-// NewNovelRepository creates a new NovelRepository instance
+// NewNovelRepository creates a new NovelRepository.
 //
 // Parameters:
-//   - db *gorm.DB (Gorm database connection)
+//   - db (*gorm.DB): The database connection.
 //
 // Returns:
-//   - *NovelRepository (pointer to the NovelRepository instance)
+//   - *NovelRepository: A pointer to the newly created NovelRepository.
 func NewNovelRepository(db *gorm.DB) *NovelRepository {
-	return &NovelRepository{db: db}
+	return &NovelRepository{
+		BaseRepository: NewBaseRepository(db),
+	}
 }
 
-// CreateNovel creates a new novel in the database.
+// CreateNovel creates a new novel in the database, handling associated tags, authors, and genres.  It checks for existing
+// records and creates them if necessary, preventing duplicates.
 //
 // Parameters:
-//   - novel models.Novel (Novel struct)
+//   - novel (models.Novel): The novel data to be created.  This includes tags, authors, and genres which will be processed.
 //
 // Returns:
-//   - *models.Novel (pointer to Novel struct)
-//   - CONFLICT_ERROR if the novel already exists
-//   - INTERNAL_SERVER_ERROR if the novel could not be created
+//   - *models.Novel: A pointer to the newly created novel.  Returns nil if an error occurs.
+//   - error: An error object indicating the failure, or nil if successful.  Specific error types are detailed below.
+//
+// Error types:
+//   - errors.ErrDatabaseOffline: Indicates that the database is offline and cannot be accessed.
+//   - types.WrappedError (errors.TAG_ASSOCIATION_ERROR): Wrapped error indicating failure during tag creation or association.
+//   - types.WrappedError (errors.AUTHOR_ASSOCIATION_ERROR): Wrapped error indicating failure during author creation or association.
+//   - types.WrappedError (errors.GENRE_ASSOCIATION_ERROR): Wrapped error indicating failure during genre creation or association.
+//   - errors.ErrImportingNovel: A generic error indicating failure during novel creation.
 func (n *NovelRepository) CreateNovel(novel models.Novel) (*models.Novel, error) {
+	if n.IsDown() {
+		return nil, errors.ErrDatabaseOffline
+	}
+
 	n.db.Logger = n.db.Logger.LogMode(logger.Silent)
 
-	if IsNovelCreated := n.isNovelCreated(novel); IsNovelCreated {
-		return nil, types.WrapError("CONFLICT_ERROR", "Novel already exists", nil)
+	// Process relationships
+	newTags, err := n.processTags(novel.Tags)
+	if err != nil {
+		return nil, err
 	}
-
-	// Initialize slices for the new relationships
-	var newTags []models.Tag
-	var newAuthors []models.Author
-	var newGenres []models.Genre
-
-	// Process tags
-	for _, tag := range novel.Tags {
-		var existingTag models.Tag
-
-		if tag.Name == "" {
-			continue // Skip empty tags
-		}
-
-		err := n.db.Where("name = ?", tag.Name).FirstOrCreate(&existingTag, models.Tag{
-			Name:        tag.Name,
-			Description: tag.Description,
-		}).Error
-
-		if err != nil {
-			return nil, types.WrapError(types.INTERNAL_SERVER_ERROR, "Failed to associate tag", err)
-		}
-
-		newTags = append(newTags, existingTag) // Append to the newTags slice
+	newAuthors, err := n.processAuthors(novel.Authors)
+	if err != nil {
+		return nil, err
 	}
-
-	// Process authors
-	for _, author := range novel.Authors {
-		var existingAuthor models.Author
-
-		if author.Name == "" {
-			continue // Skip empty authors
-		}
-
-		err := n.db.Where("name = ?", author.Name).FirstOrCreate(&existingAuthor, models.Author{
-			Name: author.Name,
-		}).Error
-
-		if err != nil {
-			return nil, types.WrapError(types.INTERNAL_SERVER_ERROR, "Failed to associate author", err)
-		}
-
-		newAuthors = append(newAuthors, existingAuthor) // Append to the newAuthors slice
+	newGenres, err := n.processGenres(novel.Genres)
+	if err != nil {
+		return nil, err
 	}
-
-	// Process genres
-	for _, genre := range novel.Genres {
-		var existingGenre models.Genre
-
-		if genre.Name == "" {
-			continue // Skip empty genres
-		}
-
-		err := n.db.Where("name = ?", genre.Name).FirstOrCreate(&existingGenre, models.Genre{
-			Name:        genre.Name,
-			Description: genre.Description,
-		}).Error
-
-		if err != nil {
-			return nil, types.WrapError(types.INTERNAL_SERVER_ERROR, "Failed to associate genre", err)
-		}
-
-		newGenres = append(newGenres, existingGenre) // Append to the newGenres slice
-	}
-
-	// Update the novel with associated relationships
-	novel.Tags = newTags
-	novel.Authors = newAuthors
-	novel.Genres = newGenres
 
 	// Save the novel with relationships
-	if err := n.db.Create(&novel).Error; err != nil {
+	if err := n.db.Where(models.Novel{NovelUpdatesID: novel.NovelUpdatesID}).Assign(
+		models.Novel{
+			Title:            novel.Title,
+			Synopsis:         novel.Synopsis,
+			CoverUrl:         novel.CoverUrl,
+			NovelUpdatesUrl:  novel.NovelUpdatesUrl,
+			LatestChapter:    novel.LatestChapter,
+			Year:             novel.Year,
+			Language:         novel.Language,
+			ReleaseFrequency: novel.ReleaseFrequency,
+			Status:           novel.Status,
+		}).
+		FirstOrCreate(&novel).Error; err != nil {
 		log.Println(err)
-		return nil, types.WrapError("INTERNAL_SERVER_ERROR", "Failed to create novel", err)
+		return nil, errors.ErrImportingNovel
+	}
+
+	// Replace associations with Append to avoid duplicates
+	if err := n.db.Model(&novel).Association("Tags").Clear(); err != nil {
+		log.Println("Error updating tags:", err)
+		return nil, err
+	}
+	if err := n.db.Model(&novel).Association("Genres").Clear(); err != nil {
+		log.Println("Error updating genres:", err)
+		return nil, err
+	}
+	if err := n.db.Model(&novel).Association("Authors").Clear(); err != nil {
+		log.Println("Error updating authors:", err)
+		return nil, err
+	}
+	// Replace associations with Append to avoid duplicates
+	if err := n.db.Model(&novel).Association("Tags").Append(newTags); err != nil {
+		log.Println("Error updating tags:", err)
+		return nil, err
+	}
+	if err := n.db.Model(&novel).Association("Genres").Append(newGenres); err != nil {
+		log.Println("Error updating genres:", err)
+		return nil, err
+	}
+	if err := n.db.Model(&novel).Association("Authors").Append(newAuthors); err != nil {
+		log.Println("Error updating authors:", err)
+		return nil, err
 	}
 
 	return &novel, nil
@@ -122,10 +118,10 @@ func (n *NovelRepository) CreateNovel(novel models.Novel) (*models.Novel, error)
 // isNovelCreated checks if a novel with the given URL already exists in the database.
 //
 // Parameters:
-//   - novel models.Novel (Novel struct)
+//   - novel (models.Novel): Novel struct
 //
 // Returns:
-//   - bool (true if the novel already exists, false otherwise)
+//   - bool: true if the novel already exists, false otherwise
 func (n *NovelRepository) isNovelCreated(novel models.Novel) bool {
 	var existingNovel models.Novel
 	if err := n.db.Where("novel_updates_id = ?", novel.NovelUpdatesID).First(&existingNovel).Error; err != nil {
@@ -134,18 +130,27 @@ func (n *NovelRepository) isNovelCreated(novel models.Novel) bool {
 	return existingNovel.ID != 0
 }
 
-// GetNovels gets a list of novels.
+// GetNovels retrieves a paginated list of all the novels
 //
 // Parameters:
-//   - page int (page number)
-//   - limit int (limit of novels per page)
+//   - page (int): The page number for pagination (1-based).
+//   - limit (int): The maximum number of novels to return per page.
 //
 // Returns:
-//   - []models.Novel (list of Novel structs)
-//   - int64 (total number of novels)
-//   - INTERNAL_SERVER_ERROR if the novels could not be fetched
-//   - NO_NOVELS_ERROR if the novels could not be fetched
+//   - []models.Novel: A slice of novels.
+//   - int64: The total number of novels.
+//   - error: An error object indicating any issues encountered during the retrieval process.
+//
+// Error types:
+//   - errors.ErrDatabaseOffline: Returned if the database is offline.
+//   - errors.ErrNoNovels: Returned if no novels are found.
+//   - errors.ErrGettingTotalNovels: Returned if an error occurs while retrieving the total number of novels.
+//   - errors.ErrGettingNovels: Returned if an error occurs while retrieving the novels themselves.
 func (n *NovelRepository) GetNovels(page, limit int) ([]models.Novel, int64, error) {
+	if n.IsDown() {
+		return nil, 0, errors.ErrDatabaseOffline
+	}
+
 	var novels []models.Novel
 	var total int64
 
@@ -154,10 +159,10 @@ func (n *NovelRepository) GetNovels(page, limit int) ([]models.Novel, int64, err
 		Count(&total).Error; err != nil {
 
 		if err.Error() == "record not found" {
-			return nil, 0, types.WrapError(types.NO_NOVELS_ERROR, "No novels found", nil)
+			return nil, 0, errors.ErrNoNovels
 		}
 
-		return nil, 0, types.WrapError(types.INTERNAL_SERVER_ERROR, "Failed to get the total number of novels", err)
+		return nil, 0, errors.ErrGettingTotalNovels
 	}
 
 	// Apply pagination and ordering
@@ -170,27 +175,36 @@ func (n *NovelRepository) GetNovels(page, limit int) ([]models.Novel, int64, err
 		Find(&novels).Error; err != nil {
 
 		if err.Error() == "record not found" {
-			return nil, 0, types.WrapError(types.NO_NOVELS_ERROR, "No novels found", nil)
+			return nil, 0, errors.ErrNoNovels
 		}
 
-		return nil, 0, types.WrapError(types.INTERNAL_SERVER_ERROR, "Failed to fetch novels", err)
+		return nil, 0, errors.ErrGettingNovels
 	}
 	return novels, total, nil
 }
 
-// GetNovelsByGenreName gets a list of novels by genre name.
+// GetNovelsByGenreName retrieves a paginated list of novels by a given genre.
 //
 // Parameters:
-//   - genreName string (name of the genre)
-//   - page int (page number)
-//   - limit int (limit of novels per page)
+//   - genreName (string): The name of the genre to search for.
+//   - page (int): The page number for pagination (1-based).
+//   - limit (int): The maximum number of novels to return per page.
 //
 // Returns:
-//   - []models.Novel (list of Novel structs)
-//   - int64 (total number of novels)
-//   - INTERNAL_SERVER_ERROR if the novels could not be fetched
-//   - NO_NOVELS_ERROR if the novels could not be fetched
+//   - []models.Novel: A slice of novels matching the genre.
+//   - int64: The total number of novels by the genre.
+//   - error: An error object indicating any issues encountered during the retrieval process.
+//
+// Error types:
+//   - errors.ErrDatabaseOffline: Returned if the database is offline.
+//   - errors.ErrNoNovels: Returned if no novels are found for the given genre.
+//   - errors.ErrGettingTotalNovels: Returned if an error occurs while retrieving the total number of novels.
+//   - errors.ErrGettingNovels: Returned if an error occurs while retrieving the novels themselves.
 func (n *NovelRepository) GetNovelsByGenreName(genreName string, page, limit int) ([]models.Novel, int64, error) {
+	if n.IsDown() {
+		return nil, 0, errors.ErrDatabaseOffline
+	}
+
 	var novels []models.Novel
 	var total int64
 
@@ -202,10 +216,10 @@ func (n *NovelRepository) GetNovelsByGenreName(genreName string, page, limit int
 		Count(&total).Error; err != nil {
 
 		if err.Error() == "record not found" {
-			return nil, 0, types.WrapError(types.NO_NOVELS_ERROR, "No novels found", nil)
+			return nil, 0, errors.ErrNoNovels
 		}
 
-		return nil, 0, types.WrapError(types.INTERNAL_SERVER_ERROR, "Failed to get the total number of novels", err)
+		return nil, 0, errors.ErrGettingTotalNovels
 	}
 
 	// Apply pagination and ordering
@@ -222,28 +236,37 @@ func (n *NovelRepository) GetNovelsByGenreName(genreName string, page, limit int
 		Find(&novels).Error; err != nil {
 
 		if err.Error() == "record not found" {
-			return nil, 0, types.WrapError(types.NO_NOVELS_ERROR, "No novels found", nil)
+			return nil, 0, errors.ErrNoNovels
 		}
 
-		return nil, 0, types.WrapError(types.INTERNAL_SERVER_ERROR, "Failed to fetch novels", err)
+		return nil, 0, errors.ErrGettingNovels
 	}
 
 	return novels, total, nil
 }
 
-// GetNovelsByTagName gets a list of novels by tag name.
+// GetNovelsByTagName retrieves a paginated list of novels by a given tag.
 //
 // Parameters:
-//   - tagName string (name of the tag)
-//   - page int (page number)
-//   - limit int (limit of novels per page)
+//   - tagName (string): The name of the tag to search for.
+//   - page (int): The page number for pagination (1-based).
+//   - limit (int): The maximum number of novels to return per page.
 //
 // Returns:
-//   - []models.Novel (list of Novel structs)
-//   - int64 (total number of novels)
-//   - INTERNAL_SERVER_ERROR if the novels could not be fetched
-//   - NO_NOVELS_ERROR if the novels could not be fetched
+//   - []models.Novel: A slice of novels matching the tag.
+//   - int64: The total number of novels by the tag.
+//   - error: An error object indicating any issues encountered during the retrieval process.
+//
+// Error types:
+//   - errors.ErrDatabaseOffline: Returned if the database is offline.
+//   - errors.ErrNoNovels: Returned if no novels are found for the given tag.
+//   - errors.ErrGettingTotalNovels: Returned if an error occurs while retrieving the total number of novels.
+//   - errors.ErrGettingNovels: Returned if an error occurs while retrieving the novels themselves.
 func (n *NovelRepository) GetNovelsByTagName(tagName string, page, limit int) ([]models.Novel, int64, error) {
+	if n.IsDown() {
+		return nil, 0, errors.ErrDatabaseOffline
+	}
+
 	var novels []models.Novel
 	var total int64
 
@@ -255,10 +278,10 @@ func (n *NovelRepository) GetNovelsByTagName(tagName string, page, limit int) ([
 		Count(&total).Error; err != nil {
 
 		if err.Error() == "record not found" {
-			return nil, 0, types.WrapError(types.NO_NOVELS_ERROR, "No novels found", nil)
+			return nil, 0, errors.ErrNoNovels
 		}
 
-		return nil, 0, types.WrapError(types.INTERNAL_SERVER_ERROR, "Failed to get the total number of novels", err)
+		return nil, 0, errors.ErrGettingTotalNovels
 	}
 
 	// Apply pagination and ordering
@@ -275,28 +298,37 @@ func (n *NovelRepository) GetNovelsByTagName(tagName string, page, limit int) ([
 		Find(&novels).Error; err != nil {
 
 		if err.Error() == "record not found" {
-			return nil, 0, types.WrapError(types.NO_NOVELS_ERROR, "No novels found", nil)
+			return nil, 0, errors.ErrNoNovels
 		}
 
-		return nil, 0, types.WrapError(types.INTERNAL_SERVER_ERROR, "Failed to fetch novels", err)
+		return nil, 0, errors.ErrGettingNovels
 	}
 
 	return novels, total, nil
 }
 
-// GetNovelsByAuthorName gets a list of novels by author name.
+// GetNovelsByAuthorName retrieves a paginated list of novels by a given author name.
 //
 // Parameters:
-//   - authorName string (name of the author)
-//   - page int (page number)
-//   - limit int (limit of novels per page)
+//   - authorName (string): The name of the author to search for.
+//   - page (int): The page number for pagination (1-based).
+//   - limit (int): The maximum number of novels to return per page.
 //
 // Returns:
-//   - []models.Novel (list of Novel structs)
-//   - int64 (total number of novels)
-//   - INTERNAL_SERVER_ERROR if the novels could not be fetched
-//   - NO_NOVELS_ERROR if the novels could not be fetched
+//   - []models.Novel: A slice of novels matching the author's name.
+//   - int64: The total number of novels by the author.
+//   - error: An error object indicating any issues encountered during the retrieval process.
+//
+// Error types:
+//   - errors.ErrDatabaseOffline: Returned if the database is offline.
+//   - errors.ErrNoNovels: Returned if no novels are found for the given author.
+//   - errors.ErrGettingTotalNovels: Returned if an error occurs while retrieving the total number of novels.
+//   - errors.ErrGettingNovels: Returned if an error occurs while retrieving the novels themselves.
 func (n *NovelRepository) GetNovelsByAuthorName(authorName string, page, limit int) ([]models.Novel, int64, error) {
+	if n.IsDown() {
+		return nil, 0, errors.ErrDatabaseOffline
+	}
+
 	var novels []models.Novel
 	var total int64
 
@@ -308,10 +340,10 @@ func (n *NovelRepository) GetNovelsByAuthorName(authorName string, page, limit i
 		Count(&total).Error; err != nil {
 
 		if err.Error() == "record not found" {
-			return nil, 0, types.WrapError(types.NO_NOVELS_ERROR, "No novels found", nil)
+			return nil, 0, errors.ErrNoNovels
 		}
 
-		return nil, 0, types.WrapError(types.INTERNAL_SERVER_ERROR, "Failed to get the total number of novels", err)
+		return nil, 0, errors.ErrGettingTotalNovels
 	}
 
 	// Apply pagination and ordering
@@ -327,24 +359,33 @@ func (n *NovelRepository) GetNovelsByAuthorName(authorName string, page, limit i
 		Find(&novels).Error; err != nil {
 
 		if err.Error() == "record not found" {
-			return nil, 0, types.WrapError(types.NO_NOVELS_ERROR, "No novels found", nil)
+			return nil, 0, errors.ErrNoNovels
 		}
 
-		return nil, 0, types.WrapError(types.INTERNAL_SERVER_ERROR, "Failed to fetch novels", err)
+		return nil, 0, errors.ErrGettingNovels
 	}
 	return novels, total, nil
 }
 
-// GetNovelByID gets a novel by ID.
+// GetNovelByID retrieves a novel from the database based on its ID.
+// It preloads the associated authors, genres, and tags.
 //
 // Parameters:
-//   - id uint (ID of the novel)
+//   - id (uint): The ID of the novel to retrieve.
 //
 // Returns:
-//   - *models.Novel (pointer to Novel struct)
-//   - INTERNAL_SERVER_ERROR if the novel could not be fetched
-//   - NOVEL_NOT_FOUND_ERROR if the novel could not be fetched
+//   - *models.Novel: A pointer to the retrieved novel, or nil if not found.
+//   - error: An error object indicating the reason for failure, if any.
+//
+// Error types:
+//   - errors.ErrDatabaseOffline: Returned if the database is offline.
+//   - errors.ErrNovelNotFound: Returned if the novel with the given ID is not found.
+//   - errors.ErrGettingNovel: Returned if there's a general error retrieving the novel.
 func (n *NovelRepository) GetNovelByID(id uint) (*models.Novel, error) {
+	if n.IsDown() {
+		return nil, errors.ErrDatabaseOffline
+	}
+
 	var novel models.Novel
 	if err := n.db.Where("id = ?", id).
 		Preload("Authors").
@@ -354,24 +395,32 @@ func (n *NovelRepository) GetNovelByID(id uint) (*models.Novel, error) {
 		Error; err != nil {
 
 		if err.Error() == "record not found" {
-			return nil, types.WrapError(types.NOVEL_NOT_FOUND_ERROR, "No novels found", nil)
+			return nil, errors.ErrNovelNotFound
 		}
 
-		return nil, types.WrapError(types.INTERNAL_SERVER_ERROR, "Failed to fetch novel", err)
+		return nil, errors.ErrGettingNovel
 	}
 	return &novel, nil
 }
 
-// GetNovelByUpdatesID gets a novel by NovelUpdatesID.
+// GetNovelByUpdatesID retrieves a novel from the database based on its NovelUpdates ID.
 //
 // Parameters:
-//   - NovelUpdatesID string (NovelUpdatesID of the novel)
+//   - title (string): The NovelUpdates ID of the novel.
 //
 // Returns:
-//   - *models.Novel (pointer to Novel struct)
-//   - INTERNAL_SERVER_ERROR if the novel could not be fetched
-//   - NOVEL_NOT_FOUND_ERROR if the novel could not be fetched
+//   - *models.Novel: A pointer to the retrieved novel, or nil if not found.
+//   - error: An error object indicating the type of error encountered, or nil if the operation was successful.
+//
+// Error types:
+//   - errors.ErrDatabaseOffline: Returned if the database is offline.
+//   - errors.ErrNovelNotFound: Returned if no novel with the given NovelUpdates ID exists in the database.
+//   - errors.ErrGettingNovel: Returned if an error occurred while retrieving the novel from the database.
 func (n *NovelRepository) GetNovelByUpdatesID(title string) (*models.Novel, error) {
+	if n.IsDown() {
+		return nil, errors.ErrDatabaseOffline
+	}
+
 	var novel models.Novel
 	if err := n.db.Where("novel_updates_id = ?", title).
 		Preload("Authors").
@@ -379,10 +428,129 @@ func (n *NovelRepository) GetNovelByUpdatesID(title string) (*models.Novel, erro
 		Preload("Tags").
 		First(&novel).Error; err != nil {
 		if err.Error() == "record not found" {
-			return nil, types.WrapError(types.NOVEL_NOT_FOUND_ERROR, "No novels found", nil)
+			return nil, errors.ErrNovelNotFound
 		}
 
-		return nil, types.WrapError(types.INTERNAL_SERVER_ERROR, "Failed to fetch novel", err)
+		return nil, errors.ErrGettingNovel
 	}
 	return &novel, nil
+}
+
+// processTags processes a list of tags, ensuring they exist in the database.
+// It iterates through the input tags and either retrieves existing tags or creates new ones if they don't exist.
+// Empty tag names are skipped.
+//
+// Parameters:
+//   - tags ([]models.Tag): A slice of tag structs to process.
+//
+// Returns:
+//   - []models.Tag: A slice of processed tags, containing either existing or newly created tags.  Each tag will
+//     have a valid ID.
+//   - error: An error if there's a problem creating or retrieving a tag from the database.  The error will wrap a more
+//     specific error for better diagnostics.
+//
+// Error types:
+//   - types.Error: Wraps errors.TAG_ASSOCIATION_ERROR with a descriptive message and HTTP status code
+//     (http.StatusInternalServerError) if there's an issue with database operations related to tag creation or retrieval.
+func (n *NovelRepository) processTags(tags []models.Tag) ([]models.Tag, error) {
+	var newTags []models.Tag
+
+	for _, tag := range tags {
+		if tag.Name == "" {
+			continue // Skip empty tags
+		}
+
+		var existingTag models.Tag
+		err := n.db.Where("name = ?", tag.Name).FirstOrCreate(&existingTag, models.Tag{
+			Name:        tag.Name,
+			Description: tag.Description,
+		}).Error
+
+		if err != nil {
+			return nil, types.WrapError(errors.TAG_ASSOCIATION_ERROR, "Failed to create tag", http.StatusInternalServerError, err)
+		}
+
+		newTags = append(newTags, existingTag)
+	}
+
+	return newTags, nil
+}
+
+// processAuthors processes a list of authors, ensuring they exist in the database.
+// It iterates through the input authors and either retrieves existing authors or creates new ones if they don't exist.
+// Empty author names are skipped.
+//
+// Parameters:
+//   - authors ([]models.Author): A slice of authors structs to process.
+//
+// Returns:
+//   - []models.Author: A slice of processed authors, containing either existing or newly created authors.  Each author will
+//     have a valid ID.
+//   - error: An error if there's a problem creating or retrieving an author from the database.  The error will wrap a more
+//     specific error for better diagnostics.
+//
+// Error types:
+//   - types.Error: Wraps errors.AUTHOR_ASSOCIATION_ERROR with a descriptive message and HTTP status code
+//     (http.StatusInternalServerError) if there's an issue with database operations related to author creation or retrieval.func (n *NovelRepository) processAuthors(authors []models.Author) ([]models.Author, error) {
+func (n *NovelRepository) processAuthors(authors []models.Author) ([]models.Author, error) {
+	var newAuthors []models.Author
+
+	for _, author := range authors {
+		if author.Name == "" {
+			continue // Skip empty authors
+		}
+
+		var existingAuthor models.Author
+		err := n.db.Where("name = ?", author.Name).FirstOrCreate(&existingAuthor, models.Author{
+			Name: author.Name,
+		}).Error
+
+		if err != nil {
+			return nil, types.WrapError(errors.AUTHOR_ASSOCIATION_ERROR, "Failed to create author", http.StatusInternalServerError, err)
+		}
+
+		newAuthors = append(newAuthors, existingAuthor)
+	}
+
+	return newAuthors, nil
+}
+
+// processGenres processes a list of genres, ensuring they exist in the database.
+// It iterates through the input genres and either retrieves existing genres or creates new ones if they don't exist.
+// Empty genre names are skipped.
+//
+// Parameters:
+//   - genres ([]models.Genre): A slice of genre structs to process.
+//
+// Returns:
+//   - []models.Genre: A slice of processed genres, containing either existing or newly created genres.  Each genre will
+//     have a valid ID.
+//   - error: An error if there's a problem creating or retrieving a genre from the database.  The error will wrap a more
+//     specific error for better diagnostics.
+//
+// Error types:
+//   - types.Error: Wraps errors.GENRE_ASSOCIATION_ERROR with a descriptive message and HTTP status code
+//     (http.StatusInternalServerError) if there's an issue with database operations related to genre creation or retrieval.
+func (n *NovelRepository) processGenres(genres []models.Genre) ([]models.Genre, error) {
+	var newGenres []models.Genre
+
+	for _, genre := range genres {
+		if genre.Name == "" {
+			continue // Skip empty genres
+		}
+
+		var existingGenre models.Genre
+		err := n.db.Where("name = ?", genre.Name).FirstOrCreate(&existingGenre, models.Genre{
+			Name:        genre.Name,
+			Description: genre.Description,
+		}).Error
+
+		if err != nil {
+			return nil, types.WrapError(errors.GENRE_ASSOCIATION_ERROR, "Failed to create genre", http.StatusInternalServerError, err)
+		}
+
+		newGenres = append(newGenres, existingGenre)
+	}
+
+	return newGenres, nil
 }

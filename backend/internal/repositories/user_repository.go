@@ -2,9 +2,11 @@ package repositories
 
 import (
 	"log"
+	"net/http"
 
 	"backend/internal/models"
 	"backend/internal/types"
+	"backend/internal/types/errors"
 	"backend/internal/validators"
 
 	"gorm.io/gorm"
@@ -36,7 +38,7 @@ func NewUserRepository(db *gorm.DB) *UserRepository {
 func (r *UserRepository) CreateUser(user *models.User) error {
 	if err := r.db.Create(user).Error; err != nil {
 		log.Printf("Failed to insert user: %v", err)
-		return types.WrapError(types.INTERNAL_SERVER_ERROR, "Failed to insert user", err)
+		return types.WrapError(errors.CREATING_USER_ERROR, "Failed to insert user", http.StatusInternalServerError, err)
 	}
 	return nil
 }
@@ -55,7 +57,7 @@ func (r *UserRepository) GetUserByID(id uint) (*models.User, error) {
 
 	if err := r.db.First(user, id).Error; err != nil {
 		log.Printf("Failed to fetch user: %v", err)
-		return nil, types.WrapError(types.USER_NOT_FOUND_ERROR, "User not found", err)
+		return nil, types.WrapError(errors.USER_NOT_FOUND, "User not found", http.StatusNotFound, err)
 	}
 
 	if err := validators.ValidateIsDeleted(*user); err != nil {
@@ -79,7 +81,7 @@ func (r *UserRepository) GetUserByVerificationToken(token string) (*models.User,
 
 	if err := r.db.Where("verification_token = ?", token).First(user).Error; err != nil {
 		log.Printf("Failed to fetch user: %v", err)
-		return nil, types.WrapError(types.USER_NOT_FOUND_ERROR, "User not found", err)
+		return nil, types.WrapError(errors.USER_NOT_FOUND, "User not found", http.StatusNotFound, err)
 	}
 
 	if err := validators.ValidateIsDeleted(*user); err != nil {
@@ -99,7 +101,7 @@ func (r *UserRepository) GetUserByVerificationToken(token string) (*models.User,
 func (r *UserRepository) UpdateUser(user *models.User) error {
 	if err := r.db.Save(user).Error; err != nil {
 		log.Printf("Failed to update user: %v", err)
-		return types.WrapError(types.INTERNAL_SERVER_ERROR, "Failed to update user", err)
+		return types.WrapError(errors.UPDATING_USER_ERROR, "Failed to update user", http.StatusInternalServerError, err)
 	}
 
 	return nil
@@ -131,7 +133,7 @@ func (r *UserRepository) GetUserByEmail(email string) (*models.User, error) {
 
 	if err := r.db.Where("email = ?", email).First(user).Error; err != nil {
 		log.Printf("Failed to fetch user: %v", err)
-		return nil, types.WrapError(types.USER_NOT_FOUND_ERROR, "User not found", err)
+		return nil, types.WrapError(errors.USER_NOT_FOUND, "User not found", http.StatusNotFound, err)
 	}
 
 	if err := validators.ValidateIsDeleted(*user); err != nil {
@@ -156,7 +158,7 @@ func (r *UserRepository) GetUserByUsername(username string) (*models.User, error
 	if err := r.db.Where("username = ?", username).First(user).Error; err != nil {
 		log.Printf("Failed to fetch user: %v", err)
 
-		return nil, types.WrapError(types.USER_NOT_FOUND_ERROR, "User not found", err)
+		return nil, types.WrapError(errors.USER_NOT_FOUND, "User not found", http.StatusNotFound, err)
 	}
 
 	if err := validators.ValidateIsDeleted(*user); err != nil {
@@ -184,12 +186,12 @@ func (r *UserRepository) UpdateUserEmail(userID uint, newEmail string, token str
 		})
 
 	if result.RowsAffected == 0 {
-		return types.WrapError(types.INTERNAL_SERVER_ERROR, "User not found or already deleted", nil)
+		return types.WrapError(errors.USER_NOT_FOUND, "User not found", http.StatusNotFound, nil)
 	}
 
 	if result.Error != nil {
 		log.Printf("Failed to update user email: %v", result.Error)
-		return types.WrapError(types.INTERNAL_SERVER_ERROR, "Failed to update user email", result.Error)
+		return types.WrapError(errors.UPDATING_FIELDS_ERROR, "Failed to update user email", http.StatusInternalServerError, result.Error)
 	}
 
 	return nil
@@ -207,7 +209,7 @@ func (r *UserRepository) UpdateUserFields(userID uint, fields interface{}) error
 	// Update user fields
 	if err := r.db.Model(&models.User{}).Where("id = ?", userID).Updates(fields).Error; err != nil {
 		log.Printf("Failed to update user fields: %v", err)
-		return types.WrapError(types.INTERNAL_SERVER_ERROR, "Failed to update user fields", err)
+		return types.WrapError(errors.UPDATING_FIELDS_ERROR, "Failed to update user fields", http.StatusInternalServerError, err)
 	}
 	return nil
 }

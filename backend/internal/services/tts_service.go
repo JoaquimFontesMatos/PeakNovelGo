@@ -3,10 +3,12 @@ package services
 import (
 	"backend/internal/dtos"
 	"backend/internal/types"
+	myErrors "backend/internal/types/errors"
 	"errors"
 	"fmt"
 	"io"
 	"log"
+	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
@@ -29,20 +31,20 @@ type Paragraph struct {
 
 // Define supported voices as a map for fast lookup
 var supportedVoices = map[string]bool{
-	"en-US-AriaNeural":        true,
-	"en-GB-LibbyNeural":       true,
-	"es-ES-ElviraNeural":      true,
-	"en-US-SteffanNeural":     true,
-	"en-US-JennyNeural":       true,
-	"en-US-MichelleNeural":    true,
-	"en-US-EricNeural":        true,
-	"en-US-ChristopherNeural": true,
-	"en-US-AnaNeural":         true,
-	"en-GB-SoniaNeural":       true,
-	"en-US-AvaNeural":         true,
-	"en-US-GuyNeural": true,
-	"en-US-RogerNeural":        true,
-	"en-US-AvaMultilingualNeural":        true,
+	"en-US-AriaNeural":            true,
+	"en-GB-LibbyNeural":           true,
+	"es-ES-ElviraNeural":          true,
+	"en-US-SteffanNeural":         true,
+	"en-US-JennyNeural":           true,
+	"en-US-MichelleNeural":        true,
+	"en-US-EricNeural":            true,
+	"en-US-ChristopherNeural":     true,
+	"en-US-AnaNeural":             true,
+	"en-GB-SoniaNeural":           true,
+	"en-US-AvaNeural":             true,
+	"en-US-GuyNeural":             true,
+	"en-US-RogerNeural":           true,
+	"en-US-AvaMultilingualNeural": true,
 
 	// Add more voices as needed
 }
@@ -88,10 +90,10 @@ func (s *TTSService) GenerateTTSFile(paragraphs []Paragraph, voice string, rate 
 
 			ioWriter, err := s.generateFile(paragraph.Filepath)
 			if err != nil {
-				var myError *types.MyError
+				var myError *types.MyCustomError
 				if errors.As(err, &myError) {
 					switch myError.Code {
-					case types.TTS_FILE_ALREADY_EXISTS_ERROR:
+					case myErrors.TTS_FILE_ALREADY_EXISTS_ERROR:
 						return
 					}
 				}
@@ -124,7 +126,7 @@ func (s *TTSService) GenerateTTSFile(paragraphs []Paragraph, voice string, rate 
 func (s *TTSService) generateFile(filePath string) (io.Writer, error) {
 	// Check if file already exists before creating it
 	if _, err := os.Stat(filePath); err == nil {
-		return nil, types.WrapError("TTS_FILE_ALREADY_EXISTS_ERROR", "File already exists", err)
+		return nil, types.WrapError(myErrors.TTS_FILE_ALREADY_EXISTS_ERROR, "File already exists", http.StatusInternalServerError, err)
 	}
 	return os.Create(filePath)
 }
@@ -186,7 +188,7 @@ func isOnlyDots(s string) bool {
 func (s *TTSService) GenerateTTSMap(ttsRequest *dtos.TTSRequest, baseURL string) ([]Paragraph, error) {
 	err := os.MkdirAll(s.OutputDir, 0755)
 	if err != nil {
-		return nil, types.WrapError(types.INTERNAL_SERVER_ERROR, "An error occurred while creating tts directory", err)
+		return nil, types.WrapError(myErrors.CREATING_TTS_FILE_DIR_ERROR, "An error occurred while creating tts directory", http.StatusInternalServerError, err)
 	}
 
 	paragraphs := s.GenerateParagraphs(ttsRequest, baseURL)

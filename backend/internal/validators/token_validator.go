@@ -1,7 +1,7 @@
 package validators
 
 import (
-	"backend/internal/types"
+	"backend/internal/types/errors"
 
 	"time"
 )
@@ -9,11 +9,11 @@ import (
 // IsVerificationTokenExpired checks if the verification token is expired.
 //
 // Parameters:
-//   - createdAt time.Time (time when the token was created)
-//   - emailVerified bool (whether the email has been verified)
+//   - createdAt (time.Time): time when the token was created
+//   - emailVerified (bool):whether the email has been verified
 //
 // Returns:
-//   - bool (true if the token is expired, false otherwise)
+//   - bool: true if the token is expired, false otherwise
 func IsVerificationTokenExpired(createdAt time.Time, emailVerified bool) bool {
 	timeDifference := time.Since(createdAt)
 
@@ -24,20 +24,20 @@ func IsVerificationTokenExpired(createdAt time.Time, emailVerified bool) bool {
 	return false
 }
 
-// ValidateToken validates the token and ensures it is valid.
+// ValidateToken checks if a token is valid.
 //
 // Parameters:
-//   - token string (token)
+//   - token (string): The token to validate.
 //
 // Returns:
-//   - INVALID_TOKEN if the token is invalid
+//   - error: An error (errors.ErrInvalidToken) if the token is invalid, nil otherwise.
 func ValidateToken(token string) error {
 	if token == "" {
-		return types.WrapError(types.INVALID_TOKEN_ERROR, "token is required", nil)
+		return errors.ErrInvalidToken
 	}
 
 	if len(token) > 255 {
-		return types.WrapError(types.INVALID_TOKEN_ERROR, "token cannot be longer than 255 characters", nil)
+		return errors.ErrInvalidToken
 	}
 
 	return nil

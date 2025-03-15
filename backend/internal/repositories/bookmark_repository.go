@@ -3,7 +3,9 @@ package repositories
 import (
 	"backend/internal/models"
 	"backend/internal/types"
+	"backend/internal/types/errors"
 	"log"
+	"net/http"
 
 	"gorm.io/gorm"
 )
@@ -46,10 +48,10 @@ func (b *BookmarkRepository) GetBookmarkedNovelsByUserID(userID uint, page, limi
 		Where("bookmarked_novels.user_id = ?", userID).
 		Count(&total).Error; err != nil {
 		if err.Error() == "record not found" {
-			return nil, 0, types.WrapError(types.NO_NOVELS_ERROR, "No novels found", nil)
+			return nil, 0, errors.ErrNoBookmarks
 		}
 
-		return nil, 0, types.WrapError(types.INTERNAL_SERVER_ERROR, "Failed to get the total number of bookmarked novels", err)
+		return nil, 0, types.WrapError(errors.GETTING_TOTAL_BOOKMARKS, "Failed to get the total number of bookmarked novels", http.StatusInternalServerError, err)
 	}
 
 	// Apply pagination and ordering
@@ -62,10 +64,10 @@ func (b *BookmarkRepository) GetBookmarkedNovelsByUserID(userID uint, page, limi
 		Find(&novels).Error; err != nil {
 
 		if err.Error() == "record not found" {
-			return nil, 0, types.WrapError(types.NO_NOVELS_ERROR, "No novels found", nil)
+			return nil, 0, errors.ErrNoBookmarks
 		}
 
-		return nil, 0, types.WrapError(types.INTERNAL_SERVER_ERROR, "Failed to fetch novels", err)
+		return nil, 0, types.WrapError(errors.GETTING_BOOKMARKS, "Failed to fetch novels", http.StatusInternalServerError, err)
 	}
 
 	return novels, total, nil
@@ -89,10 +91,10 @@ func (b *BookmarkRepository) GetBookmarkByUserIDAndNovelID(userID uint, novelID 
 		First(&novel).Error; err != nil {
 
 		if err.Error() == "record not found" {
-			return novel, types.WrapError(types.NOVEL_NOT_FOUND_ERROR, "Novel not found", nil)
+			return novel, errors.ErrNoBookmarks
 		}
 
-		return novel, types.WrapError(types.INTERNAL_SERVER_ERROR, "Failed to fetch bookmarked novel", err)
+		return novel, types.WrapError(errors.GETTING_BOOKMARK, "Failed to fetch bookmarked novel", http.StatusInternalServerError, err)
 	}
 	return novel, nil
 }
@@ -115,10 +117,10 @@ func (b *BookmarkRepository) UpdateBookmark(novel models.BookmarkedNovel) (model
 		Error; err != nil {
 
 		if err.Error() == "record not found" {
-			return novel, types.WrapError(types.NOVEL_NOT_FOUND_ERROR, "Novel not found", nil)
+			return novel, errors.ErrNoBookmarks
 		}
 
-		return novel, types.WrapError(types.INTERNAL_SERVER_ERROR, "Failed to update bookmarked novel", err)
+		return novel, types.WrapError(errors.UPDATING_BOOKMARK, "Failed to update bookmarked novel", http.StatusInternalServerError, err)
 	}
 	return novel, nil
 }
@@ -134,13 +136,13 @@ func (b *BookmarkRepository) UpdateBookmark(novel models.BookmarkedNovel) (model
 //   - INTERNAL_SERVER_ERROR if the bookmarked novel could not be created
 func (b *BookmarkRepository) CreateBookmark(bookmarkedNovel models.BookmarkedNovel) (*models.BookmarkedNovel, error) {
 	if IsBookmarkedNovelCreated := b.isBookmarkCreated(bookmarkedNovel); IsBookmarkedNovelCreated {
-		return nil, types.WrapError(types.CONFLICT_ERROR, "Bookmarked novel already exists", nil)
+		return nil, errors.ErrBookmarkConflict
 	}
 
 	// Save the bookmarked novel
 	if err := b.db.Create(&bookmarkedNovel).Error; err != nil {
 		log.Println(err)
-		return nil, types.WrapError(types.INTERNAL_SERVER_ERROR, "Failed to create bookmarked novel", err)
+		return nil, types.WrapError(errors.IMPORTING_BOOKMARK, "Failed to create bookmarked novel", http.StatusInternalServerError, err)
 	}
 
 	return &bookmarkedNovel, nil
@@ -178,10 +180,10 @@ func (b *BookmarkRepository) DeleteBookmark(userID uint, novelID uint) error {
 
 	if err != nil {
 		if err.Error() == "record not found" {
-			return types.WrapError(types.NOVEL_NOT_FOUND_ERROR, "Novel not found", nil)
+			return errors.ErrBookmarkNotFound
 		}
 
-		return types.WrapError(types.INTERNAL_SERVER_ERROR, "Failed to delete bookmarked novel", err)
+		return types.WrapError(errors.DELETING_BOOKMARK, "Failed to delete bookmarked novel", http.StatusInternalServerError, err)
 	}
 	return nil
 }

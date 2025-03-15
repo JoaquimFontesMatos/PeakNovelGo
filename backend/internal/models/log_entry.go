@@ -2,7 +2,15 @@ package models
 
 import "encoding/json"
 
-// LogEntry defines the structure of a log entry.
+// LogEntry represents a log entry.
+//
+// Fields:
+//   - ID (uint): The unique identifier of the log entry.
+//   - Level (string): The severity level of the log entry (e.g., "DEBUG", "INFO", "ERROR").
+//   - Message (string): The message of the log entry.
+//   - Timestamp (string): The timestamp of the log entry.
+//   - Context (string): Optional context information related to the log entry.
+//   - Error (string): Optional error message associated with the log entry.
 type LogEntry struct {
 	ID   uint   `gorm:"primarykey" json:"id"`
 	Level     string `json:"level"`
@@ -12,7 +20,15 @@ type LogEntry struct {
 	Error     string `json:"error,omitempty"`
 }
 
-// ImportedLogEntry defines the structure of a log entry.
+// ImportedLogEntry represents a log entry imported from an external source.  It contains the log level, message, timestamp, context, and any associated error.
+//
+// Fields:
+//   - ID (uint): The unique identifier of the log entry.  Omitted when not available.
+//   - Level (string): The severity level of the log entry (e.g., "DEBUG", "INFO", "ERROR").
+//   - Message (string): The main message of the log entry.
+//   - Timestamp (string): The timestamp of when the log entry was created.
+//   - Context (map[string]interface{}):  A map containing additional contextual information related to the log entry. Omitted when not available.
+//   - Error (json.RawMessage):  The error associated with the log entry, if any.  Stored as a RawMessage to avoid unmarshalling issues with unknown error types. Omitted when no error occurred.
 type ImportedLogEntry struct {
 	ID        uint                   `json:"id,omitempty"`
 	Level     string                 `json:"level"`
@@ -22,7 +38,21 @@ type ImportedLogEntry struct {
 	Error     json.RawMessage        `json:"error,omitempty"`
 }
 
-// ConvertToDTO converts a LogEntry model to an ImportedLogEntry DTO.
+// ConvertToDTO converts a LogEntry to an ImportedLogEntry.
+//
+// It handles JSON unmarshalling of the Context and Error fields,
+// returning an error if unmarshalling fails.  If the Context or Error fields are empty strings,
+// the corresponding fields in the ImportedLogEntry will be nil or empty.
+//
+// Parameters:
+//  - log (*LogEntry): The LogEntry to convert.
+//
+// Returns:
+//   - ImportedLogEntry: The converted ImportedLogEntry.
+//   - error: An error if JSON unmarshalling fails.  Nil if successful.
+//
+// Error types:
+//   - json.UnmarshalTypeError: If the JSON in Context or Error fields is invalid.
 func (log *LogEntry) ConvertToDTO() (ImportedLogEntry, error) {
 	var contextMap map[string]interface{}
 	if log.Context != "" {
@@ -49,6 +79,18 @@ func (log *LogEntry) ConvertToDTO() (ImportedLogEntry, error) {
 }
 
 // ConvertToModel converts an ImportedLogEntry DTO to a LogEntry model.
+//
+// It marshals the Context and Error fields (which are maps and json.RawMessage respectively) into JSON strings before assigning them to the LogEntry struct.  Any marshaling errors are returned.
+//
+// Parameters:
+//  - dto (*ImportedLogEntry): The ImportedLogEntry DTO to convert.
+//
+// Returns:
+//   - LogEntry: The converted LogEntry model.
+//   - error: An error encountered during JSON marshaling of the Context or Error fields.  Returns an empty LogEntry if an error occurs.
+//
+// Error types:
+//   - json.MarshalError: If marshaling the Context or Error field fails.
 func (dto *ImportedLogEntry) ConvertToModel() (LogEntry, error) {
 	// Marshal Context field (map) to a JSON string
 	contextBytes, err := json.Marshal(dto.Context)

@@ -1,80 +1,59 @@
 package types
 
-// MyError struct represents a custom error with a code and message.
-type MyError struct {
-	Code    ErrorType
-	Message string
-	Err     error
+// HTTPError is an interface that defines the common methods for an HTTP error.
+type HTTPError interface {
+	error
+	HTTPStatus() int
+	ErrorCode() string
+}
+
+// MyCustomError MyError is a custom error type that implements the HTTPError interface.
+type MyCustomError struct {
+	Message    string
+	StatusCode int
+	Code       string
+	Wrapped    error
 }
 
 // Error returns the error message.
 //
 // Returns:
-//   - string (error message)
-func (e *MyError) Error() string {
-	return e.Message
-}
+//   - string (The error message.)
+func (e *MyCustomError) Error() string { return e.Message }
 
-// WrapError wraps an error with a code and message.
-//
-// Parameters:
-//   - code string (error code)
-//   - message string (error message)
-//   - err error (error to wrap)
+// HTTPStatus returns the HTTP status code.
 //
 // Returns:
-//   - *MyError (MyError struct)
-func WrapError(code ErrorType, message string, err error) *MyError {
-	return &MyError{
-		Code:    code,
-		Message: message,
-		Err:     err,
+//   - int (The HTTP status code.)
+func (e *MyCustomError) HTTPStatus() int { return e.StatusCode }
+
+// ErrorCode returns the error code.
+//
+// Returns:
+//   - string (The error code.)
+func (e *MyCustomError) ErrorCode() string { return e.Code }
+
+// WrappedError returns the wrapped error.
+//
+// Returns:
+//   - error (The wrapped error.)
+func (e *MyCustomError) WrappedError() error { return e.Wrapped }
+
+// WrapError wraps an error with a custom error type.
+//
+// Parameters:
+//   - code (string): Error code.
+//   - message (string): Error message.
+//   - statusCode (int): HTTP status code.
+//   - err (error): The original error being wrapped.
+//
+// Returns:
+//   - *MyCustomError: A pointer to the wrapped error.
+func WrapError(code string, message string, statusCode int, err error) *MyCustomError {
+	return &MyCustomError{
+		Code:       code,
+		StatusCode: statusCode,
+		Message:    message,
+		Wrapped:    err,
 	}
 }
-
-type ErrorType string
-
-const (
-	VALIDATION_ERROR            ErrorType = "VALIDATION_ERROR"
-	REPOSITORY_ERROR            ErrorType = "REPOSITORY_ERROR"
-	SERVICE_ERROR               ErrorType = "SERVICE_ERROR"
-	AUTHENTICATION_ERROR        ErrorType = "AUTHENTICATION_ERROR"
-	AUTHORIZATION_ERROR         ErrorType = "AUTHORIZATION_ERROR"
-	INTERNAL_SERVER_ERROR       ErrorType = "INTERNAL_SERVER_ERROR"
-	USER_DEACTIVATED_ERROR      ErrorType = "USER_DEACTIVATED_ERROR"
-	INVALID_TOKEN_ERROR         ErrorType = "INVALID_TOKEN_ERROR"
-	INVALID_PASSWORD_ERROR      ErrorType = "INVALID_PASSWORD_ERROR"
-	PASSWORD_DIFF_ERROR         ErrorType = "PASSWORD_DIFF_ERROR"
-	USER_NOT_FOUND_ERROR        ErrorType = "USER_NOT_FOUND_ERROR"
-	EMAIL_SEND_ERROR            ErrorType = "EMAIL_SEND_ERROR"
-	INVALID_BODY_ERROR          ErrorType = "INVALID_BODY_ERROR"
-	INVALID_ID_ERROR            ErrorType = "INVALID_ID_ERROR"
-	CONFLICT_ERROR              ErrorType = "CONFLICT_ERROR"
-	REFRESH_TOKEN_REVOKED_ERROR ErrorType = "REFRESH_TOKEN_REVOKED_ERROR"
-	INVALID_CREDENTIALS_ERROR   ErrorType = "INVALID_CREDENTIALS_ERROR"
-	// Chapter errors
-	NO_NEW_CHAPTERS_ERROR   ErrorType = "NO_NEW_CHAPTERS_ERROR"
-	CHAPTER_NOT_FOUND_ERROR ErrorType = "CHAPTER_NOT_FOUND_ERROR"
-	NO_CHAPTERS_ERROR       ErrorType = "NO_CHAPTERS_ERROR"
-	// Novel errors
-	NO_NEW_NOVELS_ERROR    ErrorType = "NO_NEW_NOVELS_ERROR"
-	NO_NOVELS_ERROR        ErrorType = "NO_NOVELS_ERROR"
-	NO_NEW_GENRES_ERROR    ErrorType = "NO_NEW_GENRES_ERROR"
-	NO_GENRES_ERROR        ErrorType = "NO_GENRES_ERROR"
-	NO_NEW_TAGS_ERROR      ErrorType = "NO_NEW_TAGS_ERROR"
-	NO_TAGS_ERROR          ErrorType = "NO_TAGS_ERROR"
-	NO_NEW_AUTHORS_ERROR   ErrorType = "NO_NEW_AUTHORS_ERROR"
-	NO_AUTHORS_ERROR       ErrorType = "NO_AUTHORS_ERROR"
-	AUTHOR_NOT_FOUND_ERROR ErrorType = "AUTHOR_NOT_FOUND_ERROR"
-	GENRE_NOT_FOUND_ERROR  ErrorType = "GENRE_NOT_FOUND_ERROR"
-	TAG_NOT_FOUND_ERROR    ErrorType = "TAG_NOT_FOUND_ERROR"
-	NOVEL_NOT_FOUND_ERROR  ErrorType = "NOVEL_NOT_FOUND_ERROR"
-	// Log errors
-	LOG_NOT_FOUND_ERROR       ErrorType = "LOG_NOT_FOUND_ERROR"
-	LOG_LEVEL_NOT_FOUND_ERROR ErrorType = "LOG_LEVEL_NOT_FOUND_ERROR"
-	NO_LOGS_ERROR             ErrorType = "NO_LOGS_ERROR"
-	// TTS errors
-	TTS_FILE_ALREADY_EXISTS_ERROR ErrorType = "FILE_ALREADY_EXISTS_ERROR"
-	TTS_GENERATION_ERROR          ErrorType = "TTS_GENERATION_ERROR"
-	// Add more types as needed
-)

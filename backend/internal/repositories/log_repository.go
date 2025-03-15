@@ -3,7 +3,9 @@ package repositories
 import (
 	"backend/internal/models"
 	"backend/internal/types"
+	"backend/internal/types/errors"
 	"log"
+	"net/http"
 
 	"gorm.io/gorm"
 )
@@ -35,7 +37,7 @@ func NewLogRepository(db *gorm.DB) *LogRepository {
 func (l *LogRepository) CreateLogEntry(entry models.LogEntry) error {
 	if err := l.db.Create(&entry).Error; err != nil {
 		log.Println(err)
-		return types.WrapError("INTERNAL_SERVER_ERROR", "Failed to create log", err)
+		return types.WrapError(errors.LOGGING_ERROR, "Failed to create log entry", http.StatusInternalServerError, nil)
 	}
 	return nil
 }
@@ -47,10 +49,10 @@ func (l *LogRepository) GetLogs(page, limit int) ([]models.LogEntry, int64, erro
 	// Count total chapters for the novel
 	if err := l.db.Model(&models.LogEntry{}).Count(&total).Error; err != nil {
 		if err.Error() == "record not found" {
-			return nil, 0, types.WrapError(types.NO_LOGS_ERROR, "No logs found", nil)
+			return nil, 0, errors.ErrNoLogs
 		}
 
-		return nil, 0, types.WrapError(types.INTERNAL_SERVER_ERROR, "Failed to get the total number of logs", err)
+		return nil, 0, types.WrapError(errors.TOTAL_LOGS_ERROR, "Failed to get the total number of logs", http.StatusInternalServerError, err)
 	}
 
 	// Apply pagination and ordering
@@ -61,10 +63,10 @@ func (l *LogRepository) GetLogs(page, limit int) ([]models.LogEntry, int64, erro
 		Find(&logs).Error; err != nil {
 
 		if err.Error() == "record not found" {
-			return nil, 0, types.WrapError(types.NO_LOGS_ERROR, "No logs found", nil)
+			return nil, 0, errors.ErrNoLogs
 		}
 
-		return nil, 0, types.WrapError(types.INTERNAL_SERVER_ERROR, "Failed to fetch logs", err)
+		return nil, 0, types.WrapError(errors.FETCHING_LOGS_ERROR, "Failed to get logs", http.StatusInternalServerError, err)
 	}
 
 	return logs, total, nil
@@ -88,7 +90,7 @@ func (l *LogRepository) GetLogsByLevel(level string, page, limit int) ([]models.
 	var total int64
 
 	if level != "info" && level != "error" && level != "warning" && level != "debug" {
-		return nil, 0, types.WrapError(types.LOG_LEVEL_NOT_FOUND_ERROR, "Log level non existent", nil)
+		return nil, 0, errors.ErrLogLevelNotFound
 	}
 
 	// Count total logs for the level
@@ -97,10 +99,10 @@ func (l *LogRepository) GetLogsByLevel(level string, page, limit int) ([]models.
 		Count(&total).Error; err != nil {
 
 		if err.Error() == "record not found" {
-			return nil, 0, types.WrapError(types.NO_LOGS_ERROR, "No logs found", nil)
+			return nil, 0, errors.ErrNoLogs
 		}
 
-		return nil, 0, types.WrapError(types.INTERNAL_SERVER_ERROR, "Failed to get the total number of logs", err)
+		return nil, 0, types.WrapError(errors.TOTAL_LOGS_ERROR, "Failed to get the total number of logs", http.StatusInternalServerError, err)
 	}
 
 	// Apply pagination and ordering
@@ -112,10 +114,10 @@ func (l *LogRepository) GetLogsByLevel(level string, page, limit int) ([]models.
 		Find(&logs).Error; err != nil {
 
 		if err.Error() == "record not found" {
-			return nil, 0, types.WrapError(types.NO_LOGS_ERROR, "No logs found", nil)
+			return nil, 0, errors.ErrNoLogs
 		}
 
-		return nil, 0, types.WrapError(types.INTERNAL_SERVER_ERROR, "Failed to fetch logs", err)
+		return nil, 0, types.WrapError(errors.TOTAL_LOGS_ERROR, "Failed to get the total number of logs", http.StatusInternalServerError, err)
 	}
 
 	return logs, total, nil

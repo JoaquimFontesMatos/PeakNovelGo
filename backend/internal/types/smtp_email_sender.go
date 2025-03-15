@@ -7,22 +7,21 @@ import (
 // SmtpEmailSender struct represents an SMTP email sender.
 type SmtpEmailSender struct{}
 
-// SendMail sends an email using SMTP.
+// SendMail sends an email using the provided SMTP configuration.
 //
 // Parameters:
-//   - addr string (SMTP server address)
-//   - auth smtp.Auth (SMTP authentication)
-//   - from string (email address of the sender)
-//   - to []string (list of email addresses to send the email to)
-//   - msg []byte (email message)
+//   - addr (string): The address of the SMTP server.
+//   - auth (smtp.Auth): The authentication mechanism for the SMTP server.
+//   - from (string): The sender's email address.
+//   - to ([]string): A slice of recipient email addresses.
+//   - msg ([]byte): The email message as a byte slice.
 //
 // Returns:
-//   - EMAIL_SEND_ERROR if there is an error sending the email
+//   - error: An error if the email could not be sent, nil otherwise.
 func (sender *SmtpEmailSender) SendMail(addr string, auth smtp.Auth, from string, to []string, msg []byte) error {
-	// Send the email using SMTP
 	err := smtp.SendMail(addr, auth, from, to, msg)
 	if err != nil {
-		return WrapError(EMAIL_SEND_ERROR, "Failed to send email", err)
+		return err
 	}
 	return nil
 }

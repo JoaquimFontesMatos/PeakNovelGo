@@ -3,7 +3,9 @@ package repositories
 import (
 	"backend/internal/models"
 	"backend/internal/types"
+	"backend/internal/types/errors"
 	"log"
+	"net/http"
 
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
@@ -53,13 +55,13 @@ func (c *ChapterRepository) CreateChapter(chapter models.Chapter) (*models.Chapt
 	c.db.Logger = c.db.Logger.LogMode(logger.Silent)
 
 	if IsChapterCreated := c.IsChapterCreated(chapter.ChapterNo, *chapter.NovelID); IsChapterCreated {
-		return nil, types.WrapError(types.CONFLICT_ERROR, "Chapter already exists", nil)
+		return nil, errors.ErrChapterConflict
 	}
 
 	// Save the chapter
 	if err := c.db.Create(&chapter).Error; err != nil {
 		log.Println(err)
-		return nil, types.WrapError(types.INTERNAL_SERVER_ERROR, "Failed to create chapter", err)
+		return nil, types.WrapError(errors.IMPORTING_CHAPTER, "Failed to create chapter", http.StatusInternalServerError, err)
 	}
 
 	return &chapter, nil
@@ -81,10 +83,10 @@ func (c *ChapterRepository) GetChapterByNovelUpdatesIDAndChapterNo(novelTitle st
 		Joins("JOIN novels ON novels.id = chapters.novel_id").
 		Where("novels.novel_updates_id = ? AND chapters.chapter_no = ?", novelTitle, chapterNo).First(&chapter).Error; err != nil {
 		if err.Error() == "record not found" {
-			return nil, types.WrapError(types.CHAPTER_NOT_FOUND_ERROR, "Chapter not found", nil)
+			return nil, errors.ErrChapterNotFound
 		}
 		log.Println(err)
-		return nil, types.WrapError(types.INTERNAL_SERVER_ERROR, "Failed to fetch chapter", err)
+		return nil, types.WrapError(errors.GETTING_CHAPTER, "Failed to fetch chapter", http.StatusInternalServerError, err)
 	}
 	return &chapter, nil
 }
@@ -107,10 +109,10 @@ func (c *ChapterRepository) GetChaptersByNovelUpdatesID(novelTitle string, page,
 		Where("novels.novel_updates_id = ?", novelTitle).
 		Count(&total).Error; err != nil {
 		if err.Error() == "record not found" {
-			return nil, 0, types.WrapError(types.NO_CHAPTERS_ERROR, "No chapters found", nil)
+			return nil, 0, errors.ErrNoChapters
 		}
 
-		return nil, 0, types.WrapError(types.INTERNAL_SERVER_ERROR, "Failed to get the total number of chapters", err)
+		return nil, 0, types.WrapError(errors.GETTING_TOTAL_CHAPTERS, "Failed to get the total number of chapters", http.StatusInternalServerError, err)
 	}
 	// Apply pagination and ordering
 	offset := (page - 1) * limit
@@ -123,10 +125,10 @@ func (c *ChapterRepository) GetChaptersByNovelUpdatesID(novelTitle string, page,
 		Find(&chapters).Error; err != nil {
 
 		if err.Error() == "record not found" {
-			return nil, 0, types.WrapError(types.NO_CHAPTERS_ERROR, "No chapters found", nil)
+			return nil, 0, errors.ErrNoChapters
 		}
 
-		return nil, 0, types.WrapError(types.INTERNAL_SERVER_ERROR, "Failed to fetch chapters", err)
+		return nil, 0, types.WrapError(errors.GETTING_CHAPTERS, "Failed to fetch chapters", http.StatusInternalServerError, err)
 	}
 	return chapters, total, nil
 }

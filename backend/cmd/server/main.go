@@ -2,22 +2,53 @@ package main
 
 import (
 	"backend/config"
+	_ "backend/docs"
 	"backend/internal/auth"
 	"backend/internal/controllers"
+	"backend/internal/middleware"
 	"backend/internal/models"
 	"backend/internal/repositories"
 	"backend/internal/routes"
 	"backend/internal/services"
 	"backend/internal/utils"
 	"fmt"
+	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
 	"log"
 	"os"
 	"path/filepath"
-
-	"github.com/gin-gonic/gin"
-	"github.com/joho/godotenv"
 )
 
+// gin-swagger middleware
+// swagger embed files
+
+//	@title			PeakNovelGo API
+//	@version		1.0.12
+//	@description	This is the api of the peaknovelgo website.
+//	@termsOfService	http://swagger.io/terms/
+
+//	@contact.name	API Support
+//	@contact.url	http://www.swagger.io/support
+//	@contact.email	support@swagger.io
+
+//	@license.name	Apache 2.0
+//	@license.url	http://www.apache.org/licenses/LICENSE-2.0.html
+
+//	@host		localhost:8081
+//	@BasePath	/
+
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
+// @description Type "Bearer" followed by a space and the JWT token.
+
+// @securityDefinitions.apikey RefreshBearerAuth
+// @in header
+// @name Authorization
+// @description Type "Bearer" followed by a space and the refresh token.
+
+// @externalDocs.description	OpenAPI
+// @externalDocs.url			https://swagger.io/resources/open-api/
 func main() {
 	err := godotenv.Load()
 	if err != nil {
@@ -56,9 +87,11 @@ func main() {
 	bookmarkRepo := repositories.NewBookmarkRepository(db)
 	logRepo := repositories.NewLogRepository(db)
 
+	scriptExecutor := &utils.RealScriptExecutor{}
+
 	userService := services.NewUserService(userRepo)
 	authService := services.NewAuthService(userRepo, authRepo)
-	novelService := services.NewNovelService(novelRepo)
+	novelService := services.NewNovelService(novelRepo, scriptExecutor)
 	chapterService := services.NewChapterService(chapterRepo)
 	bookmarkService := services.NewBookmarkService(bookmarkRepo)
 	logService := services.NewLogService(logRepo)
@@ -100,12 +133,15 @@ func main() {
 	ttsController := controllers.NewTTSController(ttsService)
 	logController := controllers.NewLogController(logFilePath, logService)
 
+	// Set up middleware
+	middleware := middleware.NewMiddleware(userService)
+
 	// Set up routes
-	routes.SetupRoutes(r, authController, userController, novelController, bookmarkController, chapterController, ttsController, logController)
+	routes.SetupRoutes(r, authController, userController, novelController, bookmarkController, chapterController, ttsController, logController, middleware)
 
 	fmt.Printf("Server running on port %s\n", port)
 	err = r.Run(":" + port)
 	if err != nil {
 		return
-	} // Start server on port 8080
+	}
 }

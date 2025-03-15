@@ -20,7 +20,7 @@ export const useChapterStore = defineStore('Chapter', () => {
   const fetchingChapters = ref(true);
 
   const importingChapters = ref(false);
-  const chapterStatuses = ref<Record<number, string>>({}); // Track chapter import statuses
+  const chapterStatuses = ref<Record<string, string>>({}); // Track chapter import statuses
   const fetchChapter = async (novelUpdatesId: string, chaptNo: number) => {
     fetchingChapters.value = true;
 
@@ -125,7 +125,7 @@ export const useChapterStore = defineStore('Chapter', () => {
           // Only process if the event type is "status" and data is present
           if (eventType === 'status' && eventData) {
             try {
-              const statuses = JSON.parse(eventData) as Record<number, string>;
+              const statuses = JSON.parse(eventData) as Record<string, string>;
               chapterStatuses.value = { ...chapterStatuses.value, ...statuses }; // Update statuses
             } catch (error) {
               console.error('Failed to parse status update:', error);

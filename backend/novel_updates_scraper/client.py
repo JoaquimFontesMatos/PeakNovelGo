@@ -1,4 +1,6 @@
 import sys
+
+import requests
 from .request import Request
 from . import parsers
 import json
@@ -42,21 +44,27 @@ class Client:
         return parsers.parseSearch(req)
 
     def series_info(self, series_id):
-        """Gets information about a series.
+        """Gets information about a series."""
+        try:
+            req = self.req.get(f"https://novel-bin.net/novel-bin/{series_id}")
 
-        Parameters
-        ----------
-        id : :class:`int`
-            The id of the series. (/series/{ID})
+            if req is None:
+                return {"status": 503, "error": "No working proxies available"}
 
-        Returns
-        -------
-        :class:`dict`
-            A dictionary containing information about the series.
-            Contains all information and links for the series.
-        """
-        req = self.req.get(f"https://www.lightnovelworld.co/novel/{series_id}")
-        return parsers.parseSeries(req)
+            if req.status_code == 404:
+                return {"status": 404, "error": "Series not found"}
+
+            req.raise_for_status()
+
+            return parsers.parse_series(req)
+        except requests.exceptions.ConnectionError:
+            return {"status": 503, "error": "Network connection down"}
+        except requests.exceptions.Timeout:
+            return {"status": 503, "error": "Request timed out"}
+        except requests.exceptions.HTTPError as e:
+            return {"status": 503, "error": f"Source website down: {e}"}
+        except Exception as e:
+            return {"status": 503, "error": f"Unexpected error: {e}"}
 
     def chapters(self, series_id, i=1):
         """Gets the chapters of a series.
@@ -71,7 +79,7 @@ class Client:
         :class:`dict`
             A dictionary containing chapter information, or an error indicator.
         """
-        url = f"https://www.lightnovelworld.co/novel/{series_id}/chapter-{i}"
+        url = f"https://novelbin.com/b/{series_id}/chapter-{i}"
         req = self.req.get(url)  # Make the request
 
         tries = 5
@@ -91,7 +99,7 @@ class Client:
             }
 
         # Parse the chapter content
-        chapter_data = parsers.parseChapters(req)
+        chapter_data = parsers.parse_chapters(req)
 
         if not chapter_data["body"].strip():
             return {"status": 204, "chapter_no": i, "error": "Empty chapter"}
@@ -139,16 +147,25 @@ if __name__ == "__main__":
         action = sys.argv[1]
 
         if action == "import-novel":
-            series_id = sys.argv[2]
-            result = client.series_info(series_id)
-
-            print(json.dumps(result))
+            if len(sys.argv) > 2:
+                series_id = sys.argv[2]
+                result = client.series_info(series_id)
+                print(json.dumps(result))
+            else:
+                print(json.dumps({"status": 400, "error": "No series ID provided"}))
+                sys.exit(1)
         elif action == "import-chapter":
-            series_id = sys.argv[2]
-            chaptNo = sys.argv[3]
-            result = client.chapters(series_id, chaptNo)
-
-            print(json.dumps(result))
+            if len(sys.argv) > 3:
+                series_id = sys.argv[2]
+                chaptNo = sys.argv[3]
+                result = client.chapters(series_id, chaptNo)
+                print(json.dumps(result))
+            else:
+                print(json.dumps({"status": 400, "error": "Invalid arguments for import-chapter"}))
+                sys.exit(1)
+        else:
+            print(json.dumps({"status": 400, "error": "Invalid action"}))
+            sys.exit(1)
     else:
-        print(json.dumps({"error": "No series ID provided"}))
+        print(json.dumps({"status": 400, "error": "No action provided"}))
         sys.exit(1)

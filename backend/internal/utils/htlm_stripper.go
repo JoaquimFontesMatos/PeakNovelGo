@@ -1,8 +1,8 @@
 package utils
 
 import (
-	"regexp"
 	"html"
+	"regexp"
 )
 
 // StripHTML removes HTML tags while preserving paragraph breaks and decodes HTML entities.

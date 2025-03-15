@@ -1,27 +1,82 @@
 {
-    "cSpell.words": [
-        "Dialector",
-        "dtos",
-        "edgetts",
-        "Gamification",
-        "godotenv",
-        "gonic",
-        "gorm",
-        "Nums",
-        "Nuxt",
-        "plantuml",
-        "sslmode",
-        "surfaceyu",
-        "Unbookmark",
-        "unbookmarked"
-    ],
-    "vue3snippets.enable-compile-vue-file-on-did-save-code": false,
-    "terminal-keeper.theme": "inkwell",
-    "terminal-keeper.active": "peaknovelgo",
-    "terminal-keeper.activateOnStartup": false,
-    "terminal-keeper.keepExistingTerminals": true,
-    "terminal-keeper.noClear": false,
-    "terminal-keeper.killProcess": false,
-    "terminal-keeper.wslSupport": false,
-    "terminal-keeper.quickRun": true
+  "cSpell.words": [
+    "Dialector",
+    "dtos",
+    "edgetts",
+    "Gamification",
+    "godotenv",
+    "gonic",
+    "gorm",
+    "NOVELUPDATESID",
+    "Nums",
+    "Nuxt",
+    "plantuml",
+    "sslmode",
+    "surfaceyu",
+    "Unbookmark",
+    "unbookmarked"
+  ],
+  "vue3snippets.enable-compile-vue-file-on-did-save-code": false,
+  "terminal-keeper.theme": "inkwell",
+  "terminal-keeper.active": "peaknovelgo",
+  "terminal-keeper.activateOnStartup": false,
+  "terminal-keeper.keepExistingTerminals": true,
+  "terminal-keeper.noClear": false,
+  "terminal-keeper.killProcess": false,
+  "terminal-keeper.wslSupport": false,
+  "terminal-keeper.quickRun": true,
+  "go.toolsManagement.autoUpdate": true,
+  "go.useLanguageServer": true,
+  "go.addTags": {
+    "tags": "json",
+    "options": "json=omitempty",
+    "promptForTags": false,
+    "transform": "snakecase"
+  },
+  "gopls": {
+    "formatting.gofumpt": true,
+    "usePlaceholders": true,
+    "ui.semanticTokens": true,
+    "staticcheck": true
+  },
+  "go.lintTool": "golangci-lint",
+  "go.lintFlags": ["--fast", "--timeout", "5m", "--fix"],
+  "go.testFlags": [
+    "-cover",
+    "-race",
+    "-count=1",
+    "-v",
+    "-s",
+    "-benchtime=5s",
+    "-timeout=5m"
+  ],
+  "go.enableCodeLens": {
+    "runtest": true
+  },
+  "[go]": {
+    "editor.insertSpaces": false,
+    "editor.formatOnSave": true,
+    "editor.formatOnSaveMode": "file",
+    "editor.codeActionsOnSave": {
+      "source.organizeImports": "always",
+      "source.fixAll": "always"
+    }
+  },
+  // Enhanced inlay hints
+  "go.inlayHints.compositeLiteralFields": true,
+  "go.inlayHints.compositeLiteralTypes": true,
+  "go.inlayHints.functionTypeParameters": true,
+  "go.inlayHints.parameterNames": true,
+  "go.inlayHints.rangeVariableTypes": true,
+  "go.inlayHints.constantValues": true,
+  // Security checks
+  "go.diagnostic.vulncheck": "Imports",
+  "go.toolsEnvVars": {
+      "GOFLAGS": "-buildvcs=false" // Better performance for large repos
+  },
+  "git.ignoreRebaseWarning": true,
+  "git.replaceTagsWhenPull": true,
+  "telemetry.telemetryLevel": "off",
+  "makefile.configureOnOpen": true,
 }
+

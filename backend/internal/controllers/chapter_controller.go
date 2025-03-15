@@ -72,7 +72,7 @@ func (c *ChapterController) processChaptersWithStreaming(ctx *gin.Context, novel
 		return fmt.Errorf("no chapters found")
 	}
 
-	chapterStatuses := make(map[int]string, latestChapter+2)
+	chapterStatuses := make(map[any]string, latestChapter+2)
 	for i := 1; i <= latestChapter; i++ {
 		chapterStatuses[i] = "to download"
 	}
@@ -160,7 +160,7 @@ func (c *ChapterController) GetChapterByNovelUpdatesIDAndChapterNo(ctx *gin.Cont
 	novelTitle := ctx.Param("novel_title")
 	chapterNo := ctx.Param("chapter_no")
 
-	chapterNoUint, err := utils.ParseID(chapterNo)
+	chapterNoUint, err := utils.ParseUintID(chapterNo)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return

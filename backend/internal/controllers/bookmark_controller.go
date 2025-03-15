@@ -3,9 +3,7 @@ package controllers
 import (
 	"backend/internal/models"
 	"backend/internal/services/interfaces"
-	"backend/internal/types"
 	"backend/internal/utils"
-	"errors"
 	"log"
 	"net/http"
 	"strconv"
@@ -23,7 +21,7 @@ func NewBookmarkController(bookmarkService interfaces.BookmarkServiceInterface) 
 
 func (b *BookmarkController) GetBookmarkedNovelsByUserID(ctx *gin.Context) {
 	idParam := ctx.Param("user_id")
-	id, err := utils.ParseID(idParam)
+	id, err := utils.ParseUintID(idParam)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -102,7 +100,7 @@ func (b *BookmarkController) GetBookmarkByUserIDAndNovelID(ctx *gin.Context) {
 	userIDParam := ctx.Param("user_id")
 	novelIDParam := ctx.Param("novel_id")
 
-	userID, err := utils.ParseID(userIDParam)
+	userID, err := utils.ParseUintID(userIDParam)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -110,17 +108,8 @@ func (b *BookmarkController) GetBookmarkByUserIDAndNovelID(ctx *gin.Context) {
 
 	novel, err := b.bookmarkService.GetBookmarkByUserIDAndNovelID(userID, novelIDParam)
 	if err != nil {
-		var myError *types.MyError
-		if errors.As(err, &myError) {
-			switch myError.Code {
-			case types.NOVEL_NOT_FOUND_ERROR:
-				ctx.JSON(http.StatusNotFound, gin.H{"error": myError.Message})
-			}
-			return
-		}
-
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
+		utils.HandleError(ctx, err)
+        return
 	}
 
 	ctx.JSON(http.StatusOK, novel)
@@ -128,7 +117,7 @@ func (b *BookmarkController) GetBookmarkByUserIDAndNovelID(ctx *gin.Context) {
 
 func (b *BookmarkController) UnbookmarkNovel(ctx *gin.Context) {
 
-	userID, err := utils.ParseID(ctx.Param("user_id"))
+	userID, err := utils.ParseUintID(ctx.Param("user_id"))
 
 	if err != nil {
 		log.Println(err)
@@ -136,7 +125,7 @@ func (b *BookmarkController) UnbookmarkNovel(ctx *gin.Context) {
 		return
 	}
 
-	novelID, err := utils.ParseID(ctx.Param("novel_id"))
+	novelID, err := utils.ParseUintID(ctx.Param("novel_id"))
 
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -145,14 +134,8 @@ func (b *BookmarkController) UnbookmarkNovel(ctx *gin.Context) {
 
 	err = b.bookmarkService.UnbookmarkNovel(uint(userID), uint(novelID))
 	if err != nil {
-		error := err.(*types.MyError)
-		if error.Code == types.NOVEL_NOT_FOUND_ERROR {
-			ctx.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
-			return
-		}
-
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
+		utils.HandleError(ctx, err)
+        return
 	}
 
 	ctx.JSON(http.StatusOK, gin.H{"message": "Novel successfully unbookmarked"})

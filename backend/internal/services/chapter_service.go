@@ -4,9 +4,11 @@ import (
 	"backend/internal/models"
 	"backend/internal/repositories/interfaces"
 	"backend/internal/types"
+	"backend/internal/types/errors"
 	"backend/internal/utils"
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"os"
 	"os/exec"
 	"strconv"
@@ -48,7 +50,7 @@ func (s *ChapterService) ImportChapter(novelUpdatesID string, chapterNo int) (mo
 
 	output, err := cmd.Output()
 	if err != nil {
-		return models.ImportedChapterMetadata{}, types.WrapError(types.INTERNAL_SERVER_ERROR, "Failed to execute Python script", err)
+		return models.ImportedChapterMetadata{}, types.WrapError(errors.SCRIPT_ERROR, "Failed to execute Python script: "+err.Error(), http.StatusServiceUnavailable, err)
 	}
 
 	var result struct {
@@ -61,15 +63,15 @@ func (s *ChapterService) ImportChapter(novelUpdatesID string, chapterNo int) (mo
 
 	err = json.Unmarshal(output, &result)
 	if err != nil {
-		return models.ImportedChapterMetadata{}, types.WrapError(types.INTERNAL_SERVER_ERROR, "Failed to parse Python script output as JSON", err)
+		return models.ImportedChapterMetadata{}, types.WrapError(errors.IMPORTING_CHAPTER, "Failed to parse Python script output as JSON", http.StatusInternalServerError, err)
 	}
 
 	if result.Status == 404 {
-		return models.ImportedChapterMetadata{}, types.WrapError(types.NO_CHAPTERS_ERROR, "No more chapters available", nil)
+		return models.ImportedChapterMetadata{}, errors.ErrNoChapters
 	}
 
 	if result.Status == 204 {
-		return models.ImportedChapterMetadata{},types.WrapError(types.CHAPTER_NOT_FOUND_ERROR, "Skipping empty chapter", nil)
+		return models.ImportedChapterMetadata{}, errors.ErrChapterNotFound
 	}
 
 	return models.ImportedChapterMetadata{

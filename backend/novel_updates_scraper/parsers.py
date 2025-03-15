@@ -1,5 +1,6 @@
-from bs4 import BeautifulSoup as bs
 import re
+
+from bs4 import BeautifulSoup as bs
 
 
 def parseFeed(req):
@@ -93,100 +94,96 @@ def parseSearch(req):
     return results
 
 
-def parseChapters(req):
+def parse_chapters(req):
     """Parses the chapter content from the response."""
     soup = bs(req.text, "html.parser")
-    chapter_article = soup.find("article", id="chapter-article")
 
+    chapter_article = soup.find("div", class_="chapter container")
     if not chapter_article:
         return None  # No valid chapter found
 
-    section = chapter_article.find("section", class_="page-in content-wrap")
-    title = section.find("h1").find("span", class_="chapter-title").text.strip()
+    title = chapter_article.find("h2").find("a").text.strip()
 
-    body = section.find("div", id="chapter-container")
-    body = body.decode_contents().strip() if body else ""
+    body_paragraphs = chapter_article.find("div", id="chr-content").find_all("p", recursive=False)
+
+    # Extract text from all <p> elements and join them with line breaks
+    body = "\n\n".join(p.get_text(strip=True) for p in body_paragraphs) if body_paragraphs else ""
 
     return {"title": title, "body": body}
 
 
-def parseSeries(req):
+def parse_series(req):
     soup = bs(req.text, "html.parser")
+    article = soup.find("div", id="novel")
+    novel_info = article.find("div", class_="books")
 
-    header = soup.find("header", class_="novel-header")
-    novel_body = soup.find("div", class_="novel-body container")
+    title = novel_info.find(class_="title").text.strip()
 
-    image = header.find("figure", class_="cover").find("img").get("data-src")
+    image = novel_info.find("img").get("data-src")
 
-    novel_info = header.find("div", class_="novel-info")
+    info_meta = article.find(class_="info info-meta")
 
-    title = novel_info.find("h1").text.strip()
-
-    author_div = novel_info.find("div", class_="author")
     authors = []
-    for author in author_div.find_all("a"):
-        link = author.get("href")
-        authorName = author.find("span").text
-        authors.append({"name": authorName, "link": link})
+    genres = []
+    tags = []
+    status = ""
+    year = "N/A"
+    for li in info_meta.find_all("li"):
+        if li.find("h3").text == "Author:":
+            for author in li.find_all("a"):
+                authors.append(
+                    {
+                        "name": author.text.strip()
+                    }
+                )
 
-    rating_div = novel_info.find("div", class_="rating")
-    rating = rating_div.find("div", class_="rating-star").find("strong").text.strip()
+        elif li.find("h3").text == "Genre:":
+            for g in li.findAll("a"):
+                genres.append(
+                    {
+                        "name": g.text.strip(),
+                    }
+                )
 
-    categories_div = novel_info.find("div", class_="categories")
-    genre = []
-    for g in categories_div.find("ul").find_all("li"):
-        category = g.find("a")
-        genre.append(
-            {
-                "name": category.text,
-                "link": category.get("href"),
-                "description": category.get("title"),
-            }
-        )
+        elif li.find("h3").text == "Tag:":
+            for t in li.find("div", class_="tag-container").findAll("a"):
+                tags.append(
+                    {
+                        "name": t.text.strip(),
+                    }
+                )
+        elif li.find("h3").text == "Status:":
+            status = li.find("a").text.strip()
 
-    stats = novel_info.find("div", class_="header-stats")
-    latest_chapter = stats.find("span").find("strong").text.strip()
-    second_span = stats.find("span").find_next_sibling("span")
-    views = second_span.find("strong").text.strip()
+        elif li.find("h3").text == "Year of publishing:":
+            year = li.find("a").text.strip()
 
-    third_span = stats.find("span").find_next_sibling("span").find_next_sibling("span")
-    bookmarks = third_span.find("strong").text.strip()
+    rating_div = article.find("div", class_="rate-info")
+    rating = rating_div.find("input").get("value").strip()
 
-    fourth_span = (
-        stats.find("span")
-        .find_next_sibling("span")
-        .find_next_sibling("span")
-        .find_next_sibling("span")
-    )
-    status = fourth_span.find("strong").text.strip()
+    latest_chapter_div = article.find("div", class_="l-chapter")
+    latest_chapter_text = latest_chapter_div.find("a").text.strip()
 
-    info = novel_body.find("section", id="info")
-    summary_div = info.find("div", class_="summary")
-    description = (
-        summary_div.find("div", class_="content expand-wrapper").find("p").text.strip()
-    )
+    # Extract only the number using regex
+    match = re.search(r"Chapter (\d+)", latest_chapter_text)
 
-    tags_div = info.find("div", class_="tags")
-    tag = []
-    for t in tags_div.find("div", class_="expand-wrapper").find("ul").find_all("li"):
-        tag_item = t.find("a")
-        tag.append(
-            {
-                "name": tag_item.text,
-                "link": tag_item.get("href"),
-                "description": tag_item.get("title"),
-            }
-        )
+    latest_chapter = 0
+    if match:
+        chapter_number = match.group(1)  # Get the number
+        latest_chapter = chapter_number
+
+    description_tab = article.find("div", class_="tab-content")
+    description = description_tab.find("div", class_="desc-text").text.strip()
 
     result = {
         "title": title,
         "image": image,
-        "genre": genre,
-        "tags": tag,
+        "genre": genres,
+        "tags": tags,
         "rating": rating,
         "language": {"name": "English"},
         "authors": authors,
-        "year": "N/A",
+        "year": year,
         "status": status,
         "release_freq": "N/A",
         "description": description,
