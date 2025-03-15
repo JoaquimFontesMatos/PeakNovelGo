@@ -156,7 +156,7 @@ func (ac *AuthController) VerifyEmail(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Email verified successfully"})
 }
 
-// StartGoogleAuth initiates the Google OAuth2 flow
+// StartOAuth2 initiates the OAuth2 flow
 func (ac *AuthController) StartOAuth2(c *gin.Context) {
 	provider := c.Param("provider")
 	q := c.Request.URL.Query()
@@ -170,8 +170,8 @@ func (ac *AuthController) StartOAuth2(c *gin.Context) {
 	gothic.BeginAuthHandler(c.Writer, c.Request)
 }
 
-// GoogleCallback handles the callback from Google after OAuth2 login
-func (ac *AuthController) GoogleCallback(c *gin.Context) {
+// Oauth2Callback handles the callback from the provider after OAuth2 login
+func (ac *AuthController) Oauth2Callback(c *gin.Context) {
 	provider := c.Param("provider")
 	q := c.Request.URL.Query()
 	q.Add("provider", provider)
@@ -183,7 +183,7 @@ func (ac *AuthController) GoogleCallback(c *gin.Context) {
 		return
 	}
 
-	// Use the Google profile to create or log in a user in your system
+	// Use the profile to create or log in a user in your system
 	// For example, check if the user already exists by email
 	existingUser, err := ac.UserService.GetUserByEmail(user.Email)
 	if err != nil {

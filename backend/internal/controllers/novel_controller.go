@@ -1,9 +1,12 @@
 package controllers
 
 import (
+	"backend/internal/dtos"
 	"backend/internal/services/interfaces"
 	"backend/internal/types/errors"
 	"backend/internal/utils"
+	"fmt"
+	"sync"
 
 	"log"
 	"net/http"
@@ -57,7 +60,6 @@ func NewNovelController(novelService interfaces.NovelServiceInterface) *NovelCon
 // @Success 200 {object} models.Novel
 // @Failure 400 {object} dtos.ErrorResponse
 // @Failure 404 {object} dtos.ErrorResponse
-// @Failure 409 {object} dtos.ErrorResponse
 // @Failure 500 {object} dtos.ErrorResponse
 // @Failure 503 {object} dtos.ErrorResponse
 // @Security BearerAuth
@@ -341,4 +343,113 @@ func (n *NovelController) GetNovelByUpdatesID(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, novel)
+}
+
+// HandleBatchUpdateNovels handles streaming response for updating novels
+func (n *NovelController) HandleBatchUpdateNovels(ctx *gin.Context) {
+	ctx.Writer.Header().Set("Content-Type", "text/event-stream")
+	ctx.Writer.Header().Set("Cache-Control", "no-cache")
+	ctx.Writer.Header().Set("Connection", "keep-alive")
+	ctx.Writer.Flush() // Ensure headers are sent immediately
+
+	err := n.processNovelsWithStreaming(ctx)
+	if err != nil {
+		fmt.Fprintf(ctx.Writer, "event: error\ndata: %s\n\n", err.Error())
+		ctx.Writer.Flush()
+		return
+	}
+}
+
+func (n *NovelController) processNovelsWithStreaming(ctx *gin.Context) error {
+	const workerCount = 10
+	novelCount := 0
+	novelQueue := make(chan int, workerCount)
+	results := make(chan string)
+	errorsChan := make(chan dtos.NovelStatus)
+	done := make(chan struct{})
+
+	var wg sync.WaitGroup
+
+	// fetch all novels
+	novels, total, err := n.novelService.GetNovels(1, 999999999)
+	if err != nil {
+		fmt.Fprintf(ctx.Writer, "event: error\ndata: %s\n\n", err.Error())
+		ctx.Writer.Flush()
+		return err
+	}
+
+	totalInt := int(total)
+
+	if totalInt == 0 {
+		fmt.Fprintf(ctx.Writer, "event: error\ndata: No novels found\n\n")
+		ctx.Writer.Flush()
+		return fmt.Errorf("no novels found")
+	}
+
+	novelStatuses := make(map[any]string, total-1)
+	for i := 0; i < totalInt; i++ {
+		id := novels[i].NovelUpdatesID
+		novelStatuses[id] = "to update"
+	}
+
+	// Worker goroutines
+	for i := 0; i < workerCount; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for novelNo := range novelQueue {
+				id := novels[novelNo].NovelUpdatesID
+				_, err := n.novelService.CreateNovel(id)
+				if err != nil {
+					errorsChan <- dtos.NovelStatus{NovelUpdatesId: id, Status: "error"}
+					continue
+				}
+
+				results <- id
+			}
+		}()
+	}
+
+	// Populate queue up to the latest chapter
+	go func() {
+		defer close(novelQueue)
+		for i := 0; i < totalInt; i++ {
+			select {
+			case <-done:
+				return
+			case novelQueue <- i:
+				log.Printf("Added novel %s to queue", novels[i].NovelUpdatesID)
+			}
+		}
+	}()
+
+	// Goroutine to close result-related channels after workers finish
+	go func() {
+		wg.Wait()
+		close(results)
+		close(errorsChan)
+	}()
+
+	// Process results
+	for {
+		select {
+		case err := <-errorsChan:
+			novelStatuses[err.NovelUpdatesId] = err.Status
+			log.Printf("Error updating %s: %s", err.NovelUpdatesId, err.Status)
+
+		case result, ok := <-results:
+			if !ok {
+				log.Printf("All novels processed")
+				fmt.Fprintf(ctx.Writer, "event: complete\ndata: All novels processed\n\n")
+				ctx.Writer.Flush()
+				return nil
+			}
+
+			novelCount++
+			novelStatuses[result] = "updated"
+		}
+
+		fmt.Fprintf(ctx.Writer, "event: status\ndata: %s\n\n", utils.GetStatusJSON(novelStatuses))
+		ctx.Writer.Flush()
+	}
 }

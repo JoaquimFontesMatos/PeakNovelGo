@@ -42,7 +42,6 @@ func NewNovelRepository(db *gorm.DB) *NovelRepository {
 //
 // Error types:
 //   - errors.ErrDatabaseOffline: Indicates that the database is offline and cannot be accessed.
-//   - errors.ErrNovelAlreadyImported: Indicates that a novel with the same data already exists.
 //   - types.WrappedError (errors.TAG_ASSOCIATION_ERROR): Wrapped error indicating failure during tag creation or association.
 //   - types.WrappedError (errors.AUTHOR_ASSOCIATION_ERROR): Wrapped error indicating failure during author creation or association.
 //   - types.WrappedError (errors.GENRE_ASSOCIATION_ERROR): Wrapped error indicating failure during genre creation or association.
@@ -54,37 +53,63 @@ func (n *NovelRepository) CreateNovel(novel models.Novel) (*models.Novel, error)
 
 	n.db.Logger = n.db.Logger.LogMode(logger.Silent)
 
-	if IsNovelCreated := n.isNovelCreated(novel); IsNovelCreated {
-		return nil, errors.ErrNovelAlreadyImported
-	}
-
-	// Process tags
+	// Process relationships
 	newTags, err := n.processTags(novel.Tags)
 	if err != nil {
 		return nil, err
 	}
-
-	// Process authors
 	newAuthors, err := n.processAuthors(novel.Authors)
 	if err != nil {
 		return nil, err
 	}
-
-	// Process genres
 	newGenres, err := n.processGenres(novel.Genres)
 	if err != nil {
 		return nil, err
 	}
 
-	// Update the novel with associated relationships
-	novel.Tags = newTags
-	novel.Authors = newAuthors
-	novel.Genres = newGenres
-
 	// Save the novel with relationships
-	if err := n.db.Create(&novel).Error; err != nil {
+	if err := n.db.Where(models.Novel{NovelUpdatesID: novel.NovelUpdatesID}).Assign(
+		models.Novel{
+			Title:            novel.Title,
+			Synopsis:         novel.Synopsis,
+			CoverUrl:         novel.CoverUrl,
+			NovelUpdatesUrl:  novel.NovelUpdatesUrl,
+			LatestChapter:    novel.LatestChapter,
+			Year:             novel.Year,
+			Language:         novel.Language,
+			ReleaseFrequency: novel.ReleaseFrequency,
+			Status:           novel.Status,
+		}).
+		FirstOrCreate(&novel).Error; err != nil {
 		log.Println(err)
 		return nil, errors.ErrImportingNovel
+	}
+
+	// Replace associations with Append to avoid duplicates
+	if err := n.db.Model(&novel).Association("Tags").Clear(); err != nil {
+		log.Println("Error updating tags:", err)
+		return nil, err
+	}
+	if err := n.db.Model(&novel).Association("Genres").Clear(); err != nil {
+		log.Println("Error updating genres:", err)
+		return nil, err
+	}
+	if err := n.db.Model(&novel).Association("Authors").Clear(); err != nil {
+		log.Println("Error updating authors:", err)
+		return nil, err
+	}
+	// Replace associations with Append to avoid duplicates
+	if err := n.db.Model(&novel).Association("Tags").Append(newTags); err != nil {
+		log.Println("Error updating tags:", err)
+		return nil, err
+	}
+	if err := n.db.Model(&novel).Association("Genres").Append(newGenres); err != nil {
+		log.Println("Error updating genres:", err)
+		return nil, err
+	}
+	if err := n.db.Model(&novel).Association("Authors").Append(newAuthors); err != nil {
+		log.Println("Error updating authors:", err)
+		return nil, err
 	}
 
 	return &novel, nil

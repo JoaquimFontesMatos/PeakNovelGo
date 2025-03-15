@@ -23,7 +23,7 @@ import (
 type Novel struct {
 	gorm.Model
 	Title            string   `gorm:"size:200;uniqueIndex" json:"title"`
-	Synopsis         string   `gorm:"size:5000;not null" json:"synopsis"`
+	Synopsis         string   `gorm:"size:25000;not null" json:"synopsis"`
 	CoverUrl         string   `gorm:"size:255;not null" json:"coverUrl"`
 	Language         string   `gorm:"size:255;not null" json:"language"`
 	Status           string   `gorm:"size:500;not null" json:"status"`
@@ -34,7 +34,7 @@ type Novel struct {
 	Genres           []Genre  `gorm:"many2many:novel_genres;" json:"genres"`
 	Year             string   `gorm:"not null" json:"year"`
 	ReleaseFrequency string   `gorm:"size:255;not null" json:"releaseFrequency"`
-	LatestChapter    int     `gorm:"not null" json:"latestChapter"`
+	LatestChapter    int      `gorm:"not null" json:"latestChapter"`
 }
 
 // ImportedNovel represents a novel imported from an external source.

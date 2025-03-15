@@ -66,7 +66,7 @@ func SetupRoutes(r *gin.Engine,
 		auth.GET("/verify-email", authController.VerifyEmail)
 		auth.POST("/logout", middleware.RefreshTokenMiddleware(), authController.Logout)
 		auth.GET("/oauth2/:provider", authController.StartOAuth2)
-		auth.GET("/oauth2/:provider/callback", authController.GoogleCallback)
+		auth.GET("/oauth2/:provider/callback", authController.Oauth2Callback)
 	}
 
 	user := r.Group("/user")
@@ -89,6 +89,7 @@ func SetupRoutes(r *gin.Engine,
 		novel.GET("/tags/:tag_name", novelController.GetNovelsByTagName)
 		novel.GET("/:novel_id", novelController.GetNovelByID)
 		novel.GET("/title/:title", novelController.GetNovelByUpdatesID)
+		novel.GET("/update", middleware.AuthMiddleware(), middleware.PermissionMiddleware("novels", "update"), novelController.HandleBatchUpdateNovels)
 
 		chapters := novel.Group("/chapters")
 		{

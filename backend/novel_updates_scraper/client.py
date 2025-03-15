@@ -44,32 +44,19 @@ class Client:
         return parsers.parseSearch(req)
 
     def series_info(self, series_id):
-        """Gets information about a series.
-
-        Parameters
-        ----------
-        series_id : :class:`str`
-            The ID of the series. (/series/{ID})
-
-        Returns
-        -------
-        :class:`dict`
-            A dictionary containing information about the series.
-            If an error occurs, the dictionary will contain an "error" key.
-        """
+        """Gets information about a series."""
         try:
-            # Make the HTTP request
-            req = self.req.get(
-                f"https://www.lightnovelworld.co/novel/{series_id}"
-            )
+            req = self.req.get(f"https://novel-bin.net/novel-bin/{series_id}")
+
+            if req is None:
+                return {"status": 503, "error": "No working proxies available"}
 
             if req.status_code == 404:
                 return {"status": 404, "error": "Series not found"}
 
-            req.raise_for_status()  # Raise an exception for HTTP errors (4xx, 5xx)
+            req.raise_for_status()
 
-            # Parse the response
-            return parsers.parseSeries(req)
+            return parsers.parse_series(req)
         except requests.exceptions.ConnectionError:
             return {"status": 503, "error": "Network connection down"}
         except requests.exceptions.Timeout:
@@ -92,7 +79,7 @@ class Client:
         :class:`dict`
             A dictionary containing chapter information, or an error indicator.
         """
-        url = f"https://www.lightnovelworld.co/novel/{series_id}/chapter-{i}"
+        url = f"https://novelbin.com/b/{series_id}/chapter-{i}"
         req = self.req.get(url)  # Make the request
 
         tries = 5
@@ -112,7 +99,7 @@ class Client:
             }
 
         # Parse the chapter content
-        chapter_data = parsers.parseChapters(req)
+        chapter_data = parsers.parse_chapters(req)
 
         if not chapter_data["body"].strip():
             return {"status": 204, "chapter_no": i, "error": "Empty chapter"}
