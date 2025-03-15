@@ -20,12 +20,17 @@ RUN go install github.com/swaggo/swag/cmd/swag@latest
 # Copy the rest of the application code
 COPY . .
 
-# Set the working directory to the location of main.go
-WORKDIR /app/backend/cmd/server
+# Change working directory to backend
+WORKDIR /app/backend
 
-# Ensure the docs directory exists and generate Swagger documentation
-RUN mkdir -p ../../docs
-RUN swag init -d ./, ../../internal/controllers,../../internal/dtos,../../internal/models --parseDependency -o ../../docs && ls -lah ../../docs
+# Ensure the docs directory exists
+RUN mkdir -p docs
+
+# Generate Swagger documentation with corrected paths
+RUN swag init -d ./cmd/server,./internal/controllers,./internal/dtos,./internal/models --parseDependency -o ./docs && ls -lah ./docs
+
+# Change working directory to build Go binary
+WORKDIR /app/backend/cmd/server
 
 # Build the Go application with static linking
 RUN go build -o main .
