@@ -1,3 +1,19 @@
+## v2.0.0 - 2025-03-15
+* Merge branch 'development'
+* feat: added a batch update to novels
+* feat: added swagger support
+* fix: fixed oauth authentication
+* fix
+* fix: fixed backend error handling
+* feat: reworked the error system in backend
+* fix
+* fix
+* fix
+* chore: update release notes and changelog for v1.0.12
+* Merge branch 'main' into development
+* fix: fixed error handling
+* feat: added tests for novel management
+* Merge branch 'main' into development
 ## v1.0.12 - 2025-03-07
 * fix: fixed manifest for pwas
 * chore: update release notes and changelog for v1.0.11
