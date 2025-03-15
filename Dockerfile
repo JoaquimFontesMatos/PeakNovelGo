@@ -23,8 +23,9 @@ COPY . .
 # Set the working directory to the location of main.go
 WORKDIR /app/backend/cmd/server
 
-# Generate Swagger documentation
-RUN swag init -d ../../cmd/server,../../internal/controllers,../../internal/dtos,../../internal/models --parseDependency -o ../../docs
+# Ensure the docs directory exists and generate Swagger documentation
+RUN mkdir -p ../../docs
+RUN swag init -d ./, ../../internal/controllers,../../internal/dtos,../../internal/models --parseDependency -o ../../docs && ls -lah ../../docs
 
 # Build the Go application with static linking
 RUN go build -o main .
@@ -42,7 +43,7 @@ RUN apt-get update && apt-get install -y \
 COPY --from=builder /app/backend/cmd/server/main /app/main
 
 # Copy the generated Swagger documentation
-COPY --from=builder /app/docs /app/docs
+COPY --from=builder /app/backend/docs /app/docs
 
 # Copy Python requirements and the entire Python module
 COPY backend/novel_updates_scraper /app/novel_updates_scraper
