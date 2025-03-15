@@ -1,3 +1,6 @@
+## v2.0.2 - 2025-03-15
+* fix: fix dockerfile
+* chore: update release notes and changelog for v2.0.1
 ## v2.0.1 - 2025-03-15
 * fix dockerfile
 * chore: update release notes and changelog for v2.0.0
