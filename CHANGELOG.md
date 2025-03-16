@@ -1,3 +1,6 @@
+## v2.1.1 - 2025-03-16
+* fix: added playwright depts to dockerfile
+* chore: update release notes and changelog for v2.1.0
 ## v2.1.0 - 2025-03-16
 * feat: added secondary scrappers just to be safe
 * chore: update release notes and changelog for v2.0.3
