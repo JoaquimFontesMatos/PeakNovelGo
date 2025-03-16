@@ -67,7 +67,7 @@ func (s *ChapterService) ImportChapter(novelUpdatesID string, chapterNo int) (mo
 	}
 
 	if result.Status == 404 {
-		return models.ImportedChapterMetadata{}, errors.ErrNoChapters
+		return models.ImportedChapterMetadata{}, errors.ErrChapterNotFound
 	}
 
 	if result.Status == 204 {

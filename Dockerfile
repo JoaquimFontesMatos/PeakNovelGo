@@ -57,6 +57,9 @@ COPY backend/novel_updates_scraper/requirements.txt /app/requirements.txt
 # Install Python dependencies
 RUN pip3 install -r /app/requirements.txt
 
+# Install Playwright
+RUN playwright install
+
 # Set PYTHONPATH so Python can locate the module
 ENV PYTHONPATH=/app
 

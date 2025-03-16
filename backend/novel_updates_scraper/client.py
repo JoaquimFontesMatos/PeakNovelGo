@@ -1,68 +1,34 @@
+import json
 import sys
 
 import requests
-from .request import Request
+
 from . import parsers
-import json
+from .request import PlaywrightScraper
 
 
 class Client:
     def __init__(self):
-        self.req = Request()
-
-    def get_latest_feed(self):
-        """Gets the latest updates from NovelUpdates.
-
-        Parameters
-        ----------
-        None
-
-        Returns
-        -------
-        :class:`list`
-            A dictionary containing the latest novel updates from NovelUpdates.
-            Contains all information and links for each update.
-        """
-        req = self.req.get("https://www.novelupdates.com/")
-        return parsers.parseFeed(req)
-
-    def search_series(self, name):
-        """Searches for a series and gets back the top 25 results (first page).
-
-        Parameters
-        ----------
-        name : :class:`str`
-            The name of the series to search for.
-
-        Returns
-        -------
-        :class:`list`
-            A dictionary containing the top 25 results for the search.
-            Contains all information and links for each result.
-        """
-        req = self.req.get(f"https://www.novelupdates.com/?s={name}")
-        return parsers.parseSearch(req)
+        self.req = PlaywrightScraper()
 
     def series_info(self, series_id):
         """Gets information about a series."""
         try:
-            req = self.req.get(f"https://novel-bin.net/novel-bin/{series_id}")
+            latest_chapter_url=f"https://novtales.com/novel/{series_id}"
+            url = f"https://novelbin.com/b/{series_id}"
+            content = self.req.scrape(url)
+            content2 = self.req.scrape(latest_chapter_url)
+            if content is None:
+                return {"status": 503, "error": "Failed to fetch the page"}
 
-            if req is None:
-                return {"status": 503, "error": "No working proxies available"}
-
-            if req.status_code == 404:
+            # Check for 404 status (if applicable)
+            if "Page not found" in content:  # Replace with a condition specific to your website
                 return {"status": 404, "error": "Series not found"}
 
-            req.raise_for_status()
+            # Parse the series information
+            latest_chapter=parsers.parse_latest_chap(content2)
 
-            return parsers.parse_series(req)
-        except requests.exceptions.ConnectionError:
-            return {"status": 503, "error": "Network connection down"}
-        except requests.exceptions.Timeout:
-            return {"status": 503, "error": "Request timed out"}
-        except requests.exceptions.HTTPError as e:
-            return {"status": 503, "error": f"Source website down: {e}"}
+            return parsers.parse_series(content, latest_chapter)
         except Exception as e:
             return {"status": 503, "error": f"Unexpected error: {e}"}
 
@@ -79,65 +45,58 @@ class Client:
         :class:`dict`
             A dictionary containing chapter information, or an error indicator.
         """
-        url = f"https://novelbin.com/b/{series_id}/chapter-{i}"
-        req = self.req.get(url)  # Make the request
+        urls = {
+            "wuxiabox": f"https://www.wuxiabox.com/novel/{series_id}_{i}.html",
+            "novtales": f"https://novtales.com/chapter/{series_id}-{i}"
+        }
 
-        tries = 5
+        error = {}
 
-        while tries > 0 and req.status_code != 200:
-            if req.status_code == 404:
-                return {"status": 404, "chapter_no": i, "error": "Chapter not found"}
-            else:
-                tries -= 1
-                req = self.req.get(url)  # Retry request
+        for urlKey in urls.keys():
+            url = urls[urlKey]
+            req = requests.get(url)  # Make the request
 
-        if req.status_code != 200:
+            tries = 5
+
+            if not isinstance(req, requests.Response):
+                error = {"status": 400, "chapter_no": i, "error": "Invalid response object"}
+                continue
+
+            while tries > 0 and req.status_code != 200:
+                if req.status_code == 404:
+                    error = {"status": 404, "chapter_no": i, "error": "Chapter not found"}
+                    break
+                else:
+                    tries -= 1
+                    req = requests.get(url)  # Retry request
+
+            if req.status_code != 200:
+                error = {
+                    "status": 500,
+                    "chapter_no": i,
+                    "error": "Failed to retrieve chapter",
+                }
+                continue
+
+            # Parse the chapter content
+            if urlKey == 'wuxiabox':
+                chapter_data = parsers.parse_chapters_wuxiabox(req)
+            elif urlKey == "novtales":
+                chapter_data = parsers.parse_chapters_novtales(req)
+
+            if not chapter_data or not chapter_data["body"].strip():
+                error = {"status": 204, "chapter_no": i, "error": "Empty chapter"}
+                continue
+
             return {
-                "status": 500,
+                "status": 200,
                 "chapter_no": i,
-                "error": "Failed to retrieve chapter",
+                "title": chapter_data["title"],
+                "url": url,
+                "body": chapter_data["body"],
             }
 
-        # Parse the chapter content
-        chapter_data = parsers.parse_chapters(req)
-
-        if not chapter_data["body"].strip():
-            return {"status": 204, "chapter_no": i, "error": "Empty chapter"}
-
-        return {
-            "status": 200,
-            "chapter_no": i,
-            "title": chapter_data["title"],
-            "url": url,
-            "body": chapter_data["body"],
-        }
-
-    def series_groups(self, series_id):
-        """Gets the groups that are translating a series.
-
-        Parameters
-        ----------
-        id : :class:`int`
-            The id of the series. (/series/{ID})
-
-        Returns
-        -------
-        :class:`list`
-            A dictionary containing information about the groups.
-            Contains all information and links for each group.
-        """
-        req = self.req.get(f"https://www.novelupdates.com/series/{series_id}")
-        extras = parsers.parseSeries(req, extras=True)
-        data = {
-            "action": "nd_getgroupnovel",
-            "mygrr": extras["grr_groups"],
-            "mypostid": extras["postid"],
-        }
-        req2 = self.req.post(
-            "https://www.novelupdates.com/wp-admin/admin-ajax.php", data=data
-        )
-        return req2.text
-
+        return error
 
 if __name__ == "__main__":
     client = Client()
