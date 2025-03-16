@@ -1,3 +1,6 @@
+## v2.1.0 - 2025-03-16
+* feat: added secondary scrappers just to be safe
+* chore: update release notes and changelog for v2.0.3
 ## v2.0.3 - 2025-03-15
 * fix:
 * chore: update release notes and changelog for v2.0.2
