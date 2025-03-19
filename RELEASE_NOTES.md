@@ -1,3 +1,6 @@
+## v2.1.2 - 2025-03-19
+* fix: fixed page unloading, and fixed title in pages
+* chore: update release notes and changelog for v2.1.1
 ## v2.1.1 - 2025-03-16
 * fix: added playwright depts to dockerfile
 * chore: update release notes and changelog for v2.1.0
