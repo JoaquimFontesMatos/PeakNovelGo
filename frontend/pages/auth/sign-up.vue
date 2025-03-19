@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import { signUpFormSchema, type SignUpForm } from '~/schemas/Forms';
 
+useHead({
+  title: "🔐 Sign Up",
+});
+
 // Use the Vee-Validate form hook
 const { handleSubmit } = useForm<SignUpForm>({
   validationSchema: toTypedSchema(signUpFormSchema),

@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import {hasPermission} from "~/config/permissionsConfig";
 
+useHead({
+  title: "📖 Novels",
+});
+
 const currentPage = ref(1);
 const currentLimit = ref(10);
 

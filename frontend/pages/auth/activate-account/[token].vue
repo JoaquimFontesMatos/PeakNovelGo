@@ -1,6 +1,10 @@
 <script setup lang="ts">
 const route = useRoute();
 
+useHead({
+  title: "🔐 Activate Account",
+});
+
 const authStore = useAuthStore();
 
 const { loadingVerifyToken, verifyTokenMessage } = storeToRefs(authStore);

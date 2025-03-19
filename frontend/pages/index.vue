@@ -52,6 +52,10 @@
 const currentPage = ref(1);
 const currentLimit = ref(10);
 
+useHead({
+  title: "📖 Home",
+});
+
 onMounted(async () => {
   await onPageChange(currentPage.value, currentLimit.value);
   // featuredNovels.value = await fetchFeaturedNovels();
