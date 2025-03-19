@@ -19,7 +19,7 @@
     "@vee-validate/zod": "^4.15.0",
     "@vite-pwa/nuxt": "^0.10.6",
     "@vueuse/nuxt": "^12.5.0",
-    "nuxt": "^3.15.1",
+    "nuxt": "^3.16.1",
     "pinia": "^2.3.1",
     "vee-validate": "^4.15.0",
     "vue": "latest",
