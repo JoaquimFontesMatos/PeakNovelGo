@@ -1,3 +1,12 @@
+## v2.1.3 - 2025-03-24
+* Merge remote-tracking branch 'origin/main'
+* fix: changed chapter page
+* fix: fixed python scraper
+* chore: update release notes and changelog for v2.1.2
+* fix: fixed page unloading, and fixed title in pages
+* chore: update release notes and changelog for v2.1.1
+* fix: added playwright depts to dockerfile
+* chore: update release notes and changelog for v2.1.0
 ## v2.1.2 - 2025-03-19
 * fix: fixed page unloading, and fixed title in pages
 * chore: update release notes and changelog for v2.1.1
