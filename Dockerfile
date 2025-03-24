@@ -60,6 +60,9 @@ RUN pip3 install -r /app/requirements.txt
 # Install Playwright
 RUN playwright install
 
+# Install Playwright depts
+RUN playwright install-deps
+
 # Set PYTHONPATH so Python can locate the module
 ENV PYTHONPATH=/app
 

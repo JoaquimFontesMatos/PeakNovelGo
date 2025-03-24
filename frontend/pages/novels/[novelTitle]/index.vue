@@ -5,6 +5,16 @@ const textUtils = new BaseTextUtils();
 
 const { novelTitle } = useRoute().params as { novelTitle: string };
 
+useHead({
+  title: `📖 ${novelTitle.replace(/-/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase())}`,
+  meta: [
+    {
+      name: 'description',
+      content: `Read ${novelTitle} on our platform.`,
+    },
+  ],
+});
+
 function openNovelUpdatesUrl(url: string) {
   window.open(url, '_blank');
 }

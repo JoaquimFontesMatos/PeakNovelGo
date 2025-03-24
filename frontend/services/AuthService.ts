@@ -382,4 +382,56 @@ export class BaseAuthService implements AuthService {
       });
     }
   }
+
+  async keepAlive(): Promise<SuccessServerResponse> {
+    let response;
+    let errorMessage = 'An unexpected error occurred';
+
+    try {
+      response = await this.httpClient.request(`${this.baseUrl}/keep-alive`, {
+        method: 'GET',
+      });
+    } catch (error) {
+      throw new ProjectError({
+        type: 'NETWORK_ERROR',
+        message: 'Network request failed',
+        cause: error,
+      });
+    }
+
+    const parsedResponse = await this.responseParser.parseJSON(response);
+
+    if (!response.ok) {
+      try {
+        const validatedResponse: ErrorServerResponse = this.responseParser.validateSchema(ErrorServerResponseSchema, parsedResponse);
+        errorMessage = validatedResponse.error;
+      } catch (validationError) {
+        console.log(validationError);
+        // If validation fails, keep the default error message.
+        // Optionally, you could log validationError for debugging.
+      }
+
+      switch (response.status) {
+        default:
+          throw new ProjectError({
+            type: 'INTERNAL_SERVER_ERROR',
+            message: errorMessage,
+            cause: response,
+          });
+      }
+    }
+
+    try {
+      const validatedResponse: SuccessServerResponse = this.responseParser.validateSchema(SuccessServerResponseSchema, parsedResponse);
+
+      return validatedResponse as SuccessServerResponse;
+    } catch (validationError) {
+      console.log(validationError);
+      throw new ProjectError({
+        type: 'VALIDATION_ERROR',
+        message: 'Received malformed success data',
+        cause: validationError,
+      });
+    }
+  }
 }

@@ -118,4 +118,8 @@ func SetupRoutes(r *gin.Engine,
 	r.GET("/health", func(c *gin.Context) {
 		c.String(http.StatusOK, "OK")
 	})
+
+	r.GET("/keep-alive", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{"message": "Keep alive was successfully executed"})
+	})
 }

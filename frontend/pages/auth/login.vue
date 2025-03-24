@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import { loginFormSchema, type LoginForm } from '~/schemas/Forms';
 
+useHead({
+  title: "🔐 Login",
+});
+
 const runtimeConfig = useRuntimeConfig();
 const url: string = runtimeConfig.public.apiUrl;
 // Use the Vee-Validate form hook
