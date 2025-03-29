@@ -1,3 +1,7 @@
+## v2.1.5 - 2025-03-29
+* Merge branch 'development'
+* fix: optimized dockerfile
+* chore: update release notes and changelog for v2.1.4
 ## v2.1.4 - 2025-03-29
 * Merge branch 'development'
 * fix: fixed the dockerfile
