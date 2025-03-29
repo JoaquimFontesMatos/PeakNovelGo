@@ -1,3 +1,8 @@
+## v2.1.4 - 2025-03-29
+* Merge branch 'development'
+* fix: fixed the dockerfile
+* fix: documentation
+* chore: update release notes and changelog for v2.1.3
 ## v2.1.3 - 2025-03-24
 * Merge remote-tracking branch 'origin/main'
 * fix: changed chapter page
