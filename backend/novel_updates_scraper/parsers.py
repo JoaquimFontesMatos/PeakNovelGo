@@ -6,7 +6,19 @@ from .novel import NovelMetadata
 
 
 def parse_chapters_wuxiabox(req):
-    """Parses the chapter content from the response."""
+    """
+    Parses chapter content from a WuxiaBox response.
+
+    Parameters
+    ----------
+    req : :class:`string`
+        The response object containing the chapter HTML.
+
+    Returns
+    -------
+    :class:`dict`
+        A dictionary containing the chapter title and body, or None if parsing fails.
+    """
     soup = bs(req.text, "html.parser")
 
     chapter_article = soup.find("article", id="chapter-article")
@@ -24,7 +36,19 @@ def parse_chapters_wuxiabox(req):
 
 
 def parse_chapters_novtales(req):
-    """Parses the chapter content from the response."""
+    """
+    Parses chapter content from a Novtales response.
+
+    Parameters
+    ----------
+    req : :class:`string`
+        The response object containing the chapter HTML.
+
+    Returns
+    -------
+    :class:`dict`
+        A dictionary containing the chapter title and body, or None if parsing fails.
+    """
     soup = bs(req.text, "html.parser")
     title_tag = soup.find("meta", property="og:title") or soup.find("meta", name="twitter:title")
     description_tag = soup.find("meta", property="og:description") or soup.find("meta", name="twitter:description")
@@ -40,6 +64,19 @@ def parse_chapters_novtales(req):
 
 
 def parse_latest_chap(req):
+    """
+    Parses the latest chapter from a novel source response.
+
+    Parameters
+    ----------
+    req : :class:`string`
+    The response object containing the novel HTML.
+
+    Returns
+    -------
+    :class:`int`
+        The latest chapter of the novel or 0, if the novel has no chapters
+    """
     try:
         soup = bs(req, "html.parser")
         latest_chapter = 0
@@ -60,6 +97,19 @@ def parse_latest_chap(req):
 
 
 def parse_series_novelbin(req):
+    """
+    Parses novel content from a Novelbin response.
+
+    Parameters
+    ----------
+    req : :class:`string`
+        The response object containing the novel HTML.
+
+    Returns
+    -------
+    :class:`NovelMetadata`
+        A dictionary containing the novel metadata.
+    """
     soup = bs(req, "html.parser")
     article = soup.find("div", id="novel")
     novel_info = article.find("div", class_="books")
@@ -67,8 +117,8 @@ def parse_series_novelbin(req):
     title = novel_info.find(class_="title").text.strip()
 
     image_tag = soup.find("meta", property="og:image")
-    image=""
-    if  image_tag:
+    image = ""
+    if image_tag:
         image = image_tag.get('content').strip()
 
     info_meta = article.find(class_="info info-meta")
@@ -144,6 +194,19 @@ def parse_series_novelbin(req):
 
 
 def parse_series_lightnovelworld(req):
+    """
+    Parses novel content from a LightNovelWord response.
+
+    Parameters
+    ----------
+    req : :class:`string`
+        The response object containing the novel HTML.
+
+    Returns
+    -------
+    :class:`NovelMetadata`
+        A dictionary containing the novel metadata.
+    """
     title = ""
     image = ""
     authors = []
@@ -223,6 +286,19 @@ def parse_series_lightnovelworld(req):
 
 
 def parse_series_description(req):
+    """
+    Parses the novel description content from a novel source response.
+
+    Parameters
+    ----------
+    req : :class:`string`
+        The response object containing the novel HTML.
+
+    Returns
+    -------
+    :class:`string`
+        The novel description or an empty string
+    """
     soup = bs(req, "html.parser")
 
     description_tag = soup.find("meta", property="og:description") or soup.find("meta", property="twitter:description")
