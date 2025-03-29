@@ -36,13 +36,7 @@ WORKDIR /app/backend/cmd/server
 RUN go build -o main .
 
 # Stage 2: Runtime environment
-FROM debian:bullseye-slim
-
-# Install Python and pip
-RUN apt-get update && apt-get install -y \
-    python3 \
-    python3-pip \
-    && rm -rf /var/lib/apt/lists/*
+FROM python:3.13.1-slim
 
 # Copy the Go binary from the builder stage
 COPY --from=builder /app/backend/cmd/server/main /app/main

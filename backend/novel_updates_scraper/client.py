@@ -19,7 +19,7 @@ class Client:
        Parameters
        ----------
        novel_id : :class:`string`
-           The id of the series. (/series/{novel_id})
+            The id of the series. (/series/{novel_id})
 
        Returns
        -------
