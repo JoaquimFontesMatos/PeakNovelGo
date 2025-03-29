@@ -27,16 +27,17 @@ func NewChapterController(chapterService interfaces.ChapterServiceInterface, nov
 func (c *ChapterController) HandleImportChapters(ctx *gin.Context) {
 	idParam := ctx.Param("novel_id")
 
-	novel, err := c.novelService.GetNovelByUpdatesID(idParam)
-	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-
 	ctx.Writer.Header().Set("Content-Type", "text/event-stream")
 	ctx.Writer.Header().Set("Cache-Control", "no-cache")
 	ctx.Writer.Header().Set("Connection", "keep-alive")
-	ctx.Writer.Flush() // Ensure headers are sent immediately
+	ctx.Writer.Flush()
+
+	novel, err := c.novelService.GetNovelByUpdatesID(idParam)
+	if err != nil {
+		fmt.Fprintf(ctx.Writer, "event: error\ndata: %s\n\n", err.Error())
+		ctx.Writer.Flush()
+		return
+	}
 
 	err = c.processChaptersWithStreaming(ctx, idParam, novel.ID)
 	if err != nil {

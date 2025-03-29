@@ -232,6 +232,7 @@ func (s *NovelService) CreateNovel(novelUpdatesID string) (*models.Novel, error)
 
 	// Execute the Python script
 	output, err := s.scriptExecutor.ExecuteScript(os.Getenv("PYTHON"), "-m", "novel_updates_scraper.client", "import-novel", novelUpdatesID)
+
 	if err != nil {
 		return nil, types.WrapError(errors.SCRIPT_ERROR, "Failed to execute Python script: "+err.Error(), http.StatusServiceUnavailable, err)
 	}
@@ -256,10 +257,6 @@ func (s *NovelService) CreateNovel(novelUpdatesID string) (*models.Novel, error)
 	year := strings.ReplaceAll(result.Year, "\n", "")
 	status := strings.ReplaceAll(result.Status, "\n", "")
 	language := strings.ReplaceAll(result.Language.Name, "\n", "")
-	latestChapter, err := utils.ParseInt(result.LatestChapter)
-	if err != nil {
-		return nil, errors.ErrInvalidLatestChapter
-	}
 
 	novel := models.Novel{
 		Title:            result.Title,
@@ -274,7 +271,7 @@ func (s *NovelService) CreateNovel(novelUpdatesID string) (*models.Novel, error)
 		Genres:           result.Genres,
 		Year:             year,
 		ReleaseFrequency: result.ReleaseFrequency,
-		LatestChapter:    latestChapter,
+		LatestChapter:    result.LatestChapter,
 	}
 
 	// Save the novel to the database

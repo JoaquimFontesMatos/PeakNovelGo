@@ -62,7 +62,7 @@ type ImportedNovel struct {
 	Genres           []Genre          `json:"genre"`
 	Year             string           `json:"year"`
 	ReleaseFrequency string           `json:"release_freq"`
-	LatestChapter    string           `json:"latest_chapter"`
+	LatestChapter    int              `json:"latest_chapter"`
 }
 
 // ImportedLanguage represents a language imported into a novel.
