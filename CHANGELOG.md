@@ -1,3 +1,9 @@
+## v2.2.0 - 2025-03-30
+* Merge branch 'development'
+* fix: novel import thread errors
+* fix: fixed chapter import to have more status
+* feat: fixed the novel importer and added an retrier
+* chore: update release notes and changelog for v2.1.5
 ## v2.1.5 - 2025-03-29
 * Merge branch 'development'
 * fix: optimized dockerfile
