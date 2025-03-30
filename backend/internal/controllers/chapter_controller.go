@@ -54,6 +54,7 @@ func (c *ChapterController) processChaptersWithStreaming(ctx *gin.Context, novel
 	results := make(chan models.ImportedChapterMetadata)
 	errorsChan := make(chan dtos.ChapterStatus)
 	skippedChan := make(chan dtos.ChapterStatus)
+	statusUpdates := make(chan dtos.ChapterStatus) // New channel for status updates
 	done := make(chan struct{})
 
 	var wg sync.WaitGroup
@@ -73,10 +74,15 @@ func (c *ChapterController) processChaptersWithStreaming(ctx *gin.Context, novel
 		return fmt.Errorf("no chapters found")
 	}
 
+	// Initialize chapter statuses
 	chapterStatuses := make(map[any]string, latestChapter+2)
 	for i := 1; i <= latestChapter; i++ {
 		chapterStatuses[i] = "to download"
 	}
+
+	// Send initial status
+	fmt.Fprintf(ctx.Writer, "event: status\ndata: %s\n\n", utils.GetStatusJSON(chapterStatuses))
+	ctx.Writer.Flush()
 
 	// Worker goroutines
 	for i := 0; i < workerCount; i++ {
@@ -84,15 +90,21 @@ func (c *ChapterController) processChaptersWithStreaming(ctx *gin.Context, novel
 		go func() {
 			defer wg.Done()
 			for chapterNo := range chapterQueue {
+				// Notify main loop that we're downloading this chapter
+				statusUpdates <- dtos.ChapterStatus{ChapterNo: chapterNo, Status: "downloading"}
+				log.Printf("Now importing chapter: %d", chapterNo)
+
+				// Check if chapter already exists
 				isChapterCreated := c.chapterService.IsChapterCreated(uint(chapterNo), novelID)
 				if isChapterCreated {
 					skippedChan <- dtos.ChapterStatus{ChapterNo: chapterNo, Status: "skipped"}
 					continue
 				}
 
+				// Import the chapter
 				result, err := c.chapterService.ImportChapter(novelUpdatesID, chapterNo)
 				if err != nil {
-					errorsChan <- dtos.ChapterStatus{ChapterNo: chapterNo, Status: "error"}
+					errorsChan <- dtos.ChapterStatus{ChapterNo: chapterNo, Status: "error: " + err.Error()}
 					continue
 				}
 
@@ -101,7 +113,7 @@ func (c *ChapterController) processChaptersWithStreaming(ctx *gin.Context, novel
 		}()
 	}
 
-	// Populate queue up to the latest chapter
+	// Populate queue with chapters to process
 	go func() {
 		defer close(chapterQueue)
 		for chapterNo := 1; chapterNo <= latestChapter; chapterNo++ {
@@ -109,49 +121,54 @@ func (c *ChapterController) processChaptersWithStreaming(ctx *gin.Context, novel
 			case <-done:
 				return
 			case chapterQueue <- chapterNo:
+				// Notify main loop that this chapter is queued
+				statusUpdates <- dtos.ChapterStatus{ChapterNo: chapterNo, Status: "in queue"}
 				log.Printf("Added chapter %d to queue", chapterNo)
 			}
 		}
 	}()
 
-	// Goroutine to close result-related channels after workers finish
+	// Close channels when all workers finish
 	go func() {
 		wg.Wait()
 		close(results)
 		close(errorsChan)
 		close(skippedChan)
+		close(statusUpdates)
 	}()
 
-	// Process results
+	// Main processing loop (single-threaded map updates)
 	for {
 		select {
+		case update := <-statusUpdates:
+			chapterStatuses[update.ChapterNo] = update.Status
 		case err := <-errorsChan:
 			chapterStatuses[err.ChapterNo] = err.Status
 			log.Printf("Error importing chapter %d: %s", err.ChapterNo, err.Status)
-
+		case skipped := <-skippedChan:
+			chapterStatuses[skipped.ChapterNo] = skipped.Status
+			log.Printf("Chapter %d skipped (already exists)", skipped.ChapterNo)
 		case result, ok := <-results:
 			if !ok {
-				log.Printf("All chapters processed")
-				fmt.Fprintf(ctx.Writer, "event: complete\ndata: All chapters processed\n\n")
+				// All chapters processed
+				log.Printf("All chapters processed (total: %d)", chapterCount)
+				fmt.Fprintf(ctx.Writer, "event: complete\ndata: All %d chapters processed\n\n", chapterCount)
 				ctx.Writer.Flush()
 				return nil
 			}
 
-			err := c.chapterService.CreateChapter(novelID, result)
-			if err != nil {
+			// Save the chapter
+			if err := c.chapterService.CreateChapter(novelID, result); err != nil {
+				chapterStatuses[int(result.ID)] = "save error: " + err.Error()
 				log.Printf("Failed to save chapter %d: %v", result.ID, err)
-				return err
-			}
-
-			chapterCount++
-			chapterStatuses[int(result.ID)] = "downloaded"
-
-		case skipped, ok := <-skippedChan:
-			if ok {
-				chapterStatuses[skipped.ChapterNo] = "skipped"
+			} else {
+				chapterCount++
+				chapterStatuses[int(result.ID)] = "downloaded"
+				log.Printf("Successfully processed chapter %d (%d/%d)", result.ID, chapterCount, latestChapter)
 			}
 		}
 
+		// Send updated status (single-threaded, no race condition)
 		fmt.Fprintf(ctx.Writer, "event: status\ndata: %s\n\n", utils.GetStatusJSON(chapterStatuses))
 		ctx.Writer.Flush()
 	}

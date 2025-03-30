@@ -79,8 +79,10 @@ def parse_latest_chap(req):
     """
     try:
         soup = bs(req, "html.parser")
+
         latest_chapter = 0
         latest_chapter_div = soup.find("div", class_="bubble-element Group baTaHaNh bubble-r-container flex row")
+
         if latest_chapter_div.find("h2").text == "Latest Chapter:":
             latest_chapter_text = latest_chapter_div.find("div").text.strip()
 

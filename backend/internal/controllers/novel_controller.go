@@ -350,7 +350,9 @@ func (n *NovelController) HandleBatchUpdateNovels(ctx *gin.Context) {
 	ctx.Writer.Header().Set("Content-Type", "text/event-stream")
 	ctx.Writer.Header().Set("Cache-Control", "no-cache")
 	ctx.Writer.Header().Set("Connection", "keep-alive")
-	ctx.Writer.Flush() // Ensure headers are sent immediately
+	ctx.Writer.Header().Set("X-Accel-Buffering", "no")
+	ctx.Set("Connection", "keep-alive")
+	ctx.Writer.Flush()
 
 	err := n.processNovelsWithStreaming(ctx)
 	if err != nil {
@@ -361,36 +363,36 @@ func (n *NovelController) HandleBatchUpdateNovels(ctx *gin.Context) {
 }
 
 func (n *NovelController) processNovelsWithStreaming(ctx *gin.Context) error {
-	const workerCount = 10
+	const workerCount = 5
 	novelCount := 0
 	novelQueue := make(chan int, workerCount)
 	results := make(chan string)
 	errorsChan := make(chan dtos.NovelStatus)
+	statusUpdates := make(chan dtos.NovelStatus) // New channel for status updates
 	done := make(chan struct{})
 
 	var wg sync.WaitGroup
 
-	// fetch all novels
+	// Fetch all novels
 	novels, total, err := n.novelService.GetNovels(1, 999999999)
 	if err != nil {
-		fmt.Fprintf(ctx.Writer, "event: error\ndata: %s\n\n", err.Error())
-		ctx.Writer.Flush()
+		sendSSEError(ctx, "Failed to fetch novels: "+err.Error())
 		return err
 	}
 
 	totalInt := int(total)
-
 	if totalInt == 0 {
-		fmt.Fprintf(ctx.Writer, "event: error\ndata: No novels found\n\n")
-		ctx.Writer.Flush()
+		sendSSEError(ctx, "No novels found")
 		return fmt.Errorf("no novels found")
 	}
 
-	novelStatuses := make(map[any]string, total-1)
+	// Initialize novel statuses (thread-safe updates via main loop)
+	novelStatuses := make(map[any]string, totalInt)
 	for i := 0; i < totalInt; i++ {
 		id := novels[i].NovelUpdatesID
 		novelStatuses[id] = "to update"
 	}
+	sendSSEStatus(ctx, novelStatuses)
 
 	// Worker goroutines
 	for i := 0; i < workerCount; i++ {
@@ -399,9 +401,14 @@ func (n *NovelController) processNovelsWithStreaming(ctx *gin.Context) error {
 			defer wg.Done()
 			for novelNo := range novelQueue {
 				id := novels[novelNo].NovelUpdatesID
+
+				// Notify main loop of status change
+				statusUpdates <- dtos.NovelStatus{NovelUpdatesId: id, Status: "updating"}
+
+				// Process the novel
 				_, err := n.novelService.CreateNovel(id)
 				if err != nil {
-					errorsChan <- dtos.NovelStatus{NovelUpdatesId: id, Status: "error"}
+					errorsChan <- dtos.NovelStatus{NovelUpdatesId: id, Status: "error: " + err.Error()}
 					continue
 				}
 
@@ -410,7 +417,7 @@ func (n *NovelController) processNovelsWithStreaming(ctx *gin.Context) error {
 		}()
 	}
 
-	// Populate queue up to the latest chapter
+	// Populate queue with novels to process
 	go func() {
 		defer close(novelQueue)
 		for i := 0; i < totalInt; i++ {
@@ -418,38 +425,55 @@ func (n *NovelController) processNovelsWithStreaming(ctx *gin.Context) error {
 			case <-done:
 				return
 			case novelQueue <- i:
-				log.Printf("Added novel %s to queue", novels[i].NovelUpdatesID)
+				id := novels[i].NovelUpdatesID
+				statusUpdates <- dtos.NovelStatus{NovelUpdatesId: id, Status: "in queue"}
 			}
 		}
 	}()
 
-	// Goroutine to close result-related channels after workers finish
+	// Close channels when workers finish
 	go func() {
 		wg.Wait()
 		close(results)
 		close(errorsChan)
+		close(statusUpdates)
 	}()
 
-	// Process results
+	// Main loop (single-threaded map updates)
 	for {
 		select {
+		case update := <-statusUpdates:
+			novelStatuses[update.NovelUpdatesId] = update.Status
+			sendSSEStatus(ctx, novelStatuses)
+
 		case err := <-errorsChan:
 			novelStatuses[err.NovelUpdatesId] = err.Status
-			log.Printf("Error updating %s: %s", err.NovelUpdatesId, err.Status)
+			sendSSEStatus(ctx, novelStatuses)
 
 		case result, ok := <-results:
 			if !ok {
-				log.Printf("All novels processed")
-				fmt.Fprintf(ctx.Writer, "event: complete\ndata: All novels processed\n\n")
-				ctx.Writer.Flush()
+				sendSSEComplete(ctx, fmt.Sprintf("All %d novels processed", novelCount))
 				return nil
 			}
-
 			novelCount++
 			novelStatuses[result] = "updated"
+			sendSSEStatus(ctx, novelStatuses)
 		}
-
-		fmt.Fprintf(ctx.Writer, "event: status\ndata: %s\n\n", utils.GetStatusJSON(novelStatuses))
-		ctx.Writer.Flush()
 	}
+}
+
+// Helper functions for SSE messages
+func sendSSEStatus(ctx *gin.Context, statuses map[any]string) {
+	fmt.Fprintf(ctx.Writer, "event: status\ndata: %s\n\n", utils.GetStatusJSON(statuses))
+	ctx.Writer.Flush()
+}
+
+func sendSSEError(ctx *gin.Context, message string) {
+	fmt.Fprintf(ctx.Writer, "event: error\ndata: %s\n\n", message)
+	ctx.Writer.Flush()
+}
+
+func sendSSEComplete(ctx *gin.Context, message string) {
+	fmt.Fprintf(ctx.Writer, "event: complete\ndata: %s\n\n", message)
+	ctx.Writer.Flush()
 }

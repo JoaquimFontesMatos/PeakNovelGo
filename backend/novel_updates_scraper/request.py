@@ -24,7 +24,7 @@ class PlaywrightScraper:
 
             try:
                 # Navigate to the URL
-                response = page.goto(url, wait_until="domcontentloaded", timeout=10000)  # 10s timeout
+                response = page.goto(url, wait_until="domcontentloaded", timeout=10000)
 
                 if not response:
                     return None

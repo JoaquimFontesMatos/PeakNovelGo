@@ -130,9 +130,10 @@ const onSubmit = async () => {
             <td
               class="p-2"
               :class="{
-                'text-yellow-500': status === 'to download',
+                'text-primary-content': status === 'to download',
+                'text-yellow-500': status === 'in queue',
                 'text-blue-500': status === 'downloading',
-                'text-green-500': status === 'downloaded',
+                'text-green-500': status ==='downloaded',
                 'text-red-500': status === 'error',
                 'text-gray-500': status === 'skipped',
               }"
