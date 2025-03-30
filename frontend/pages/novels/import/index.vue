@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { ImportedNovelSchema, type ImportedNovel } from '~/schemas/ImportedNovel';
+import {type ImportedNovel, ImportedNovelSchema} from '~/schemas/ImportedNovel';
 
 const novelStore = useNovelStore();
-const { importingNovel, novel } = storeToRefs(novelStore);
+const {importingNovel, novel} = storeToRefs(novelStore);
 const toastStore = useToastStore();
 
 const novelUpdatesId = ref('');
@@ -27,21 +27,21 @@ const onSubmit = async () => {
 };
 
 // Use the Vee-Validate form hook
-const { handleSubmit } = useForm<ImportedNovel>({
+const {handleSubmit} = useForm<ImportedNovel>({
   validationSchema: toTypedSchema(ImportedNovelSchema),
 });
 
 // Define form fields
-const { value: title, errorMessage: titleError } = useField('title');
-const { value: description, errorMessage: descriptionError } = useField('description');
-const { value: image, errorMessage: imageError } = useField('image');
-const { value: languageName, errorMessage: languageError } = useField('language.name');
-const { value: status, errorMessage: statusError } = useField('status');
-const { value: tags, errorMessage: tagsError } = useField('tags');
-const { value: authors, errorMessage: authorsError } = useField('authors');
-const { value: genres, errorMessage: genresError } = useField('genres');
-const { value: year, errorMessage: yearError } = useField('year');
-const { value: release_freq, errorMessage: releaseFreqError } = useField('release_freq');
+const {value: title, errorMessage: titleError} = useField('title');
+const {value: description, errorMessage: descriptionError} = useField('description');
+const {value: image, errorMessage: imageError} = useField('image');
+const {value: languageName, errorMessage: languageError} = useField('language.name');
+const {value: status, errorMessage: statusError} = useField('status');
+const {value: tags, errorMessage: tagsError} = useField('tags');
+const {value: authors, errorMessage: authorsError} = useField('authors');
+const {value: genres, errorMessage: genresError} = useField('genres');
+const {value: year, errorMessage: yearError} = useField('year');
+const {value: release_freq, errorMessage: releaseFreqError} = useField('release_freq');
 
 const showForm = ref(false);
 
@@ -61,40 +61,41 @@ const onSubmitForm = handleSubmit(async (values: ImportedNovel) => {
     <!-- Input Section -->
     <div>
       <div class="w-full space-y-2 md:w-2/3">
-        <label for="novelUpdatesId" class="block text-sm font-medium after:text-error after:content-['*']"> Novel Updates ID </label>
+        <label for="novelUpdatesId" class="block text-sm font-medium after:text-error after:content-['*']"> Novel
+          Updates ID </label>
         <div class="relative">
           <input
-            id="novelUpdatesId"
-            v-model="novelUpdatesId"
-            type="text"
-            placeholder="e.g., reverend-insanity"
-            class="w-full rounded-md border p-2 focus:outline-none focus:ring-2 focus:ring-primary"
-            :class="{ 'border-error': errorMessage }"
+              id="novelUpdatesId"
+              v-model="novelUpdatesId"
+              type="text"
+              placeholder="e.g., reverend-insanity"
+              class="w-full rounded-md border p-2 focus:outline-none focus:ring-2 focus:ring-primary"
+              :class="{ 'border-error': errorMessage }"
           />
           <p v-if="errorMessage" class="mt-1 text-sm text-error">{{ errorMessage }}</p>
         </div>
       </div>
 
-      <VerticalSpacer />
+      <VerticalSpacer/>
 
       <!-- Import Button -->
       <Button :disabled="importingNovel" @click="onSubmit" class="w-full md:w-auto">
         <div v-if="importingNovel" class="flex items-center gap-2">
-          <LoadingSpinner class="h-5 w-5" />
+          <LoadingSpinner class="h-5 w-5"/>
           <span>Importing Novel...</span>
         </div>
         <span v-else>Import Novel</span>
       </Button>
     </div>
 
-    <VerticalSpacer />
+    <VerticalSpacer/>
 
     <!-- Preview Section -->
     <section v-if="novel" class="space-y-4">
       <div class="rounded-lg border-border bg-secondary p-4">
         <p class="text-lg font-semibold">Novel imported successfully!</p>
         <p class="text-secondary-content">You can close this window now.</p>
-        <SmallVerticalSpacer />
+        <SmallVerticalSpacer/>
         <button @click="showPreview = !showPreview" class="w-full hover:text-accent-gold hover:underline md:w-auto">
           <span>{{ showPreview ? 'Hide Details' : 'Show Details' }}</span>
         </button>
@@ -142,10 +143,11 @@ const onSubmitForm = handleSubmit(async (values: ImportedNovel) => {
           <p><span class="font-medium">Year:</span> {{ novel.year }}</p>
           <p><span class="font-medium">Release Frequency:</span> {{ novel.releaseFrequency }}</p>
           <p><span class="font-medium">Novel Updates ID:</span> {{ novel.novelUpdatesId }}</p>
+          <p><span class="font-medium">Latest Chapter:</span> {{ novel.latestChapter }}</p>
         </div>
       </div>
 
-      <VerticalSpacer />
+      <VerticalSpacer/>
 
       <!-- Navigation Button -->
       <Button @click="navigateTo('/')" class="w-full md:w-auto">

@@ -350,7 +350,7 @@ func (n *NovelController) HandleBatchUpdateNovels(ctx *gin.Context) {
 	ctx.Writer.Header().Set("Content-Type", "text/event-stream")
 	ctx.Writer.Header().Set("Cache-Control", "no-cache")
 	ctx.Writer.Header().Set("Connection", "keep-alive")
-	ctx.Writer.Flush() // Ensure headers are sent immediately
+	ctx.Writer.Flush()
 
 	err := n.processNovelsWithStreaming(ctx)
 	if err != nil {
@@ -361,7 +361,7 @@ func (n *NovelController) HandleBatchUpdateNovels(ctx *gin.Context) {
 }
 
 func (n *NovelController) processNovelsWithStreaming(ctx *gin.Context) error {
-	const workerCount = 10
+	const workerCount = 5
 	novelCount := 0
 	novelQueue := make(chan int, workerCount)
 	results := make(chan string)
@@ -386,11 +386,16 @@ func (n *NovelController) processNovelsWithStreaming(ctx *gin.Context) error {
 		return fmt.Errorf("no novels found")
 	}
 
-	novelStatuses := make(map[any]string, total-1)
+	// Initialize novel statuses with all novels marked for update
+	novelStatuses := make(map[any]string, totalInt)
 	for i := 0; i < totalInt; i++ {
 		id := novels[i].NovelUpdatesID
 		novelStatuses[id] = "to update"
 	}
+
+	// Send initial status
+	fmt.Fprintf(ctx.Writer, "event: status\ndata: %s\n\n", utils.GetStatusJSON(novelStatuses))
+	ctx.Writer.Flush()
 
 	// Worker goroutines
 	for i := 0; i < workerCount; i++ {
@@ -398,7 +403,17 @@ func (n *NovelController) processNovelsWithStreaming(ctx *gin.Context) error {
 		go func() {
 			defer wg.Done()
 			for novelNo := range novelQueue {
-				id := novels[novelNo].NovelUpdatesID
+				novel := novels[novelNo]
+				id := novel.NovelUpdatesID
+
+				// Update status to "updating"
+				novelStatuses[id] = "updating"
+				fmt.Fprintf(ctx.Writer, "event: status\ndata: %s\n\n", utils.GetStatusJSON(novelStatuses))
+				ctx.Writer.Flush()
+
+				log.Printf("Now updating novel: %s", id)
+
+				// Process the novel
 				_, err := n.novelService.CreateNovel(id)
 				if err != nil {
 					errorsChan <- dtos.NovelStatus{NovelUpdatesId: id, Status: "error"}
@@ -410,7 +425,7 @@ func (n *NovelController) processNovelsWithStreaming(ctx *gin.Context) error {
 		}()
 	}
 
-	// Populate queue up to the latest chapter
+	// Populate queue with novels to process
 	go func() {
 		defer close(novelQueue)
 		for i := 0; i < totalInt; i++ {
@@ -418,38 +433,45 @@ func (n *NovelController) processNovelsWithStreaming(ctx *gin.Context) error {
 			case <-done:
 				return
 			case novelQueue <- i:
-				log.Printf("Added novel %s to queue", novels[i].NovelUpdatesID)
+				log.Printf("Queued novel %s for update", novels[i].NovelUpdatesID)
+				// Update status to "in queue"
+				novelStatuses[novels[i].NovelUpdatesID] = "in queue"
+				fmt.Fprintf(ctx.Writer, "event: status\ndata: %s\n\n", utils.GetStatusJSON(novelStatuses))
+				ctx.Writer.Flush()
 			}
 		}
 	}()
 
-	// Goroutine to close result-related channels after workers finish
+	// Goroutine to close channels after workers finish
 	go func() {
 		wg.Wait()
 		close(results)
 		close(errorsChan)
 	}()
 
-	// Process results
+	// Process results and errors
 	for {
 		select {
 		case err := <-errorsChan:
 			novelStatuses[err.NovelUpdatesId] = err.Status
 			log.Printf("Error updating %s: %s", err.NovelUpdatesId, err.Status)
+			fmt.Fprintf(ctx.Writer, "event: status\ndata: %s\n\n", utils.GetStatusJSON(novelStatuses))
+			ctx.Writer.Flush()
 
 		case result, ok := <-results:
 			if !ok {
-				log.Printf("All novels processed")
-				fmt.Fprintf(ctx.Writer, "event: complete\ndata: All novels processed\n\n")
+				// All novels processed
+				log.Printf("All novels processed (total: %d)", novelCount)
+				fmt.Fprintf(ctx.Writer, "event: complete\ndata: All %d novels processed\n\n", novelCount)
 				ctx.Writer.Flush()
 				return nil
 			}
 
 			novelCount++
 			novelStatuses[result] = "updated"
+			log.Printf("Successfully updated novel: %s (%d/%d)", result, novelCount, totalInt)
+			fmt.Fprintf(ctx.Writer, "event: status\ndata: %s\n\n", utils.GetStatusJSON(novelStatuses))
+			ctx.Writer.Flush()
 		}
-
-		fmt.Fprintf(ctx.Writer, "event: status\ndata: %s\n\n", utils.GetStatusJSON(novelStatuses))
-		ctx.Writer.Flush()
 	}
 }

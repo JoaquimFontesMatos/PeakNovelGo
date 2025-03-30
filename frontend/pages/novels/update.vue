@@ -21,11 +21,13 @@ const paginatedStatuses = computed(() => {
   // 2. Errors
   // 3. Completed (downloaded or skipped)
   const toUpdateNovels = entries.filter(([_, status]) => status === 'to update');
+  const queuedNovels = entries.filter(([_, status]) => status === 'in queue');
+  const updatingNovels = entries.filter(([_, status]) => status === 'updating');
   const errorNovels = entries.filter(([_, status]) => status === 'error');
   const completedNovels = entries.filter(([_, status]) => status === 'updated' || status === 'skipped');
 
   // Combine the groups in the desired order
-  const sortedEntries = [...toUpdateNovels, ...errorNovels, ...completedNovels];
+  const sortedEntries = [...updatingNovels, ...queuedNovels, ...toUpdateNovels, ...errorNovels, ...completedNovels];
 
   const startIndex = (currentPage.value - 1) * pageSize.value;
   const endIndex = startIndex + pageSize.value;
@@ -46,7 +48,7 @@ const totalPages = computed(() => {
 });
 
 // Handle page change
-const handlePageChange = (newPage: number, newPageSize: number) => {
+const handlePageChange = async (newPage: number, newPageSize: number): Promise<void> => {
   currentPage.value = newPage;
   pageSize.value = newPageSize;
 };
@@ -57,10 +59,19 @@ const onSubmit = async () => {
     await novelStore.batchUpdateNovels();
     showPreview.value = true; // Show preview after successful import
   } catch (error) {
-    errorMessage.value = 'Failed to update novels.';
+    errorMessage.value = 'Failed to update novels: ' + error;
     toastStore.addToast(errorMessage.value, 'error', 'project');
   }
 };
+
+const retry = async (novelUpdatesID: string) => {
+  try {
+    await novelStore.importByNovelUpdatesId(novelUpdatesID);
+    novelStatuses.value[novelUpdatesID] = "updated"
+  } catch (error) {
+    toastStore.addToast(`Retry didn't work for novel: ${novelUpdatesID}`, 'error', 'novel')
+  }
+}
 </script>
 
 <template>
@@ -81,7 +92,7 @@ const onSubmit = async () => {
 
     <!-- Status Updates Section -->
     <section v-if="updatingNovels || showPreview" class="space-y-4">
-      <h2 class="text-lg font-semibold">Chapter Import Status</h2>
+      <h2 class="text-lg font-semibold">Novel Update Status</h2>
 
       <!-- Progress Bar -->
       <div class="relative h-4 w-full overflow-hidden rounded-full bg-secondary">
@@ -95,24 +106,29 @@ const onSubmit = async () => {
       <table class="w-full border-collapse">
         <thead>
         <tr class="bg-secondary">
-          <th class="p-2 text-left">Chapter No</th>
+          <th class="p-2 text-left">NovelUpdatesID</th>
           <th class="p-2 text-left">Status</th>
+          <th class="p-2 text-left">Actions</th>
         </tr>
         </thead>
         <tbody>
-        <tr v-for="[chapterNo, status] in paginatedStatuses" :key="chapterNo" class="border-b">
-          <td class="p-2">{{ chapterNo }}</td>
+        <tr v-for="[novelUpdatesID, status] in paginatedStatuses" :key="novelUpdatesID" class="border-b">
+          <td class="p-2">{{ novelUpdatesID }}</td>
           <td
               class="p-2"
               :class="{
-                'text-yellow-500': status === 'to download'|| status ==='to update',
-                'text-blue-500': status === 'downloading',
-                'text-green-500': status === 'downloaded' || status ==='updated',
+                'text-primary-content': status === 'to download'|| status ==='to update',
+                'text-yellow-500': status === 'in queue',
+                'text-blue-500': status === 'updating',
+                'text-green-500': status ==='updated',
                 'text-red-500': status === 'error',
                 'text-gray-500': status === 'skipped',
               }"
           >
             {{ status }}
+          </td>
+          <td class="p-2">
+            <button v-if="novelStatuses[novelUpdatesID]==='error'" @click="retry(novelUpdatesID)">Retry</button>
           </td>
         </tr>
         </tbody>

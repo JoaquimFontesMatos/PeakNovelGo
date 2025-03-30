@@ -101,21 +101,6 @@ export const useNovelStore = defineStore('Novel', () => {
     }
   };
 
-  const importNovel = async (importedNovel: ImportedNovel): Promise<void> => {
-    importingNovel.value = true;
-
-    try {
-      novel.value = await $novelService.importNovel(importedNovel);
-    } catch (error) {
-      $errorHandler.handleError(error, { importedNovel: importedNovel, location: 'novel.ts -> importNovel' });
-      novel.value = null;
-      throw error;
-    } finally {
-      importingNovel.value = false;
-    }
-  };
-
-
   const importByNovelUpdatesId = async (novelUpdatesId: string): Promise<void> => {
     importingNovel.value = true;
 
@@ -240,7 +225,6 @@ export const useNovelStore = defineStore('Novel', () => {
     fetchNovelsByAuthor,
     fetchNovelsByGenre,
     fetchNovelsByTag,
-    importNovel,
     importByNovelUpdatesId,
     batchUpdateNovels
   };

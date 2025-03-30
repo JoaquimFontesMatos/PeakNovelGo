@@ -29,13 +29,12 @@ class Client:
         urls = {
             NovelSource.NOVELBIN: f"https://novelbin.com/b/{novel_id}",
             NovelSource.LIGHTNOVELWORLD: f"https://www.lightnovelworld.co/novel/{novel_id}",
-            NovelSource.NOVTALES: f"https://novtales.com/novel/{novel_id}"
         }
 
         try:
             error = {}
 
-            default_content = self.req.scrape(urls[NovelSource.NOVTALES])
+            default_content = self.req.scrape( f"https://novtales.com/novel/{novel_id}")
 
             # Parse the series information
             latest_chapter = parsers.parse_latest_chap(default_content)

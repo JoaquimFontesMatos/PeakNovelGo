@@ -9,8 +9,10 @@ import (
 	"backend/internal/validators"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 )
 
@@ -257,6 +259,22 @@ func (s *NovelService) CreateNovel(novelUpdatesID string) (*models.Novel, error)
 	year := strings.ReplaceAll(result.Year, "\n", "")
 	status := strings.ReplaceAll(result.Status, "\n", "")
 	language := strings.ReplaceAll(result.Language.Name, "\n", "")
+	latestChapter := 0
+
+	switch v := result.LatestChapter.(type) {
+	case int:
+		latestChapter = v
+	case float64:
+		latestChapter = int(v)
+	case string:
+		latestChapter, err = strconv.Atoi(v)
+		if err != nil {
+			log.Printf("Failed to parse chapter number: %v", err)
+			latestChapter = 0 // or return error
+		}
+	default:
+		return nil, types.WrapError(errors.INVALID_LATEST_CHAPTER, "Unexpected type for LatestChapter", http.StatusBadRequest, nil)
+	}
 
 	novel := models.Novel{
 		Title:            result.Title,
@@ -271,7 +289,7 @@ func (s *NovelService) CreateNovel(novelUpdatesID string) (*models.Novel, error)
 		Genres:           result.Genres,
 		Year:             year,
 		ReleaseFrequency: result.ReleaseFrequency,
-		LatestChapter:    result.LatestChapter,
+		LatestChapter:    latestChapter,
 	}
 
 	// Save the novel to the database
