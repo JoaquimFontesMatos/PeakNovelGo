@@ -16,10 +16,6 @@ const pageSize = ref(10);
 const paginatedStatuses = computed(() => {
   const entries = Object.entries(novelStatuses.value);
 
-  // Separate chapters into three groups:
-  // 1. To Download
-  // 2. Errors
-  // 3. Completed (downloaded or skipped)
   const toUpdateNovels = entries.filter(([_, status]) => status === 'to update');
   const queuedNovels = entries.filter(([_, status]) => status === 'in queue');
   const updatingNovels = entries.filter(([_, status]) => status === 'updating');
