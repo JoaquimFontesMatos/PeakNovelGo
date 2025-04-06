@@ -17,8 +17,25 @@ const statusLabels: Record<string, string> = {
   "Dropped": "red-500",
 };
 
+const statusBorderClass = (status: string) => {
+  switch (status) {
+    case 'Completed':
+      return 'border-green-500'
+    case 'Ongoing':
+      return 'border-blue-500'
+    case 'Hiatus':
+    case 'On-Hold':
+      return 'border-yellow-500'
+    case 'Cancelled':
+    case 'Dropped':
+      return 'border-red-500'
+    default:
+      return 'border-gray-500'
+  }
+}
+
 const statusClass = (status: string): string => {
-  return `text-${statusLabels[status] || 'gray-500'} border border-${statusLabels[status] || 'gray-500'}`;
+  return `text-${statusLabels[status] || 'gray-500'} ${statusBorderClass(status)}`;
 };
 </script>
 
@@ -46,16 +63,17 @@ const statusClass = (status: string): string => {
             <div class="float-right w-3/4 p-4">
               <p class="truncate">{{ novel.title }}</p>
               <div class="flex flex-row gap-2">
-                <!-- TODO: Add Status Label -->
+                <!-- Status Label -->
                 <span
-                    class="truncate rounded p-0.5 text-xs"
+                    class="truncate rounded p-0.5 text-xs border"
                     :class="statusClass(novel.status)"
                 >
                   {{ novel.status }}
                 </span>
-                <!-- TODO: Add Total Chapters -->
-                <div>
-
+                <!-- Total Chapters -->
+                <div class="flex items-center gap-1">
+                  <Icon name="fluent:book-open-16-regular"/>
+                  <p class="text-xs">{{novel.latestChapter}} Chapters</p>
                 </div>
               </div>
               <div>
