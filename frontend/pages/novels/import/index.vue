@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import {type ImportedNovel, ImportedNovelSchema} from '~/schemas/ImportedNovel';
-
 const novelStore = useNovelStore();
 const {importingNovel, novel} = storeToRefs(novelStore);
 const toastStore = useToastStore();
@@ -25,35 +23,6 @@ const onSubmit = async () => {
     toastStore.addToast(errorMessage.value, 'error', 'project');
   }
 };
-
-// Use the Vee-Validate form hook
-const {handleSubmit} = useForm<ImportedNovel>({
-  validationSchema: toTypedSchema(ImportedNovelSchema),
-});
-
-// Define form fields
-const {value: title, errorMessage: titleError} = useField('title');
-const {value: description, errorMessage: descriptionError} = useField('description');
-const {value: image, errorMessage: imageError} = useField('image');
-const {value: languageName, errorMessage: languageError} = useField('language.name');
-const {value: status, errorMessage: statusError} = useField('status');
-const {value: tags, errorMessage: tagsError} = useField('tags');
-const {value: authors, errorMessage: authorsError} = useField('authors');
-const {value: genres, errorMessage: genresError} = useField('genres');
-const {value: year, errorMessage: yearError} = useField('year');
-const {value: release_freq, errorMessage: releaseFreqError} = useField('release_freq');
-
-const showForm = ref(false);
-
-// Handle form submission
-const onSubmitForm = handleSubmit(async (values: ImportedNovel) => {
-  try {
-    await novelStore.importNovel(values);
-    toastStore.addToast('Novel created successfully!', 'success', 'project');
-  } catch (error) {
-    toastStore.addToast('Failed to create novel. Please try again.', 'error', 'project');
-  }
-});
 </script>
 
 <template>

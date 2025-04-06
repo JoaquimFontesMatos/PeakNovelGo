@@ -8,4 +8,5 @@ package dtos
 type ChapterStatus struct {
 	ChapterNo int    `json:"chapterNo"`
 	Status    string `json:"status"`
+	Message   string `json:"message"`
 }

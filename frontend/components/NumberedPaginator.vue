@@ -43,8 +43,8 @@ function goToPreviousPage() {
 }
 
 function goToSelectedPage(
-  newPage: number,
-  limit: number = selectedPageSize.value
+    newPage: number,
+    limit: number = selectedPageSize.value
 ) {
   currentPage.value = newPage;
   selectedPageSize.value = limit;
@@ -60,8 +60,8 @@ function getVisiblePages(): number[] {
   const pages = [];
 
   const startPage = Math.max(
-    1,
-    currentPage.value - Math.floor(maxVisiblePages / 2)
+      1,
+      currentPage.value - Math.floor(maxVisiblePages / 2)
   );
   const endPage = Math.min(props.totalPages, startPage + maxVisiblePages - 1);
 
@@ -82,34 +82,34 @@ function getVisiblePages(): number[] {
 
 // Watch for changes in query params to keep the UI reactive
 watch(
-  () => route.query,
-  (newQuery) => {
-    if (newQuery.page) currentPage.value = Number(newQuery.page);
-    if (newQuery.pageSize) selectedPageSize.value = Number(newQuery.pageSize);
-  }
+    () => route.query,
+    (newQuery) => {
+      if (newQuery.page) currentPage.value = Number(newQuery.page);
+      if (newQuery.pageSize) selectedPageSize.value = Number(newQuery.pageSize);
+    }
 );
 </script>
 
 <template>
   <nav class="flex flex-wrap justify-center gap-2 items-center">
     <button
-      class="rounded-full p-2 py-1 border-2 border-transparent hover:enabled:text-primary hover:enabled:bg-accent-gold-light hover:enabled:border-accent-gold disabled:text-secondary-content disabled:cursor-not-allowed"
-      :disabled="currentPage === 1"
-      @click="goToPreviousPage"
+        class="rounded-full p-2 py-1 border-2 border-transparent hover:enabled:text-primary hover:enabled:bg-accent-gold-light hover:enabled:border-accent-gold disabled:text-secondary-content disabled:cursor-not-allowed"
+        :disabled="currentPage === 1"
+        @click="goToPreviousPage"
     >
       <
     </button>
 
     <button
-      v-for="(page, index) in getVisiblePages()"
-      :key="page"
-      @click="goToSelectedPage(page)"
-      class="flex items-center justify-center gap-2 rounded-full p-2 py-1 border-2 border-transparent hover:enabled:text-primary hover:enabled:bg-accent-gold-light hover:enabled:border-accent-gold disabled:text-secondary-content disabled:cursor-not-allowed"
-      :class="currentPage === page ? 'bg-accent-gold' : ''"
-      :disabled="currentPage === page"
+        v-for="(page, index) in getVisiblePages()"
+        :key="page"
+        @click="goToSelectedPage(page)"
+        class="flex items-center justify-center gap-2 rounded-full p-2 py-1 border-2 border-transparent hover:enabled:text-primary hover:enabled:bg-accent-gold-light hover:enabled:border-accent-gold disabled:text-secondary-content disabled:cursor-not-allowed"
+        :class="currentPage === page ? 'bg-accent-gold' : ''"
+        :disabled="currentPage === page"
     >
       <span
-        v-if="page === totalPages && page - 1 != getVisiblePages()[index - 1]"
+          v-if="page === totalPages && page - 1 != getVisiblePages()[index - 1]"
       >...</span
       >
       {{ page }}
@@ -119,9 +119,9 @@ watch(
     </button>
 
     <button
-      class="rounded-full p-2 py-1 border-2 border-transparent hover:enabled:text-primary hover:enabled:bg-accent-gold-light hover:enabled:border-accent-gold disabled:text-secondary-content disabled:cursor-not-allowed"
-      :disabled="currentPage === totalPages"
-      @click="goToNextPage"
+        class="rounded-full p-2 py-1 border-2 border-transparent hover:enabled:text-primary hover:enabled:bg-accent-gold-light hover:enabled:border-accent-gold disabled:text-secondary-content disabled:cursor-not-allowed"
+        :disabled="currentPage === totalPages"
+        @click="goToNextPage"
     >
       >
     </button>
@@ -130,10 +130,10 @@ watch(
       Page Size:
     </label>
     <select
-      id="page-size-select"
-      class="w-16 rounded-full bg-secondary p-2 py-1 border-2 border-accent-gold"
-      v-model="selectedPageSize"
-      @change="goToSelectedPage(1, selectedPageSize)"
+        id="page-size-select"
+        class="w-16 rounded-full bg-secondary p-2 py-1 border-2 border-accent-gold"
+        v-model="selectedPageSize"
+        @change="goToSelectedPage(1, selectedPageSize)"
     >
       <option value="10">10</option>
       <option value="25">25</option>

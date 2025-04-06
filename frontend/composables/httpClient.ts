@@ -63,4 +63,49 @@ export class FetchHttpClient implements HttpClient {
       }
     } as T;
   }
+
+  throttleWithFlush<T extends (...args: any[]) => void>(fn: T, delay: number): T & { flush: () => void } {
+    let lastCall = 0;
+    let lastArgs: any[] | null = null;
+    let lastThis: any;
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
+
+    const throttledFunction = function (this: any, ...args: any[]) {
+      const now = Date.now();
+      lastArgs = args;
+      lastThis = this;
+
+      if (!lastCall) {
+        // First call
+        lastCall = now;
+        fn.apply(this, args);
+      } else if (now - lastCall >= delay) {
+        // Time to execute
+        lastCall = now;
+        fn.apply(this, args);
+      } else if (!timeoutId) {
+        // Schedule execution
+        timeoutId = setTimeout(() => {
+          if (lastArgs) {
+            lastCall = Date.now();
+            fn.apply(lastThis, lastArgs);
+            lastArgs = null;
+            timeoutId = null;
+          }
+        }, delay - (now - lastCall));
+      }
+    } as T & { flush: () => void };
+
+    throttledFunction.flush = () => {
+      if (timeoutId && lastArgs) {
+        clearTimeout(timeoutId);
+        lastCall = Date.now();
+        fn.apply(lastThis, lastArgs);
+        lastArgs = null;
+        timeoutId = null;
+      }
+    };
+
+    return throttledFunction;
+  }
 }
