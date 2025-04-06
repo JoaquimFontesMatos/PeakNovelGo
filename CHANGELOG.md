@@ -1,3 +1,11 @@
+## v2.3.0 - 2025-04-06
+* Merge branch 'development'
+* fix: fixed a button
+* fix: fixed border colors
+* fix: temp fix
+* feat: changed the chapter settings
+* fix: removel incorrect comments
+* chore: update release notes and changelog for v2.2.0
 ## v2.2.0 - 2025-03-30
 * Merge branch 'development'
 * fix: novel import thread errors
