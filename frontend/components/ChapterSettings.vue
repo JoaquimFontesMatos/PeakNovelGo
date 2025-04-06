@@ -126,11 +126,11 @@ const handleSelectTab = (tab: Tabs) => {
     <section v-if="currentTab==='general'">
       <div class="menu-container">
         <div class="w-full flex justify-center align-center">
-          <p class="text-xs text-secondary-content w-full flex flex-row gap-1">
+          <div class="text-xs text-secondary-content w-full flex flex-row gap-1">
             <span>{{ novelProgress }}%</span>
             <div class="w-[3px] h-full py-1 bg-secondary-content"/>
             <span class="line-clamp-1">{{ chapter?.title ?? 0 }}</span>
-          </p>
+          </div>
         </div>
 
         <div class="form-container flex w-full items-center justify-between">
