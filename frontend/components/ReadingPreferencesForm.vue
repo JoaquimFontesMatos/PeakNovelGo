@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import SectionHeader from "~/components/SectionHeader.vue";
+
 const userStore = useUserStore();
 const { user } = storeToRefs(userStore);
 const colorMode = useColorMode();
@@ -23,9 +25,8 @@ const handleChangeReadingPreferences = async () => {
 </script>
 
 <template>
-  <div v-if="user" class="form-container space-y-6 rounded-lg bg-secondary p-4 shadow-lg">
-    <fieldset class="border-t border-accent-gold-dark pt-4">
-      <legend class="ml-3.5 px-3.5 text-xl font-semibold text-primary-content">Reading Preferences</legend>
+  <div v-if="user" class="menu-container form-container">
+    <SectionHeader :title="'Reading Preferences'" :is-main-header="true">
       <!-- Atomic Reading -->
       <div class="form-group flex items-center space-x-2">
         <input
@@ -39,7 +40,7 @@ const handleChangeReadingPreferences = async () => {
       </div>
 
       <!-- Font Selector -->
-      <div class="form-group">
+      <div class="form-group mt-2">
         <label for="fontPreview" class="block text-sm font-medium text-secondary-content">Font</label>
         <select id="fontPreview" name="font" v-model="user.readingPreferences.font" @change="handleChangeReadingPreferences()">
           <option value="font-serif">Serif</option>
@@ -51,7 +52,7 @@ const handleChangeReadingPreferences = async () => {
         </select>
         <p class="mt-2" :class="user.readingPreferences.font">Preview: The quick brown fox jumps over the lazy dog.</p>
       </div>
-    </fieldset>
+    </SectionHeader>
 
     <!-- Theme Selector -->
     <div class="form-group">
@@ -77,8 +78,7 @@ const handleChangeReadingPreferences = async () => {
     </div>
 
     <!-- Text-to-Speech Section -->
-    <fieldset class="border-t border-accent-gold-dark pt-4">
-      <legend class="ml-3.5 px-3.5 text-lg font-semibold text-primary-content">Text-to-Speech</legend>
+    <SectionHeader :title="'Text-to-Speech'" :is-main-header="true">
       <div class="mt-2 space-y-4">
         <!-- Autoplay -->
         <div class="form-group flex items-center space-x-2">
@@ -106,7 +106,7 @@ const handleChangeReadingPreferences = async () => {
           </select>
         </div>
 
-        <!-- Speed Input -->
+        <!-- Rate Input -->
         <div class="form-group">
           <label for="rate" class="block text-sm font-medium text-secondary-content">Rate</label>
           <input
@@ -122,6 +122,6 @@ const handleChangeReadingPreferences = async () => {
           <span class="block text-sm font-medium text-secondary-content">{{ user.readingPreferences.tts.rate }}%</span>
         </div>
       </div>
-    </fieldset>
+    </SectionHeader>
   </div>
 </template>

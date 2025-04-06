@@ -104,7 +104,7 @@ func (c *ChapterController) processChaptersWithStreaming(ctx *gin.Context, novel
 				// Import the chapter
 				result, err := c.chapterService.ImportChapter(novelUpdatesID, chapterNo)
 				if err != nil {
-					errorsChan <- dtos.ChapterStatus{ChapterNo: chapterNo, Status: "error: " + err.Error()}
+					errorsChan <- dtos.ChapterStatus{ChapterNo: chapterNo, Status: "error", Message: err.Error()}
 					continue
 				}
 
@@ -146,12 +146,13 @@ func (c *ChapterController) processChaptersWithStreaming(ctx *gin.Context, novel
 			chapterStatuses[err.ChapterNo] = err.Status
 			log.Printf("Error importing chapter %d: %s", err.ChapterNo, err.Status)
 		case skipped := <-skippedChan:
+			chapterCount++
 			chapterStatuses[skipped.ChapterNo] = skipped.Status
 			log.Printf("Chapter %d skipped (already exists)", skipped.ChapterNo)
 		case result, ok := <-results:
 			if !ok {
 				// All chapters processed
-				log.Printf("All chapters processed (total: %d)", chapterCount)
+				log.Printf("All chapters processed (total: %d)", chapterCount-2)
 				fmt.Fprintf(ctx.Writer, "event: complete\ndata: All %d chapters processed\n\n", chapterCount)
 				ctx.Writer.Flush()
 				return nil

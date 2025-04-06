@@ -18,7 +18,7 @@ defineProps<{
           <span class="mx-2">/</span>
         </div>
         <div v-else class="h-full">
-          <span class="md:text-md md:text-lg text-accent-gold">{{ name }}</span>
+          <span class="md:text-md md:text-lg text-accent-gold line-clamp-1">{{ name }}</span>
         </div>
       </div>
     </div>

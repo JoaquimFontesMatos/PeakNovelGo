@@ -363,7 +363,7 @@ func (n *NovelController) HandleBatchUpdateNovels(ctx *gin.Context) {
 }
 
 func (n *NovelController) processNovelsWithStreaming(ctx *gin.Context) error {
-	const workerCount = 5
+	const workerCount = 2
 	novelCount := 0
 	novelQueue := make(chan int, workerCount)
 	results := make(chan string)
@@ -408,7 +408,7 @@ func (n *NovelController) processNovelsWithStreaming(ctx *gin.Context) error {
 				// Process the novel
 				_, err := n.novelService.CreateNovel(id)
 				if err != nil {
-					errorsChan <- dtos.NovelStatus{NovelUpdatesId: id, Status: "error: " + err.Error()}
+					errorsChan <- dtos.NovelStatus{NovelUpdatesId: id, Status: "error", Message: err.Error()}
 					continue
 				}
 
@@ -447,6 +447,7 @@ func (n *NovelController) processNovelsWithStreaming(ctx *gin.Context) error {
 			sendSSEStatus(ctx, novelStatuses)
 
 		case err := <-errorsChan:
+			log.Printf("error: %s", err.Message)
 			novelStatuses[err.NovelUpdatesId] = err.Status
 			sendSSEStatus(ctx, novelStatuses)
 

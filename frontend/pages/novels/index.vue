@@ -45,9 +45,8 @@ const onPageChange = async (newPage: number, limit: number) => {
 
     <div v-show="!fetchingNovel && userStore.user && hasPermission(userStore.user, 'novels', 'update')">
       <NuxtLink :to="'/novels/update'">
-        <button>
-          Update Novels
-        </button>
+        <CircularButton :icon-name="'fluent-mdl2:refresh'" :icon-size="24" :padding="4"
+                        @click="navigateTo('novels/update')"/>
       </NuxtLink>
       <VerticalSpacer/>
     </div>
