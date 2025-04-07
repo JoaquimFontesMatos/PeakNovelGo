@@ -45,30 +45,32 @@ const onPointerUp = () => {
 </script>
 
 <template>
-  <div
-      ref="drawerRef"
-      :class="[
-      'fixed z-50 shadow-xl transition-all duration-0 overflow-hidden backdrop-blur-sm',
+  <Transition :name="isMobile ? 'drawer-up' : 'drawer-right'" :key="isMobile" appear>
+    <div
+        ref="drawerRef"
+        :class="[
+      'fixed z-50 shadow-xl overflow-hidden backdrop-blur-sm transition-all duration-0',
       isMobile ? 'left-0 right-0 bottom-0 rounded-t-2xl' : 'top-0 right-0 w-[clamp(33.33%,1/3vw,50%)] h-full'
     ]"
-      :style="isMobile ? { height: `${drawerHeight}px` } : {}"
-  >
-    <!-- Drag handle only on mobile -->
-    <div
-        v-if="isMobile"
-        class="w-full flex justify-center py-3 touch-none cursor-row-resize"
-        @pointerdown.passive="onPointerDown"
+        :style="isMobile ? { height: `${drawerHeight}px` } : {}"
     >
-      <div class="w-16 h-2 bg-accent-gold-dark opacity-50 rounded-full hover:opacity-100"></div>
-    </div>
+      <!-- Drag handle only on mobile -->
+      <div
+          v-if="isMobile"
+          class="w-full flex justify-center py-3 touch-none cursor-row-resize"
+          @pointerdown.passive="onPointerDown"
+      >
+        <div class="w-16 h-2 bg-accent-gold-dark opacity-50 rounded-full hover:opacity-100"></div>
+      </div>
 
-    <SmallVerticalSpacer v-if="!isMobile"/>
+      <SmallVerticalSpacer v-if="!isMobile"/>
 
-    <!-- Drawer content slot -->
-    <div class="h-full overflow-auto px-4">
-      <slot />
+      <!-- Drawer content slot -->
+      <div class="h-full overflow-auto px-4">
+        <slot />
+      </div>
     </div>
-  </div>
+  </Transition>
 </template>
 
 <style scoped>
