@@ -17,6 +17,8 @@ onMounted(async () => {
   }
 });
 
+const open = ref(false)
+
 const {fetchingNovel, paginatedNovelsData} = storeToRefs(useNovelStore());
 
 const onPageChange = async (newPage: number, limit: number) => {
