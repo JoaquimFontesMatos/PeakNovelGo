@@ -397,3 +397,95 @@ body {
 .menu-container {
     @apply space-y-6 rounded-lg bg-secondary p-4 shadow-lg
 }
+
+.drawer-right-enter-from,
+.drawer-right-leave-to {
+    transform: translateX(100%);
+    opacity: 0;
+}
+.drawer-right-enter-active,
+.drawer-right-leave-active {
+    transition: all 0.3s ease;
+}
+.drawer-right-enter-to,
+.drawer-right-leave-from {
+    transform: translateX(0);
+    opacity: 1;
+}
+
+.drawer-up-enter-from,
+.drawer-up-leave-to {
+    transform: translateY(100%);
+    opacity: 0;
+}
+.drawer-up-enter-active,
+.drawer-up-leave-active {
+    transition: all 0.3s ease;
+}
+.drawer-up-enter-to,
+.drawer-up-leave-from {
+    transform: translateY(0);
+    opacity: 1;
+}
+
+/* Fade */
+.fade-enter-from,
+.fade-leave-to {
+    opacity: 0;
+}
+.fade-enter-to,
+.fade-leave-from {
+    opacity: 1;
+}
+.fade-enter-active,
+.fade-leave-active {
+    transition: opacity 0.3s ease;
+}
+
+/* Zoom In */
+.zoom-in-enter-from {
+    transform: scale(0.9);
+    opacity: 0;
+}
+.zoom-in-enter-to {
+    transform: scale(1);
+    opacity: 1;
+}
+.zoom-in-enter-active {
+    transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
+.zoom-in-leave-from {
+    transform: scale(1);
+    opacity: 1;
+}
+.zoom-in-leave-to {
+    transform: scale(0.9);
+    opacity: 0;
+}
+.zoom-in-leave-active {
+    transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
+/* Slide Up */
+.slide-up-enter-from {
+    transform: translateY(100%);
+    opacity: 0;
+}
+.slide-up-enter-to {
+    transform: translateY(0);
+    opacity: 1;
+}
+.slide-up-enter-active,
+.slide-up-leave-active {
+    transition: transform 0.3s ease, opacity 0.3s ease;
+}
+.slide-up-leave-from {
+    transform: translateY(0);
+    opacity: 1;
+}
+.slide-up-leave-to {
+    transform: translateY(100%);
+    opacity: 0;
+}
+
