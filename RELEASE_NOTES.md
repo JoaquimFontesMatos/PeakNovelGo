@@ -1,3 +1,9 @@
+## v2.4.0 - 2025-04-08
+* Merge branch 'development'
+* feat: added a reorderable layout component
+* feat: added animations to the drawer
+* fixed the drawer
+* chore: update release notes and changelog for v2.3.0
 ## v2.3.0 - 2025-04-06
 * Merge branch 'development'
 * fix: fixed a button
