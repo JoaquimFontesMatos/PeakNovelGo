@@ -1,13 +1,17 @@
 <template>
   <div class="home-page">
     <Container>
-      <DraggableColumn v-model="items"/>
+      <DraggableLayout :main-column="mainItems"
+                       :side-column="sideItems"
+                       @update:mainColumn="val => mainItems = val"
+                       @update:sideColumn="val => sideItems = val"/>
     </Container>
   </div>
 </template>
 
 <script setup lang="ts">
 import {ref} from "vue";
+import type {LayoutItem} from "~/schemas/LayoutItem";
 
 const currentPage = ref(1);
 const currentLimit = ref(10);
@@ -76,7 +80,7 @@ async function fetchPopularTags(): Promise<string[]> {
   ];
 }
 
-const items = ref([
+const mainItems:Ref<LayoutItem[]> = ref([
   {
     id: '1',
     type: 'paginated-novel-gallery',
@@ -105,4 +109,17 @@ const items = ref([
     }
   }
 ]);
+
+const sideItems:Ref<LayoutItem[]> = ref([
+  {
+    id: '4',
+    type: 'text-block',
+  },
+  {
+    id: '5',
+    type: 'image-block',
+
+  },
+]);
+
 </script>

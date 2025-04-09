@@ -1,11 +1,6 @@
 <script setup lang="ts">
 import Sortable from 'sortablejs'
-
-type LayoutItem = {
-  id: string;
-  type: string;
-  props?: Record<string, any>;
-}
+import type {LayoutItem} from "~/schemas/LayoutItem";
 
 const props = defineProps<{
   modelValue: LayoutItem[]
@@ -19,15 +14,13 @@ const containerRef = ref<HTMLElement | null>(null)
 
 onMounted(() => {
   nextTick(() => {
-    Sortable.create(containerRef.value!, {
+    Sortable.create(containerRef.value as HTMLElement, {
       animation: 200,
       handle: '.drag-handle',
       onEnd: (evt) => {
-        // Ensure oldIndex and newIndex are numbers
         const oldIndex = evt.oldIndex ?? -1
         const newIndex = evt.newIndex ?? -1
 
-        // Avoid out-of-bound errors
         if (oldIndex !== -1 && newIndex !== -1) {
           const newItems = [...props.modelValue]
           const moved = newItems.splice(oldIndex, 1)[0]
