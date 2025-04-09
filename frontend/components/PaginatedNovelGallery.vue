@@ -55,15 +55,16 @@ const statusClass = (status: string): string => {
           class="bg-secondary h-full rounded-md border-2 border-transparent transition-all duration-150 hover:border-accent-gold hover:scale-[1.01] hover:brightness-105 hover:drop-shadow-md"
       >
         <NuxtLink :to="'/novels/' + novel.novelUpdatesId">
-          <div class="flex flex-row text-secondary-content w-full h-24 @sm:h-[7rem] @md:h-[9rem]">
+          <div class="flex flex-row text-secondary-content w-full h-24 @sm:h-[7rem] @md:h-[9rem] @max-3xs:relative">
             <img
                 :src="novel.coverUrl"
                 alt="Cover Image"
-                class="h-full w-1/4 object-cover rounded-s-md"
+                class="h-full object-cover rounded-s-md @max-3xs:w-full w-1/4"
             />
-            <div class="float-right w-3/4 p-4">
+            <div
+                class="float-right w-3/4 p-4 @max-3xs:w-full @max-3xs:absolute @max-3xs:h-min @max-3xs:bottom-0 @max-3xs:left-0 @max-3xs:p-1 @max-3xs:text-xs @max-3xs:bg-primary/50 @max-3xs:backdrop-blur-md">
               <p class="truncate">{{ novel.title }}</p>
-              <div class="flex flex-row gap-2">
+              <div class="flex flex-row gap-2 @max-3xs:hidden">
                 <!-- Status Label -->
                 <span
                     class="truncate rounded-sm p-0.5 text-xs border"
