@@ -49,7 +49,7 @@ const onPointerUp = () => {
     <div
         ref="drawerRef"
         :class="[
-      'fixed z-50 shadow-xl overflow-hidden backdrop-blur-sm transition-all duration-0',
+      'fixed z-50 shadow-xl overflow-hidden backdrop-blur-xs transition-all duration-0',
       isMobile ? 'left-0 right-0 bottom-0 rounded-t-2xl' : 'top-0 right-0 w-[clamp(33.33%,1/3vw,50%)] h-full'
     ]"
         :style="isMobile ? { height: `${drawerHeight}px` } : {}"

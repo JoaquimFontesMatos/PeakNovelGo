@@ -49,7 +49,7 @@ const toggleShowPassword = () => {
 </script>
 
 <template>
-  <main class="my-10 bg-gradient-to-r from-primary to-secondary px-5 py-2.5 md:px-20 md:py-10">
+  <main class="my-10 bg-linear-to-r from-primary to-secondary px-5 py-2.5 md:px-20 md:py-10">
     <div class="flex flex-col justify-center gap-10 md:flex-row">
       <!-- Sign-Up Section -->
       <section class="flex w-full flex-col items-center justify-center rounded-lg bg-secondary p-4 text-secondary-content shadow-lg md:w-2/3 md:p-8">
@@ -97,7 +97,7 @@ const toggleShowPassword = () => {
             <!-- Password Input -->
             <input id="password" name="password" :type="showPassword ? 'text' : 'password'" v-model="password" placeholder="********" class="pr-12" />
             <!-- Toggle Button -->
-            <button type="button" @click="toggleShowPassword" class="absolute right-2 top-1/2 -translate-y-1/2 transform text-gray-500 focus:outline-none">
+            <button type="button" @click="toggleShowPassword" class="absolute right-2 top-1/2 -translate-y-1/2 transform text-gray-500 focus:outline-hidden">
               <Icon name="fluent:eye-16-regular" :size="'1.5em'" v-if="showPassword" />
               <!-- Show Icon -->
               <Icon name="fluent:eye-off-16-regular" :size="'1.5em'" v-else />
@@ -114,7 +114,7 @@ const toggleShowPassword = () => {
 
         <!-- Submit Button -->
         <Button :disabled="loadingSignUp" @click="onSubmit">
-          <div v-if="loadingSignUp" class="flex items-center justify-center rounded">
+          <div v-if="loadingSignUp" class="flex items-center justify-center rounded-sm">
             <LoadingSpinner />
             <span>Signing Up...</span>
           </div>

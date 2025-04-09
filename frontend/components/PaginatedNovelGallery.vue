@@ -46,16 +46,16 @@ const statusClass = (status: string): string => {
   </ErrorAlert
   >
 
-  <div v-else-if="paginatedData && paginatedData.data.length > 0">
+  <div v-else-if="paginatedData && paginatedData.data.length > 0" class="@container">
     <ul v-auto-animate
-        class="@container/list grid grid-cols-1 @md/list:grid-cols-fluid gap-2 @md/list:gap-10 justify-center">
+        class="grid grid-cols-1 @lg:grid-cols-2 @3xl:grid-cols-3 @6xl:grid-cols-4 gap-2 @md:gap-5 @xl:gap-8 justify-center">
       <li
           v-for="novel in paginatedData.data"
           :key="novel.novelUpdatesId"
           class="bg-secondary h-full rounded-md border-2 border-transparent transition-all duration-150 hover:border-accent-gold hover:scale-[1.01] hover:brightness-105 hover:drop-shadow-md"
       >
         <NuxtLink :to="'/novels/' + novel.novelUpdatesId">
-          <div class="@container/item flex flex-row text-secondary-content w-full h-24 @md/item:h-[9rem]">
+          <div class="flex flex-row text-secondary-content w-full h-24 @sm:h-[7rem] @md:h-[9rem]">
             <img
                 :src="novel.coverUrl"
                 alt="Cover Image"
@@ -66,7 +66,7 @@ const statusClass = (status: string): string => {
               <div class="flex flex-row gap-2">
                 <!-- Status Label -->
                 <span
-                    class="truncate rounded p-0.5 text-xs border"
+                    class="truncate rounded-sm p-0.5 text-xs border"
                     :class="statusClass(novel.status)"
                 >
                   {{ novel.status }}

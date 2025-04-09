@@ -127,16 +127,16 @@ const handleSelectTab = (tab: Tabs) => {
             <fieldset v-if="audioPlayer" class="flex items-center gap-4 border-t border-accent-gold-dark pt-4">
               <legend class="ml-3.5 px-3.5 text-lg font-semibold text-primary-content">Audio Controls</legend>
               <!-- Atomic Reading -->
-              <button @click="ttsStore.togglePlayback" class="bg-primary/80 flex items-center rounded p-2 text-white">
+              <button @click="ttsStore.togglePlayback" class="bg-primary/80 flex items-center rounded-sm p-2 text-white">
                 <Icon v-if="isPlaying" name="fluent:pause-28-filled" class="text-accent-gold-dark"/>
                 <Icon v-else name="fluent:play-28-filled" class="text-accent-gold-dark"/>
               </button>
 
               <!-- Progress Display -->
               <div class="flex-1">
-                <div class="h-2 w-full rounded bg-gray-200">
+                <div class="h-2 w-full rounded-sm bg-gray-200">
                   <div
-                      class="h-2 rounded bg-accent-gold-dark"
+                      class="h-2 rounded-sm bg-accent-gold-dark"
                       :style="{
                   width: (currentTime / duration) * 100 + '%',
                 }"

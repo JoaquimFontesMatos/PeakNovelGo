@@ -117,7 +117,7 @@ watch(isMenuOpen, val => {
     </div>
 
     <!-- Mobile Hamburger -->
-    <button @click="toggleMenu()" class="hamburger mr-4 p-2 focus:outline-none md:hidden" aria-label="Toggle menu">
+    <button @click="toggleMenu()" class="hamburger mr-4 p-2 focus:outline-hidden md:hidden" aria-label="Toggle menu">
       <Icon name="fluent:line-horizontal-3-20-filled" class="h-6 w-6" :class="isMenuOpen ? 'hidden' : 'block'" />
       <Icon name="fluent:dismiss-20-filled" class="h-6 w-6" :class="isMenuOpen ? 'block' : 'hidden'" />
     </button>

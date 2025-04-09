@@ -1,8 +1,55 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss';
+@import "tailwindcss/preflight.css" layer(base);
+@plugin "@tailwindcss/forms";
 
+@custom-variant dark (&:is(.dark *));
+
+@theme {
+  --grid-template-columns-fluid: repeat(auto-fit, minmax(250px, 1fr));
+
+  --font-montserrat: Montserrat;
+  --font-noto: Noto Sans;
+  --font-raleway: Raleway;
+
+  --color-primary: var(--color-primary);
+  --color-secondary: var(--color-secondary);
+  --color-primary-content: var(--color-primary-content);
+  --color-secondary-content: var(--color-secondary-content);
+  --color-highlight-content: var(--color-highlight-content);
+
+  --color-accent-gold: var(--color-accent-gold);
+  --color-accent-gold-light: var(--color-accent-gold-light);
+  --color-accent-gold-dark: var(--color-accent-gold-dark);
+
+  --color-error: var(--color-error);
+  --color-error-darker: var(--color-error-darker);
+  --color-success: var(--color-success);
+  --color-warning: var(--color-warning);
+  --color-info: var(--color-info);
+
+  --color-neutral-light: var(--color-neutral-light);
+  --color-neutral-dark: var(--color-neutral-dark);
+
+  --color-border: var(--color-border);
+}
+
+/*
+  The default border color has changed to `currentcolor` in Tailwind CSS v4,
+  so we've added these compatibility styles to make sure everything still
+  looks the same as it did with Tailwind CSS v3.
+
+  If we ever want to remove these styles, we need to add an explicit border
+  color utility to any element that depends on these defaults.
+*/
 @layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {}
+}
+
+@layer components {
     [type='text'],
     [type='email'],
     [type='url'],
@@ -18,16 +65,16 @@
     [multiple],
     textarea,
     select {
-        @apply w-full rounded-lg border-secondary bg-border text-neutral-light shadow-sm focus:border-accent-gold-dark focus:ring-1 focus:ring-accent-gold-dark;
+        @apply w-full rounded-lg border-secondary bg-border text-neutral-light shadow-xs focus:border-accent-gold-dark focus:ring-1 focus:ring-accent-gold-dark;
     }
 
     [type='checkbox'],
     [type='radio'] {
-        @apply rounded border-secondary-content text-accent-gold-dark focus:ring-accent-gold-dark;
+        @apply rounded-sm border-secondary-content text-accent-gold-dark focus:ring-accent-gold-dark;
     }
 
     [type='range'] {
-        @apply w-full rounded-lg border-secondary bg-border text-neutral-light accent-accent-gold-dark shadow-sm;
+        @apply w-full rounded-lg border-secondary bg-border text-neutral-light accent-accent-gold-dark shadow-xs;
     }
 }
 

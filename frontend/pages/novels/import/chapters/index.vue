@@ -81,7 +81,7 @@ const onSubmit = async () => {
               v-model="novelUpdatesId"
               type="text"
               placeholder="e.g., naruto"
-              class="w-full rounded-md border p-2 focus:outline-none focus:ring-2 focus:ring-primary"
+              class="w-full rounded-md border p-2 focus:outline-hidden focus:ring-2 focus:ring-primary"
               :class="{ 'border-error': errorMessage }"
           />
           <p v-if="errorMessage" class="mt-1 text-sm text-error">{{ errorMessage }}</p>

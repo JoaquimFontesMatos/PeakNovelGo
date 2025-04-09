@@ -13,8 +13,8 @@ defineExpose({ showDialog });
         <h2 class="text-xl font-semibold">Login Required</h2>
         <p class="mt-2 text-secondary-content">You need to log in to continue.</p>
         <div class="mt-4 flex justify-end gap-2">
-          <button @click="showDialog = false" class="rounded bg-secondary px-4 py-2">Cancel</button>
-          <NuxtLink to="/auth/login" class="rounded bg-accent-gold-dark px-4 py-2 text-primary">Login</NuxtLink>
+          <button @click="showDialog = false" class="rounded-sm bg-secondary px-4 py-2">Cancel</button>
+          <NuxtLink to="/auth/login" class="rounded-sm bg-accent-gold-dark px-4 py-2 text-primary">Login</NuxtLink>
         </div>
       </div>
     </div>

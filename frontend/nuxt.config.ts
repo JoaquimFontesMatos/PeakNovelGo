@@ -1,4 +1,6 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
+
+import tailwindcss from "@tailwindcss/vite";
 export default defineNuxtConfig({
   experimental: {
     typedPages: true,
@@ -6,16 +8,10 @@ export default defineNuxtConfig({
   alias: {
     '@img': '/assets/img/',
   },
-  postcss: {
-    plugins: {
-      tailwindcss: {},
-      autoprefixer: {},
-    },
-  },
+  css: ['~/assets/css/tailwind.css'],
   compatibilityDate: '2025-02-27',
   devtools: { enabled: true },
   modules: [
-    '@nuxtjs/tailwindcss',
     '@pinia/nuxt',
     '@formkit/auto-animate/nuxt',
     [
@@ -48,6 +44,11 @@ export default defineNuxtConfig({
     classSuffix: '',
     preference: 'dark',
     fallback: 'dark',
+  },
+  vite: {
+    plugins: [
+      tailwindcss(),
+    ],
   },
   pwa: {
     registerType: 'autoUpdate',

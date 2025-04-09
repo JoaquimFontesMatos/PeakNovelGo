@@ -66,7 +66,7 @@ function resolveComponent(type: string) {
 <template>
   <div class="flex gap-6">
     <!-- Main Column -->
-    <div ref="mainRef" class="flex-1 space-y-4 p-4 rounded min-h-[100px]">
+    <div ref="mainRef" class="flex-1 space-y-4 p-4 rounded-sm min-h-[100px]">
       <div
           v-for="item in mainColumn"
           :key="item.id"
@@ -82,11 +82,11 @@ function resolveComponent(type: string) {
     </div>
 
     <!-- Side Column -->
-    <div ref="sideRef" class="w-64 space-y-4 p-4 bg-secondary rounded shadow min-h-[100px]">
+    <div ref="sideRef" class="w-64 space-y-4 p-4 bg-secondary rounded-sm shadow-sm min-h-[100px]">
       <div
           v-for="item in sideColumn"
           :key="item.id"
-          class="p-4 bg-primary rounded shadow-sm"
+          class="p-4 bg-primary rounded-sm shadow-xs"
           :data-id="item.id"
       >
         <div class="drag-handle text-sm text-gray-500 cursor-move mb-2">:: drag</div>

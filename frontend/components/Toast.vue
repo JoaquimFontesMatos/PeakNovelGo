@@ -11,7 +11,7 @@ const { toasts } = storeToRefs(toastStore);
       v-for="toast in toasts"
       :key="toast.id"
       :class="[
-        'p-2 md:p-4 rounded shadow transition-opacity duration-300 outline outline-2 outline-offset-[-5px] outline-accent-gold-dark',
+        'p-2 md:p-4 rounded-sm shadow-sm transition-opacity duration-300 outline outline-2 outline-offset-[-5px] outline-accent-gold-dark',
         toast.type === 'error' ? 'bg-red-500 text-white' : toast.type === 'warning' ? 'bg-yellow-500 text-white' : 'bg-green-500 text-white',
       ]"
     >

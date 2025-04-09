@@ -258,10 +258,10 @@ watchEffect(async () => {
             <section v-show="!fetchingChapters">
               <div v-if="paginatedChapterData?.data?.length">
                 <section class="flex gap-4">
-                  <Button v-if="paginatedChapterData && !fetchingChapters && bookmark?.currentChapter === 1" class="flex-grow">
+                  <Button v-if="paginatedChapterData && !fetchingChapters && bookmark?.currentChapter === 1" class="grow">
                     <NuxtLink class="block h-full w-full text-center" :to="'/novels/' + novelTitle + '/' + 1"> Start Reading </NuxtLink>
                   </Button>
-                  <Button v-if="paginatedChapterData && !fetchingChapters && bookmark && bookmark.currentChapter > 1" class="flex-grow">
+                  <Button v-if="paginatedChapterData && !fetchingChapters && bookmark && bookmark.currentChapter > 1" class="grow">
                     <NuxtLink class="block h-full w-full text-center" :to="'/novels/' + novelTitle + '/' + bookmark.currentChapter">
                       Continue {{ bookmark.currentChapter }}
                     </NuxtLink>
