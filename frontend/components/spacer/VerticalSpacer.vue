@@ -1,3 +1,3 @@
 <template>
-  <div class="h-10 w-full"></div>
+    <div class="h-10 w-full"></div>
 </template>

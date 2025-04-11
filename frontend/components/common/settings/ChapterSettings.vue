@@ -36,13 +36,13 @@
 
 <template>
     <section v-show="drawerOpen">
-        <BlockLayoutSlidingDrawer v-if="drawerOpen">
+        <SlidingDrawer v-if="drawerOpen">
             <!-- Drawer content -->
             <div class="form-container flex w-full items-center justify-between pt-2 md:pt-0">
-                <BitsTabButton v-for="tab in tabs" :key="tab" :name="tab" :current-tab="currentTab" @select-tab="handleSelectTab(tab)" />
+                <TabButton v-for="tab in tabs" :key="tab" :name="tab" :current-tab="currentTab" @select-tab="handleSelectTab(tab)" />
             </div>
 
-            <SpacersSmallVertical />
+            <SmallVerticalSpacer />
 
             <section v-if="currentTab === 'general'">
                 <div class="menu-container">
@@ -55,7 +55,7 @@
                     </div>
 
                     <div class="form-container flex w-full items-center justify-between">
-                        <BitsCircularButton
+                        <CircularButton
                             :disabled="currentChapter === 1"
                             :padding="4"
                             :icon-name="'fluent:previous-28-filled'"
@@ -65,7 +65,7 @@
 
                         <input type="range" min="0" max="100" class="mx-4" v-model="novelProgress" disabled />
 
-                        <BitsCircularButton
+                        <CircularButton
                             :disabled="currentChapter === paginatedChapterData?.total"
                             :padding="4"
                             :icon-name="'fluent:next-28-filled'"
@@ -75,39 +75,39 @@
                     </div>
 
                     <div class="form-container flex w-full items-center justify-between px-6">
-                        <BitsCircularButton
+                        <CircularButton
                             :padding="4"
                             :icon-name="'fluent:book-open-32-regular'"
                             :icon-size="28"
                             @click="navigateTo(`/novels/${novelStore.novel?.novelUpdatesId ?? ''}`)"
                         />
 
-                        <BitsCircularButton :padding="4" :icon-name="'fluent:home-32-regular'" :icon-size="28" @click="navigateTo('/')" />
+                        <CircularButton :padding="4" :icon-name="'fluent:home-32-regular'" :icon-size="28" @click="navigateTo('/')" />
 
-                        <BitsCircularButton :padding="4" :icon-name="'fluent:comment-multiple-32-regular'" :icon-size="28" @click="navigateTo('/')" />
+                        <CircularButton :padding="4" :icon-name="'fluent:comment-multiple-32-regular'" :icon-size="28" @click="navigateTo('/')" />
                     </div>
                 </div>
 
-                <SpacersSmallVertical />
+                <SmallVerticalSpacer />
 
                 <div class="menu-container">
-                    <BitsSectionHeader :title="'Downloads'" :is-main-header="false">
+                    <SectionHeader :title="'Downloads'" :is-main-header="false">
                         <div class="form-container flex w-full flex-col items-start justify-between gap-2 px-6">
                             <div class="flex flex-wrap items-center gap-2">
-                                <BitsCircularButton :padding="3" :icon-name="'fluent:arrow-download-32-regular'" :icon-size="24" />
+                                <CircularButton :padding="3" :icon-name="'fluent:arrow-download-32-regular'" :icon-size="24" />
                                 <p>Download this chapter</p>
                             </div>
                             <div class="flex flex-wrap items-center gap-2">
-                                <BitsCircularButton :padding="3" :icon-name="'fluent:arrow-download-32-regular'" :icon-size="24" />
+                                <CircularButton :padding="3" :icon-name="'fluent:arrow-download-32-regular'" :icon-size="24" />
                                 <p>Download all</p>
                             </div>
                         </div>
-                    </BitsSectionHeader>
+                    </SectionHeader>
                 </div>
             </section>
 
             <section v-else-if="currentTab === 'display'">
-                <SettingsReadingPreferences v-if="authStore.isUserLoggedIn()" />
+                <ReadingPreferencesSettings v-if="authStore.isUserLoggedIn()" />
             </section>
 
             <section v-else-if="currentTab === 'audio'">
@@ -147,6 +147,6 @@
                     </fieldset>
                 </div>
             </section>
-        </BlockLayoutSlidingDrawer>
+        </SlidingDrawer>
     </section>
 </template>

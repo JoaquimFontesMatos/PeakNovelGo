@@ -1,20 +1,22 @@
 <script setup lang="ts">
-const authStore = useAuthStore();
-const { user } = storeToRefs(authStore);
-const colorMode = useColorMode();
+    const authStore = useAuthStore();
+    const { user } = storeToRefs(authStore);
+    const colorMode = useColorMode();
 
-onMounted(async () => {
-  await authStore.initSession();
+    onMounted(async () => {
+        await authStore.initSession();
 
-  if (!user.value || user.value.readingPreferences.theme === undefined || !user.value.readingPreferences.theme) return;
+        if (!user.value || user.value.readingPreferences.theme === undefined || !user.value.readingPreferences.theme) return;
 
-  colorMode.preference = user.value.readingPreferences.theme;
-});
+        colorMode.preference = user.value.readingPreferences.theme;
+    });
 </script>
 <template>
-  <NuxtPwaAssets />
-  <div>
-    <div class="min-h-svh"><slot /></div>
-    <Toast />
-  </div>
+    <NuxtPwaAssets />
+    <div>
+        <div class="min-h-svh">
+            <slot />
+        </div>
+        <Toast />
+    </div>
 </template>

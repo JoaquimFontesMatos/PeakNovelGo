@@ -1,7 +1,6 @@
 <script setup lang="ts">
     import type { PaginatedServerResponse } from '~/schemas/PaginatedServerResponse';
     import type { ChapterSchema } from '~/schemas/Chapter';
-    import PaginatorNumbered from '~/components/paginator/PaginatorNumbered.vue';
     const { novelTitle } = useRoute().params;
 
     defineProps<{
@@ -14,14 +13,14 @@
 </script>
 
 <template>
-    <FeedbackErrorAlert v-if="!paginatedData || !paginatedData.data || paginatedData.data.length === 0">
+    <ErrorAlert v-if="!paginatedData || !paginatedData.data || paginatedData.data.length === 0">
         Error:
         {{ errorMessage === '' || errorMessage === null ? 'No Chapters Found' : errorMessage }}
-    </FeedbackErrorAlert>
+    </ErrorAlert>
 
     <div v-else-if="paginatedData?.data?.length > 0" class="min-h-72">
-        <PaginatorNumbered :totalPages="paginatedData.totalPages" :total="paginatedData.total" @page-change="(page, limit) => onPageChange(page, limit)" />
-        <SpacersVertical />
+        <NumberedPaginator :totalPages="paginatedData.totalPages" :total="paginatedData.total" @page-change="(page, limit) => onPageChange(page, limit)" />
+        <VerticalSpacer />
         <ul ref="parent" class="grid grid-cols-1 justify-center gap-10 gap-y-2 md:grid-cols-2 lg:grid-cols-3">
             <li v-for="chapter in paginatedData.data" :key="chapter.chapterNo">
                 <NuxtLink
@@ -32,14 +31,14 @@
                 </NuxtLink>
             </li>
         </ul>
-        <SpacersVertical />
-        <PaginatorNumbered
+        <VerticalSpacer />
+        <NumberedPaginator
             v-show="paginatedData.limit > 25"
-            :totalPages="paginatedData.totalPages"
             :total="paginatedData.total"
+            :totalPages="paginatedData.totalPages"
             @page-change="(page, limit) => onPageChange(page, limit)"
         />
     </div>
 
-    <FeedbackErrorAlert v-else>Error: Failed to Fetch Chapters</FeedbackErrorAlert>
+    <ErrorAlert v-else>Error: Failed to Fetch Chapters</ErrorAlert>
 </template>

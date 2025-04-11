@@ -1,15 +1,15 @@
 <script setup lang="ts">
-definePageMeta({
-  middleware: 'auth',
-})
+    definePageMeta({
+        middleware: 'auth',
+    });
 
-useHead({
-  title: "⚙️ Settings"
-})
+    useHead({
+        title: '⚙️ Settings',
+    });
 </script>
 
 <template>
-  <Container>
-    <ReadingPreferencesForm/>
-  </Container>
+    <Container>
+        <ReadingPreferencesSettings />
+    </Container>
 </template>

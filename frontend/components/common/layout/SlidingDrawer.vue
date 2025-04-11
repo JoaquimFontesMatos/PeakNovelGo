@@ -58,7 +58,7 @@
                 <div class="h-2 w-16 rounded-full bg-accent-gold-dark opacity-50 hover:opacity-100"></div>
             </div>
 
-            <SpacersSmallVertical v-if="!isMobile" />
+            <SmallVerticalSpacer v-if="!isMobile" />
 
             <!-- Drawer content slot -->
             <div class="h-full overflow-auto px-4">
@@ -67,15 +67,3 @@
         </div>
     </Transition>
 </template>
-
-<style scoped>
-    /* Custom scrollbars (optional) */
-    ::-webkit-scrollbar {
-        width: 6px;
-    }
-
-    ::-webkit-scrollbar-thumb {
-        background-color: #d1d5db;
-        border-radius: 9999px;
-    }
-</style>

@@ -145,7 +145,7 @@
 </script>
 
 <template>
-    <FeedbackLoadingBar v-show="fetchingTTS || fetchingChapters" />
+    <LoadingBar v-show="fetchingTTS || fetchingChapters" />
     <div v-show="!fetchingTTS && paragraphs.length > 0">
         <!-- Audio element for playing paragraph audio -->
         <audio ref="audioPlayer" @ended="playNextParagraph" />

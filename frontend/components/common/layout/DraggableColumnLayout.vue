@@ -37,10 +37,9 @@
      */
     function resolveComponent(type: string) {
         const registry: Record<string, any> = {
-            'text-block': defineAsyncComponent(() => import('~/components/containers/ContainersTextBlock.vue')),
-            'image-block': defineAsyncComponent(() => import('~/components/containers/ContainersImageBlock.vue')),
-            'paginated-novel-gallery': defineAsyncComponent(() => import('~/components/blocks/Gallery/paginated/GalleryPaginatedNovel.vue')),
-            // Add more mappings here
+            'text-block': 'TextBlock',
+            'image-block': 'ImageBlock',
+            'paginated-novel-gallery': 'PaginatedNovelGallery',
         };
         return registry[type] || 'div';
     }

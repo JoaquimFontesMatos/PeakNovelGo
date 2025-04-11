@@ -24,7 +24,7 @@
 
 <template>
     <div v-if="user" class="menu-container form-container">
-        <BitsSectionHeader :title="'Reading Preferences'" :is-main-header="true">
+        <SectionHeader :title="'Reading Preferences'" :is-main-header="true">
             <!-- Atomic Reading -->
             <div class="form-group flex items-center space-x-2">
                 <input
@@ -50,7 +50,7 @@
                 </select>
                 <p class="mt-2" :class="user.readingPreferences.font">Preview: The quick brown fox jumps over the lazy dog.</p>
             </div>
-        </BitsSectionHeader>
+        </SectionHeader>
 
         <!-- Theme Selector -->
         <div class="form-group">
@@ -76,7 +76,7 @@
         </div>
 
         <!-- Text-to-Speech Section -->
-        <BitsSectionHeader :title="'Text-to-Speech'" :is-main-header="true">
+        <SectionHeader :title="'Text-to-Speech'" :is-main-header="true">
             <div class="mt-2 space-y-4">
                 <!-- Autoplay -->
                 <div class="form-group flex items-center space-x-2">
@@ -126,6 +126,6 @@
                     <span class="block text-sm font-medium text-secondary-content">{{ user.readingPreferences.tts.rate }}%</span>
                 </div>
             </div>
-        </BitsSectionHeader>
+        </SectionHeader>
     </div>
 </template>

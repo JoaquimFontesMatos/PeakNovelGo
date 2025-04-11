@@ -1,7 +1,6 @@
 <script setup lang="ts">
     import type { PaginatedServerResponse } from '~/schemas/PaginatedServerResponse';
     import type { NovelSchema } from '~/schemas/Novel';
-    import PaginatorNumbered from '~/components/paginator/PaginatorNumbered.vue';
 
     defineProps<{
         errorMessage: string | null;
@@ -40,10 +39,10 @@
 </script>
 
 <template>
-    <FeedbackErrorAlert v-if="errorMessage !== '' && errorMessage !== null">
+    <ErrorAlert v-if="errorMessage !== '' && errorMessage !== null">
         Error:
         {{ errorMessage == '' ? 'No Novels Found' : errorMessage }}
-    </FeedbackErrorAlert>
+    </ErrorAlert>
 
     <div v-else-if="paginatedData && paginatedData.data.length > 0" class="@container">
         <ul v-auto-animate class="grid grid-cols-1 justify-center gap-2 @md:gap-5 @lg:grid-cols-2 @xl:gap-8 @3xl:grid-cols-3 @6xl:grid-cols-4">
@@ -87,11 +86,11 @@
             </li>
         </ul>
 
-        <SpacersVertical />
+        <VerticalSpacer />
 
-        <PaginatorNumbered :totalPages="paginatedData.totalPages" :total="paginatedData.total" @page-change="(page, limit) => onPageChange(page, limit)" />
+        <NumberedPaginator :totalPages="paginatedData.totalPages" :total="paginatedData.total" @page-change="(page, limit) => onPageChange(page, limit)" />
     </div>
     <div v-else>
-        <FeedbackErrorAlert>No novels found</FeedbackErrorAlert>
+        <ErrorAlert>No novels found</ErrorAlert>
     </div>
 </template>

@@ -56,10 +56,10 @@
     }
 
     function resolveComponent(type: string) {
-        const registry: Record<string, any> = {
-            'text-block': defineAsyncComponent(() => import('~/components/containers/ContainersTextBlock.vue')),
-            'image-block': defineAsyncComponent(() => import('~/components/containers/ContainersImageBlock.vue')),
-            'paginated-novel-gallery': defineAsyncComponent(() => import('~/components/blocks/Gallery/paginated/GalleryPaginatedNovel.vue')),
+        const registry: Record<string, Component> = {
+            PaginatedNovelGallery: defineAsyncComponent(() => import('~/components/common/gallery/paginated/PaginatedNovelGallery.vue')),
+            TextBlock: defineAsyncComponent(() => import('~/components/container/TextBlock.vue')),
+            ImageBlock: defineAsyncComponent(() => import('~/components/container/ImageBlock.vue')),
         };
         return registry[type] || 'div';
     }
