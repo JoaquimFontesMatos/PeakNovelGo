@@ -53,9 +53,5 @@
 </template>
 
 <style scoped>
-    .about-us-content {
-        @apply max-w-prose;
-        /* Use Tailwind's prose class for better typography */
-    }
 </style>
 <script setup lang="ts"></script>
