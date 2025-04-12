@@ -1,32 +1,56 @@
 <script setup lang="ts">
-    import { type SignUpForm, signUpFormSchema } from '~/schemas/Forms';
+    import { signUpFormSchema } from '~/schemas/Forms';
+    import { z } from 'zod';
 
     useHead({
         title: '🔐 Sign Up',
     });
 
-    // Use the Vee-Validate form hook
-    const { handleSubmit } = useForm<SignUpForm>({
-        validationSchema: toTypedSchema(signUpFormSchema),
-    });
+    const email = ref('');
+    const password = ref('');
+    const username = ref('');
+    const dateOfBirth = ref('');
 
-    const { value: email, errorMessage: emailError } = useField('email');
-    const { value: password, errorMessage: passwordError } = useField('password');
-    const { value: username, errorMessage: usernameError } = useField('username');
-    const { value: dateOfBirth, errorMessage: dateOfBirthError } = useField('dateOfBirth');
+    const emailError = ref('');
+    const passwordError = ref('');
+    const usernameError = ref('');
+    const dateOfBirthError = ref('');
 
     // Reactive object for handling form data
     const authStore = useAuthStore();
 
     const { loadingSignUp, signUpMessage } = storeToRefs(authStore);
 
-    const onSubmit = handleSubmit(async (values: SignUpForm) => {
-        try {
-            values.dateOfBirth = formatDateToYYYYMMDD(values.dateOfBirth);
+    const onSubmit = async () => {
+        // reset error messages
+        emailError.value = '';
+        passwordError.value = '';
+        usernameError.value = '';
+        dateOfBirthError.value = '';
 
-            await authStore.signUp(values);
+        const result = signUpFormSchema.safeParse({
+            email: email.value,
+            password: password.value,
+            username: username.value,
+            dateOfBirth: dateOfBirth.value,
+        });
+        if (!result.success) {
+            const tree = z.treeifyError(result.error);
+
+            emailError.value = tree.properties?.email?.errors[0] || '';
+            passwordError.value = tree.properties?.password?.errors[0] || '';
+            usernameError.value = tree.properties?.username?.errors[0] || '';
+            dateOfBirthError.value = tree.properties?.dateOfBirth?.errors[0] || '';
+
+            return;
+        }
+
+        try {
+            result.data.dateOfBirth = formatDateToYYYYMMDD(dateOfBirth.value);
+
+            await authStore.signUp(result.data);
         } catch (error) {}
-    });
+    };
 
     // Helper function to format date to YYYY-MM-DD
     const formatDateToYYYYMMDD = (date: string): string => {

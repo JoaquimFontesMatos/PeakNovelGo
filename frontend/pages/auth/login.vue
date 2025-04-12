@@ -1,5 +1,6 @@
 <script setup lang="ts">
-    import { type LoginForm, loginFormSchema } from '~/schemas/Forms';
+    import { loginFormSchema } from '~/schemas/Forms';
+    import { z } from 'zod';
 
     const router = useRouter();
 
@@ -9,13 +10,12 @@
 
     const runtimeConfig = useRuntimeConfig();
     const url: string = runtimeConfig.public.apiUrl;
-    // Use the Vee-Validate form hook
-    const { handleSubmit } = useForm<LoginForm>({
-        validationSchema: toTypedSchema(loginFormSchema),
-    });
 
-    const { value: email, errorMessage: emailError } = useField('email');
-    const { value: password, errorMessage: passwordError } = useField('password');
+    const email = ref('');
+    const password = ref('');
+
+    const emailError = ref('');
+    const passwordError = ref('');
 
     // Reactive object for handling form data
     const authStore = useAuthStore();
@@ -27,9 +27,23 @@
         showPassword.value = !showPassword.value;
     };
 
-    const onSubmit = handleSubmit(async (values: LoginForm) => {
+    const onSubmit = async () => {
+        // reset error messages
+        emailError.value = '';
+        passwordError.value = '';
+
+        const result = loginFormSchema.safeParse({ email: email.value, password: password.value });
+        if (!result.success) {
+            const tree = z.treeifyError(result.error);
+
+            emailError.value = tree.properties?.email?.errors[0] || '';
+            passwordError.value = tree.properties?.password?.errors[0] || '';
+
+            return;
+        }
+
         try {
-            await authStore.login(values);
+            await authStore.login(result.data);
 
             const previousRoute = sessionStorage.getItem('previousRoute') || '/';
 
@@ -39,7 +53,7 @@
             // Clear the previous route after use
             sessionStorage.removeItem('previousRoute');
         } catch (error) {}
-    });
+    };
 
     const handleEnterSignUp = () => {
         navigateTo('/auth/sign-up');

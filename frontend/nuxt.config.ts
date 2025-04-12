@@ -18,21 +18,7 @@ export default defineNuxtConfig({
     css: ['~/assets/css/tailwind.css'],
     compatibilityDate: '2025-02-27',
     devtools: { enabled: true },
-    modules: [
-        '@pinia/nuxt',
-        '@formkit/auto-animate/nuxt',
-        [
-            '@vee-validate/nuxt',
-            {
-                // disable or enable auto imports
-                autoImports: true,
-            },
-        ],
-        '@nuxt/icon',
-        '@nuxt/fonts',
-        '@nuxtjs/color-mode',
-        '@vite-pwa/nuxt',
-    ],
+    modules: ['@pinia/nuxt', '@formkit/auto-animate/nuxt', '@nuxt/icon', '@nuxt/fonts', '@nuxtjs/color-mode', '@vite-pwa/nuxt'],
     fonts: {
         defaults: {
             weights: [400],

@@ -3,9 +3,9 @@ export default defineNuxtPlugin(nuxtApp => {
 
     // Store the previous route before navigating to the login page
     router.afterEach((to, from) => {
-        if (from.name && from.name !== 'auth-login' && from.name !== 'auth-callback') {
+        if (to.name && to.name !== 'auth-login' && to.name !== 'auth-callback' && to.name !== 'auth-sign-up') {
             // Don't store if coming from login
-            sessionStorage.setItem('previousRoute', from.fullPath);
+            sessionStorage.setItem('previousRoute', to.fullPath);
         }
     });
 });
