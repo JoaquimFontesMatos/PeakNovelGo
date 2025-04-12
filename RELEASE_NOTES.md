@@ -1,3 +1,14 @@
+## v2.5.0 - 2025-04-12
+* Merge branch 'development'
+* fix: fixed some tts bugs
+* fix: removed vee validate dependency and bumped zod to v4 beta
+* fix: fixed some auth pages not redirecting to the previous page, instead they redirected to home
+* fix: reorganized the component folder, now i use nuxt component auto-import
+* fix: fixed some bugs
+* fix: fixed the styles of the novel gallery
+* fix: updated tailwind to v4. Now I have access to container queries
+* feat: feet
+* chore: update release notes and changelog for v2.4.0
 ## v2.4.0 - 2025-04-08
 * Merge branch 'development'
 * feat: added a reorderable layout component
