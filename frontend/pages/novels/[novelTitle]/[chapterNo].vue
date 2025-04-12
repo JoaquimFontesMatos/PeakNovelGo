@@ -1,220 +1,213 @@
 <script setup lang="ts">
+    import { useScroll } from '@vueuse/core';
 
-import {useScroll} from '@vueuse/core';
-import {BaseTextUtils} from '~/composables/textUtils';
-import ChapterSettings from "~/components/ChapterSettings.vue";
+    const { novelTitle, chapterNo } = useRoute().params as {
+        novelTitle: string;
+        chapterNo: string;
+    };
+    definePageMeta({
+        ssr: false,
+        layout: 'custom',
+    });
 
-const {novelTitle, chapterNo} = useRoute().params as { novelTitle: string; chapterNo: string };
-definePageMeta({
-  ssr: false,
-  layout: 'custom'
-})
+    useHead({
+        title: `📖 ${novelTitle.replace(/-/g, ' ').replace(/\b\w/g, char => char.toUpperCase())}: Chapter ${chapterNo}`,
+        meta: [
+            {
+                name: 'description',
+                content: `Read ${novelTitle}, Chapter ${chapterNo} on our platform.`,
+            },
+        ],
+    });
 
-useHead({
-  title: `📖 ${novelTitle.replace(/-/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase())}: Chapter ${chapterNo}`,
-  meta: [
-    {
-      name: 'description',
-      content: `Read ${novelTitle}, Chapter ${chapterNo} on our platform.`,
-    },
-  ],
-});
+    const textUtils = new BaseTextUtils();
 
-const textUtils = new BaseTextUtils();
+    const avgReadingSpeed = 238;
 
-const avgReadingSpeed = 238;
+    const chapterStore = useChapterStore();
+    const bookmarkStore = useBookmarkStore();
+    const userStore = useUserStore();
+    const authStore = useAuthStore();
+    const currentChapter = ref(0);
 
-const chapterStore = useChapterStore();
-const bookmarkStore = useBookmarkStore();
-const userStore = useUserStore();
-const authStore = useAuthStore();
-const currentChapter = ref(0);
+    const { chapter, fetchingChapters, paginatedChapterData } = storeToRefs(chapterStore);
 
-const {chapter, fetchingChapters, paginatedChapterData} = storeToRefs(chapterStore);
+    const { bookmark, fetchingBookmarkedNovel, updatingBookmark } = storeToRefs(bookmarkStore);
 
-const {bookmark, fetchingBookmarkedNovel, updatingBookmark} = storeToRefs(bookmarkStore);
+    const { user, isReaderMode } = storeToRefs(userStore);
 
-const {user, isReaderMode} = storeToRefs(userStore);
+    const fetchBookmark = async (novelId: string): Promise<void> => {
+        try {
+            await useBookmarkStore().fetchBookmarkedNovelByUser(novelId);
+        } catch {}
+    };
 
-const fetchBookmark = async (novelId: string): Promise<void> => {
-  try {
-    await useBookmarkStore().fetchBookmarkedNovelByUser(novelId);
-  } catch {
-  }
-};
+    const goToPreviousChapter = async (): Promise<void> => {
+        const previousChapter = currentChapter.value - 1;
 
-const goToPreviousChapter = async (): Promise<void> => {
-  currentChapter.value -= 1
+        if (authStore.isUserLoggedIn()) {
+            if (!bookmark.value) {
+                await navigateTo((('/novels/' + novelTitle) as string) + '/' + previousChapter);
+                return;
+            }
 
-  if (authStore.isUserLoggedIn()) {
-    if (!bookmark.value) {
-      await navigateTo((('/novels/' + novelTitle) as string) + '/' + (currentChapter.value));
-      return
-    }
+            bookmark.value.currentChapter = previousChapter;
 
-    bookmark.value.currentChapter = currentChapter.value;
+            try {
+                await bookmarkStore.updateBookmark(bookmark.value);
+            } catch {}
+        }
+        await navigateTo((('/novels/' + novelTitle) as string) + '/' + previousChapter);
+    };
 
-    try {
-      await bookmarkStore.updateBookmark(bookmark.value);
-    } catch {
-    }
-  }
-  navigateTo((('/novels/' + novelTitle) as string) + '/' + (currentChapter.value));
-};
+    const goToNextChapter = async (): Promise<void> => {
+        const nextChapter = currentChapter.value + 1;
 
-const goToNextChapter = async (): Promise<void> => {
-  currentChapter.value += 1
+        if (user.value) {
+            if (!bookmark.value) {
+                await navigateTo((('/novels/' + novelTitle) as string) + '/' + nextChapter);
+                return;
+            }
+            bookmark.value.currentChapter = nextChapter;
 
-  if (user.value) {
-    if (!bookmark.value) {
-      await navigateTo((('/novels/' + novelTitle) as string) + '/' + (currentChapter.value));
-      return
-    }
-    bookmark.value.currentChapter = currentChapter.value;
+            try {
+                if (authStore.isUserLoggedIn()) {
+                    await bookmarkStore.updateBookmark(bookmark.value);
+                }
+            } catch {}
+        }
+        await navigateTo((('/novels/' + novelTitle) as string) + '/' + nextChapter);
+    };
 
-    try {
-      if (authStore.isUserLoggedIn()) {
-        await bookmarkStore.updateBookmark(bookmark.value);
-      }
-    } catch {
-    }
-  }
-  await navigateTo((('/novels/' + novelTitle) as string) + '/' + (currentChapter.value));
-};
+    watchEffect(async () => {
+        const novelUpdatesId = novelTitle as string;
+        const chapterNum = parseInt(chapterNo as string);
 
-watchEffect(async () => {
-  const novelUpdatesId = novelTitle as string;
-  const chapterNum = parseInt(chapterNo as string);
+        if (chapterNum === undefined || chapterNum === 0) {
+            return;
+        }
 
-  if (chapterNum === undefined || chapterNum === 0) {
-    return;
-  }
+        currentChapter.value = chapterNum;
 
-  currentChapter.value = chapterNum;
+        try {
+            await chapterStore.fetchChapter(novelUpdatesId, currentChapter.value);
+        } catch {}
 
-  try {
-    await chapterStore.fetchChapter(novelUpdatesId, currentChapter.value);
-  } catch {
-  }
+        if (authStore.isUserLoggedIn()) {
+            await fetchBookmark(novelTitle as string);
+        }
 
-  if (authStore.isUserLoggedIn()) {
-    await fetchBookmark(novelTitle as string);
-  }
+        if (paginatedChapterData.value === null) {
+            await chapterStore.fetchChapters(novelUpdatesId, 1, 10);
+        }
+    });
 
-  if (paginatedChapterData.value === null) {
-    await chapterStore.fetchChapters(novelUpdatesId, 1, 10)
-  }
-});
+    const drawerOpen = ref<boolean>(false);
 
-const drawerOpen = ref<boolean>(false);
+    // Use the useScroll function to track scroll position reactively
+    const { y } = useScroll(window);
 
-// Use the useScroll function to track scroll position reactively
-const {y} = useScroll(window);
+    const scrollProgress = computed(() => {
+        if (import.meta.client) {
+            // Ensure this code runs only on the client-side
+            const scrollTop = y.value || 0;
+            const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
+            return scrollTop / scrollHeight;
+        }
+        return 0;
+    });
 
-const scrollProgress = computed(() => {
-  if (import.meta.client) {
-    // Ensure this code runs only on the client-side
-    const scrollTop = y.value || 0;
-    const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
-    return scrollTop / scrollHeight;
-  }
-  return 0;
-});
+    const keepSessionAlive = () => {
+        setInterval(
+            async () => {
+                await authStore.keepAlive();
+            },
+            5 * 60 * 1000
+        );
+    };
 
-const keepSessionAlive = () => {
-  setInterval(async () => {
-    await authStore.keepAlive()
-  }, 5 * 60 * 1000);
-};
+    onMounted(() => {
+        keepSessionAlive();
+    });
 
-onMounted(() => {
-  keepSessionAlive();
-});
+    // In your script setup
+    const calculateReadingTime = (text: string): number => {
+        if (!text) return 0;
 
-// In your script setup
-const calculateReadingTime = (text: string): number => {
-  if (!text) return 0;
-
-  const wordCount = (text.match(/\b\w+\b/g)?.length || 0);
-  return Math.ceil(wordCount / avgReadingSpeed);
-};
+        const wordCount = text.match(/\b\w+\b/g)?.length || 0;
+        return Math.ceil(wordCount / avgReadingSpeed);
+    };
 </script>
 
 <template>
-  <Container>
-    <RouteTree
-        :routes="[
-        { path: '/', name: 'Home' },
-        { path: '/novels', name: 'Novels' },
-        {
-          path: '/novels/' + novelTitle,
-          name: novelTitle as string
-        },
-        {
-          path: '/novels/' + novelTitle + '/' + chapterNo,
-          name: 'Chapter ' + chapterNo as string
-        },
-      ]"
-    />
+    <Container>
+        <RouteTree
+            :routes="[
+                { path: '/', name: 'Home' },
+                { path: '/novels', name: 'Novels' },
+                {
+                    path: '/novels/' + novelTitle,
+                    name: novelTitle as string,
+                },
+                {
+                    path: '/novels/' + novelTitle + '/' + chapterNo,
+                    name: ('Chapter ' + chapterNo) as string,
+                },
+            ]"
+        />
 
-    <VerticalSpacer/>
+        <VerticalSpacer />
 
-    <LoadingBar v-show="fetchingChapters"/>
-    <client-only>
-      <div
-          class="fixed left-0 top-0 z-50 h-[2px] w-full origin-left bg-accent-gold-dark transition-transform duration-500 md:h-1"
-          :style="{
-        transform: 'scaleX(' + scrollProgress + ')',
-      }"
-      />
-      <section v-if="isReaderMode" v-show="!fetchingChapters">
-        <div v-if="chapter">
-          <div @click="drawerOpen = !drawerOpen">
+        <LoadingBar v-show="fetchingChapters" />
+        <client-only>
             <div
-                class="mb-4 rounded-md border-[0.5px] border-accent-gold-dark bg-secondary px-4 py-2 text-secondary-content">
-              <h1>Chapter {{ chapter.chapterNo }}</h1>
-              <h3 class="opacity-50 text-xs">Approx. {{ calculateReadingTime(chapter.body) }} minutes</h3>
-            </div>
-            <p
-                :class="user ? user.readingPreferences.font : ''"
-                v-html="user && user.readingPreferences.atomicReading ? textUtils.convertLineBreaksToHtml(textUtils.toBionicText(chapter.body)) : textUtils.convertLineBreaksToHtml(chapter.body)"
+                class="fixed top-0 left-0 z-50 h-[2px] w-full origin-left bg-accent-gold-dark transition-transform duration-500 md:h-1"
+                :style="{
+                    transform: 'scaleX(' + scrollProgress + ')',
+                }"
             />
-          </div>
-          <VerticalSpacer/>
-          <div class="w-full flex justify-between px-6 md:px-[25%]">
-            <Button @click="goToPreviousChapter()" :disabled="currentChapter === 1" class="flex flex-row justify-center items-center gap-1">
-              <span>
-              <<
-              </span>
-              <span class="hidden md:block">
-                Previous Chapter
-              </span>
-            </Button>
+            <section v-if="isReaderMode" v-show="!fetchingChapters">
+                <div v-if="chapter">
+                    <div @click="drawerOpen = !drawerOpen">
+                        <div class="mb-4 rounded-md border-[0.5px] border-accent-gold-dark bg-secondary px-4 py-2 text-secondary-content">
+                            <h1>Chapter {{ chapter.chapterNo }}</h1>
+                            <h3 class="text-xs opacity-50">Approx. {{ calculateReadingTime(chapter.body) }} minutes</h3>
+                        </div>
+                        <p
+                            :class="user ? user.readingPreferences.font : ''"
+                            v-html="
+                                user && user.readingPreferences.atomicReading
+                                    ? textUtils.convertLineBreaksToHtml(textUtils.toBionicText(chapter.body))
+                                    : textUtils.convertLineBreaksToHtml(chapter.body)
+                            "
+                        />
+                    </div>
+                    <VerticalSpacer />
+                    <div class="flex w-full justify-between px-6 md:px-[25%]">
+                        <MainButton @click="goToPreviousChapter()" :disabled="currentChapter === 1" class="flex flex-row items-center justify-center gap-1">
+                            <span><<</span>
+                            <span class="hidden md:block">Previous Chapter</span>
+                        </MainButton>
 
-            <Button @click="goToNextChapter()"
-                    :disabled="currentChapter && paginatedChapterData && currentChapter === paginatedChapterData.total"
-                    class="flex flex-row justify-center items-center gap-1">
-              <span class="hidden md:block">
-                Previous Chapter
-              </span>
-              <span>
-               >>
-              </span>
-            </Button>
-          </div>
-        </div>
+                        <MainButton
+                            @click="goToNextChapter()"
+                            :disabled="currentChapter && paginatedChapterData && currentChapter === paginatedChapterData.total"
+                            class="flex flex-row items-center justify-center gap-1"
+                        >
+                            <span class="hidden md:block">Previous Chapter</span>
+                            <span>>></span>
+                        </MainButton>
+                    </div>
+                </div>
 
-        <ErrorAlert v-else>Error: {{ chapter === null ? 'Invalid Chapter Number' : null }}</ErrorAlert>
-      </section>
+                <ErrorAlert v-else>Error: {{ chapter === null ? 'Invalid Chapter Number' : null }}</ErrorAlert>
+            </section>
 
-      <section v-else v-show="!fetchingChapters" @click="drawerOpen = !drawerOpen">
-        <TTSReader :novel-title="novelTitle as string" :chapter="chapter"/>
-      </section>
+            <section v-else v-show="!fetchingChapters" @click="drawerOpen = !drawerOpen">
+                <TTSReader :novel-title="novelTitle as string" />
+            </section>
 
-      <ChapterSettings :drawer-open="drawerOpen"
-                       :current-chapter="currentChapter"
-                       @go-to-previous-chapter="goToPreviousChapter()"
-                       @go-to-next-chapter="goToNextChapter()"/>
-    </client-only>
-  </Container>
+            <ChapterSettings :drawer-open="drawerOpen" @goToPreviousChapter="goToPreviousChapter" @goToNextChapter="goToNextChapter" />
+        </client-only>
+    </Container>
 </template>
