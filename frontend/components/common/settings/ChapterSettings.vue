@@ -7,18 +7,9 @@
 
     defineProps<{
         drawerOpen: boolean;
-        currentChapter: number;
+        onGoToPreviousChapter: () => Promise<void>;
+        onGoToNextChapter: () => Promise<void>;
     }>();
-
-    const emit = defineEmits(['goToPreviousChapter', 'goToNextChapter']);
-
-    const handleGoToPreviousChapter = async () => {
-        emit('goToPreviousChapter');
-    };
-
-    const handleGoToNextChapter = async () => {
-        emit('goToNextChapter');
-    };
 
     type Tabs = 'general' | 'display' | 'audio' | 'translate';
     const tabs: Tabs[] = ['general', 'display', 'audio', 'translate'];
@@ -31,6 +22,10 @@
 
     const handleSelectTab = (tab: Tabs) => {
         currentTab.value = tab;
+    };
+
+    const handleChangeReadingMode = async () => {
+        if (isReaderMode) audioPlayer.value = null;
     };
 </script>
 
@@ -56,21 +51,21 @@
 
                     <div class="form-container flex w-full items-center justify-between">
                         <CircularButton
-                            :disabled="currentChapter === 1"
+                            :disabled="chapterStore.chapter?.chapterNo === 1"
                             :padding="4"
                             :icon-name="'fluent:previous-28-filled'"
                             :no-background="true"
-                            @click="handleGoToPreviousChapter()"
+                            @click="onGoToPreviousChapter()"
                         />
 
                         <input type="range" min="0" max="100" class="mx-4" v-model="novelProgress" disabled />
 
                         <CircularButton
-                            :disabled="currentChapter === paginatedChapterData?.total"
+                            :disabled="chapterStore.chapter?.chapterNo === paginatedChapterData?.total"
                             :padding="4"
                             :icon-name="'fluent:next-28-filled'"
                             :no-background="true"
-                            @click="handleGoToNextChapter()"
+                            @click="onGoToNextChapter()"
                         />
                     </div>
 
@@ -113,13 +108,7 @@
             <section v-else-if="currentTab === 'audio'">
                 <div class="menu-container form-container">
                     <div v-if="authStore.isUserLoggedIn()" class="form-group flex items-center space-x-2">
-                        <input
-                            id="readerMode"
-                            name="readerMode"
-                            type="checkbox"
-                            v-model="isReaderMode"
-                            @change="isReaderMode ? (audioPlayer = null) : console.log('')"
-                        />
+                        <input id="readerMode" name="readerMode" type="checkbox" v-model="isReaderMode" @change="handleChangeReadingMode()" />
                         <label for="readerMode" class="text-sm font-medium text-secondary-content">Reader Mode</label>
                     </div>
 

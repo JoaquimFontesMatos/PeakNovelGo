@@ -153,9 +153,9 @@
             <VerticalSpacer />
 
             <!-- Navigation Button -->
-            <Button @click="navigateTo('/')" class="w-full md:w-auto">
+            <MainButton @click="navigateTo('/')" class="w-full md:w-auto">
                 <span>Go to Home</span>
-            </Button>
+            </MainButton>
         </section>
     </Container>
 </template>

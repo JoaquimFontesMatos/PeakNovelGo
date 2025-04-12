@@ -43,32 +43,32 @@
     };
 
     const goToPreviousChapter = async (): Promise<void> => {
-        currentChapter.value -= 1;
+        const previousChapter = currentChapter.value - 1;
 
         if (authStore.isUserLoggedIn()) {
             if (!bookmark.value) {
-                await navigateTo((('/novels/' + novelTitle) as string) + '/' + currentChapter.value);
+                await navigateTo((('/novels/' + novelTitle) as string) + '/' + previousChapter);
                 return;
             }
 
-            bookmark.value.currentChapter = currentChapter.value;
+            bookmark.value.currentChapter = previousChapter;
 
             try {
                 await bookmarkStore.updateBookmark(bookmark.value);
             } catch {}
         }
-        navigateTo((('/novels/' + novelTitle) as string) + '/' + currentChapter.value);
+        await navigateTo((('/novels/' + novelTitle) as string) + '/' + previousChapter);
     };
 
     const goToNextChapter = async (): Promise<void> => {
-        currentChapter.value += 1;
+        const nextChapter = currentChapter.value + 1;
 
         if (user.value) {
             if (!bookmark.value) {
-                await navigateTo((('/novels/' + novelTitle) as string) + '/' + currentChapter.value);
+                await navigateTo((('/novels/' + novelTitle) as string) + '/' + nextChapter);
                 return;
             }
-            bookmark.value.currentChapter = currentChapter.value;
+            bookmark.value.currentChapter = nextChapter;
 
             try {
                 if (authStore.isUserLoggedIn()) {
@@ -76,7 +76,7 @@
                 }
             } catch {}
         }
-        await navigateTo((('/novels/' + novelTitle) as string) + '/' + currentChapter.value);
+        await navigateTo((('/novels/' + novelTitle) as string) + '/' + nextChapter);
     };
 
     watchEffect(async () => {
@@ -204,15 +204,10 @@
             </section>
 
             <section v-else v-show="!fetchingChapters" @click="drawerOpen = !drawerOpen">
-                <TTSReader :novel-title="novelTitle as string" :chapter="chapter" />
+                <TTSReader :novel-title="novelTitle as string" />
             </section>
 
-            <ChapterSettings
-                :drawer-open="drawerOpen"
-                :current-chapter="currentChapter"
-                @go-to-previous-chapter="goToPreviousChapter()"
-                @go-to-next-chapter="goToNextChapter()"
-            />
+            <ChapterSettings :drawer-open="drawerOpen" @goToPreviousChapter="goToPreviousChapter" @goToNextChapter="goToNextChapter" />
         </client-only>
     </Container>
 </template>

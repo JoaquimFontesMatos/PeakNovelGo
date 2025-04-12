@@ -142,9 +142,9 @@
     <section v-if="showPreview && !novelStatuses" class="space-y-4">
         <VerticalSpacer />
         <!-- Navigation Button -->
-        <Button @click="navigateTo('/')" class="w-full md:w-auto">
+        <MainButton @click="navigateTo('/')" class="w-full md:w-auto">
             <span>Go to Home</span>
-        </Button>
+        </MainButton>
     </section>
     <Container />
 </template>

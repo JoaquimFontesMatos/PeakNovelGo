@@ -1,10 +1,8 @@
 <script setup lang="ts">
-    import type { Chapter } from '~/schemas/Chapter';
     import type { TTSRequest } from '~/schemas/TTSRequest';
 
     const props = defineProps<{
         novelTitle: string;
-        chapter: Chapter | null;
     }>();
 
     const ttsStore = useTTSStore();
@@ -62,10 +60,9 @@
 
     // Play audio for the current paragraph
     const playAudio = () => {
-        if (!audioPlayer.value || !paragraphs.value[currentParagraph.value]) return;
+        cleanupAudioPlayer();
 
-        cleanupAudioPlayer(); // Clean up previous event listeners
-
+        if (!audioPlayer.value || paragraphs.value.length === 0 || !paragraphs.value[currentParagraph.value]) return;
         scrollToParagraph();
 
         // Set the new audio source with a cache-busting query parameter
@@ -90,45 +87,52 @@
         if (currentParagraph.value < paragraphs.value.length - 1) {
             currentParagraph.value++;
         } else {
+            if (!chapterStore.chapter) return;
+
+            const nextChapter = chapterStore?.chapter.chapterNo + 1;
             // Stop playback if we've reached the end
             isPlaying.value = false;
+            fetchingTTS.value = true;
+            paragraphs.value = [];
 
             // Update user currentChapter
-            if (!bookmark.value || !props.chapter) return;
-            bookmark.value.currentChapter = props.chapter.chapterNo + 1;
-
-            try {
-                await bookmarkStore.updateBookmark(bookmark.value);
-            } catch {}
+            if (bookmark.value) {
+                bookmark.value.currentChapter = nextChapter;
+                try {
+                    await bookmarkStore.updateBookmark(bookmark.value);
+                } catch {}
+            }
 
             // Navigate to new current chapter
             if (user.value && user.value.readingPreferences.tts.autoplay) {
-                await navigateTo('/novels/' + props.novelTitle + '/' + bookmark.value.currentChapter);
+                await navigateTo('/novels/' + props.novelTitle + '/' + nextChapter);
             }
         }
     };
 
     // Watch for changes to the current paragraph
-    watch(currentParagraph, newValue => {
-        playAudio();
+    watch(currentParagraph, _ => {
+        if (!fetchingTTS.value && isPlaying.value) {
+            playAudio();
+        }
     });
 
-    // Watch for changes to the chapter prop
-    watchEffect(async () => {
-        if (!props.chapter || !user.value) return;
-        // Reset state for the new chapter
-        currentParagraph.value = 0;
-        isPlaying.value = false;
+    watch(fetchingChapters, async () => {
+        fetchingTTS.value = true;
+        paragraphs.value = [];
         cleanupAudioPlayer();
+        isPlaying.value = false;
+
+        if (!chapterStore.chapter || !user.value) return;
 
         if (!user.value.readingPreferences.tts.voice || user.value.readingPreferences.tts.voice === '' || user.value.readingPreferences.tts.voice === ' ') {
             user.value.readingPreferences.tts.voice = 'en-US-AriaNeural';
         }
 
         const ttsRequest: TTSRequest = {
-            text: props.chapter.body,
-            novelId: props.chapter.novelId,
-            chapterNo: props.chapter.chapterNo,
+            text: chapterStore.chapter.body,
+            novelId: chapterStore.chapter.novelId,
+            chapterNo: chapterStore.chapter.chapterNo,
             voice: user.value.readingPreferences.tts.voice,
             rate: user.value.readingPreferences.tts.rate || 0,
         };
@@ -136,10 +140,15 @@
         try {
             await ttsStore.generateTTS(ttsRequest);
         } catch {}
+        // Reset state for the new chapter
+        currentParagraph.value = 0;
 
         // Start playing audio for the first paragraph
         if (paragraphs.value.length > 0) {
             playAudio();
+        }
+        {
+            flush: 'post';
         }
     });
 </script>
