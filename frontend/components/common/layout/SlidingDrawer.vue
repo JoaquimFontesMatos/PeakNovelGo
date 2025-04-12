@@ -49,7 +49,7 @@
             ref="drawerRef"
             :class="[
                 'fixed z-50 overflow-hidden shadow-xl backdrop-blur-xs transition-all duration-0',
-                isMobile ? 'right-0 bottom-0 left-0 rounded-t-2xl' : 'top-0 right-0 h-full w-[clamp(33.33%,1/3vw,50%)]',
+                isMobile ? 'right-0 bottom-0 left-0 rounded-t-2xl' : 'top-0 right-0 h-full w-[clamp(350px,33.33%,450px)]',
             ]"
             :style="isMobile ? { height: `${drawerHeight}px` } : {}"
         >

@@ -2,6 +2,7 @@
     import { useAuthStore } from '~/stores/auth';
 
     const route = useRoute();
+    const router = useRouter();
     const authStore = useAuthStore();
     const toastStore = useToastStore();
 
@@ -25,8 +26,13 @@
             refreshToken: refreshToken,
         });
 
-        // Optionally, redirect the user to another page
-        navigateTo('/'); // Or another route
+        const previousRoute = sessionStorage.getItem('previousRoute') || '/';
+
+        // If the previous route exists and is not the login page, navigate there
+        router.push(previousRoute); // Redirect to the previous route
+
+        // Clear the previous route after use
+        sessionStorage.removeItem('previousRoute');
     });
 </script>
 

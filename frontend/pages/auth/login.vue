@@ -1,6 +1,8 @@
 <script setup lang="ts">
     import { type LoginForm, loginFormSchema } from '~/schemas/Forms';
 
+    const router = useRouter();
+
     useHead({
         title: '🔐 Login',
     });
@@ -29,7 +31,13 @@
         try {
             await authStore.login(values);
 
-            navigateTo('/');
+            const previousRoute = sessionStorage.getItem('previousRoute') || '/';
+
+            // If the previous route exists and is not the login page, navigate there
+            await router.push(previousRoute); // Redirect to the previous route
+
+            // Clear the previous route after use
+            sessionStorage.removeItem('previousRoute');
         } catch (error) {}
     });
 

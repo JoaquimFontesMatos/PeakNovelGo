@@ -1,5 +1,6 @@
 <script setup lang="ts">
     import { hasPermission } from '~/config/permissionsConfig';
+    const router = useRouter();
 
     const isTop = ref(true);
     const isMenuOpen = ref(false);
@@ -44,7 +45,14 @@
 
     const handleLogout = async () => {
         await useAuthStore().logout();
-        navigateTo('/');
+
+        const previousRoute = sessionStorage.getItem('previousRoute') || '/';
+
+        // If the previous route exists and is not the login page, navigate there
+        await router.push(previousRoute); // Redirect to the previous route
+
+        // Clear the previous route after use
+        sessionStorage.removeItem('previousRoute');
     };
 
     const handleClickHome = () => {
