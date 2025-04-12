@@ -1,3 +1,7 @@
+## v2.5.1 - 2025-04-12
+* Merge branch 'development'
+* fix: fixed a invalid tailwind class
+* chore: update release notes and changelog for v2.5.0
 ## v2.5.0 - 2025-04-12
 * Merge branch 'development'
 * fix: fixed some tts bugs
