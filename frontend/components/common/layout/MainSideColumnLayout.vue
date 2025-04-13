@@ -2,6 +2,8 @@
     import Sortable from 'sortablejs';
     import type { LayoutItem } from '~/schemas/LayoutItem';
 
+    const editMode = ref(false);
+
     const props = defineProps<{
         mainColumn: LayoutItem[];
         sideColumn: LayoutItem[];
@@ -46,9 +48,9 @@
             return Array.from(container.children)
                 .map((el: any) => {
                     const id = el.getAttribute('data-id');
-                    return [...props.mainColumn, ...props.sideColumn].find(item => item.id === id)!;
+                    return [...props.mainColumn, ...props.sideColumn].find(item => item.id === id);
                 })
-                .filter(Boolean);
+                .filter((item): item is LayoutItem => Boolean(item));
         };
 
         emit('update:mainColumn', getItemsFromContainer(mainRef.value));
@@ -60,25 +62,40 @@
             PaginatedNovelGallery: defineAsyncComponent(() => import('~/components/common/gallery/paginated/PaginatedNovelGallery.vue')),
             TextBlock: defineAsyncComponent(() => import('~/components/container/TextBlock.vue')),
             ImageBlock: defineAsyncComponent(() => import('~/components/container/ImageBlock.vue')),
+            FeaturedNovels: defineAsyncComponent(() => import('~/components/common/sections/FeaturedNovels.vue')),
+            RecentlyUpdatedNovels: defineAsyncComponent(() => import('~/components/common/sections/RecentlyUpdatedNovels.vue')),
+            TopRatedNovels: defineAsyncComponent(() => import('~/components/common/sections/TopRatedNovels.vue')),
+            PopularTags: defineAsyncComponent(() => import('~/components/common/sections/PopularTags.vue')),
         };
         return registry[type] || 'div';
+    }
+
+    function toggleEditMode() {
+        editMode.value = !editMode.value;
     }
 </script>
 
 <template>
-    <div class="flex gap-6">
+    <CircularButton
+        :icon-size="12"
+        :no-background="true"
+        :icon-name="editMode ? 'fluent:edit-20-filled' : 'fluent:edit-20-regular'"
+        :padding="3"
+        @click="toggleEditMode()"
+    />
+    <div class="flex flex-col gap-6 md:flex-row">
         <!-- Main Column -->
         <div ref="mainRef" class="min-h-[100px] flex-1 space-y-4 rounded-sm p-4">
             <div v-for="item in mainColumn" :key="item.id" class="p-4" :data-id="item.id">
-                <div class="drag-handle mb-2 cursor-move text-sm text-gray-500">:: drag</div>
+                <div v-show="editMode" class="drag-handle cursor-move text-sm text-gray-500">:: drag</div>
                 <component :is="resolveComponent(item.type)" v-bind="item.props" />
             </div>
         </div>
 
         <!-- Side Column -->
-        <div ref="sideRef" class="min-h-[100px] w-64 space-y-4 rounded-sm bg-secondary p-4 shadow-sm">
+        <div ref="sideRef" class="min-h-[100px] w-full space-y-4 rounded-sm bg-primary p-4 md:w-64 md:bg-secondary md:shadow-sm">
             <div v-for="item in sideColumn" :key="item.id" class="rounded-sm bg-primary p-4 shadow-xs" :data-id="item.id">
-                <div class="drag-handle mb-2 cursor-move text-sm text-gray-500">:: drag</div>
+                <div v-show="editMode" class="drag-handle cursor-move text-sm text-gray-500">:: drag</div>
                 <component :is="resolveComponent(item.type)" v-bind="item.props" />
             </div>
         </div>

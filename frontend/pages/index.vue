@@ -1,117 +1,89 @@
 <template>
-    <div class="home-page">
-        <Container>
-            <section class="featured-novels py-12">
-                <h2 class="mb-6 text-3xl font-bold text-primary-content">Featured Novels</h2>
-                <PaginatedNovelGallery
-                    v-show="!fetchingNovel"
-                    :errorMessage="paginatedNovelsData === null ? 'No Novels Found' : null"
-                    :paginatedData="paginatedNovelsData"
-                    @page-change="onPageChange"
-                />
-            </section>
-
-            <section class="recently-updated py-12">
-                <h2 class="mb-6 text-3xl font-bold text-primary-content">Recently Updated</h2>
-                <PaginatedNovelGallery
-                    v-show="!fetchingNovel"
-                    :errorMessage="paginatedNovelsData === null ? 'No Novels Found' : null"
-                    :paginatedData="paginatedNovelsData"
-                    @page-change="onPageChange"
-                />
-            </section>
-
-            <section class="popular-tags py-12">
-                <h2 class="mb-6 text-3xl font-bold text-primary-content">Popular Tags</h2>
-                <div class="flex flex-wrap gap-2">
-                    <NuxtLink
-                        v-for="tag in popularTags"
-                        :key="tag"
-                        :to="`/novels/tag/${tag}`"
-                        class="rounded-full bg-secondary px-4 py-2 text-primary-content transition-colors duration-200 hover:bg-accent-gold hover:text-primary"
-                    >
-                        {{ tag }}
-                    </NuxtLink>
-                </div>
-            </section>
-
-            <section class="top-rated py-12">
-                <h2 class="mb-6 text-3xl font-bold text-primary-content">Top Rated</h2>
-                <PaginatedNovelGallery
-                    v-show="!fetchingNovel"
-                    :errorMessage="paginatedNovelsData === null ? 'No Novels Found' : null"
-                    :paginatedData="paginatedNovelsData"
-                    @page-change="onPageChange"
-                />
-            </section>
-        </Container>
-    </div>
+    <Container>
+        <MainSideColumnLayout
+            :main-column="mainItems"
+            :side-column="sideItems"
+            @update:mainColumn="
+                val => {
+                    mainItems = val;
+                    saveLayout();
+                }
+            "
+            @update:sideColumn="
+                val => {
+                    sideItems = val;
+                    saveLayout();
+                }
+            "
+        />
+    </Container>
 </template>
 
 <script setup lang="ts">
-    const currentPage = ref(1);
-    const currentLimit = ref(10);
+    import type { LayoutItem } from '~/schemas/LayoutItem';
 
     useHead({
         title: '📖 Home',
     });
 
-    onMounted(async () => {
-        await onPageChange(currentPage.value, currentLimit.value);
-        // featuredNovels.value = await fetchFeaturedNovels();
-
-        // Fetch recently updated novels (replace with your actual API call)
-        // recentlyUpdated.value = await fetchRecentlyUpdatedNovels();
-
-        // Fetch popular tags (replace with your actual API call)
-        popularTags.value = await fetchPopularTags();
-
-        // topRatedNovels.value = await fetchTopRatedNovels();
+    onMounted(() => {
+        loadLayout();
     });
 
-    const { fetchingNovel, paginatedNovelsData } = storeToRefs(useNovelStore());
+    const mainItems: Ref<LayoutItem[]> = ref([
+        {
+            id: '1',
+            type: 'RecentlyUpdatedNovels',
+            props: {},
+        },
+        {
+            id: '2',
+            type: 'FeaturedNovels',
+            props: {},
+        },
+    ]);
 
-    const onPageChange = async (newPage: number, limit: number) => {
-        if (newPage === currentPage.value && limit === currentLimit.value && paginatedNovelsData.value && paginatedNovelsData.value.page != 0) return;
+    const sideItems: Ref<LayoutItem[]> = ref([
+        {
+            id: '3',
+            type: 'TopRatedNovels',
+        },
+        {
+            id: '4',
+            type: 'PopularTags',
+        },
+    ]);
 
-        try {
-            await useNovelStore().fetchNovels(newPage, limit);
-        } catch {}
-        currentPage.value = newPage;
-        currentLimit.value = limit;
-    };
+    function saveLayout() {
+        const strip = (items: LayoutItem[]) =>
+            items.map(({ id, type, props }) => ({
+                id,
+                type,
+                props: {
+                    ...props,
+                    onPageChange: undefined, // remove function before saving
+                },
+            }));
 
-    //import HeroSection from '~/components/HeroSection.vue';  // Import the hero section
-
-    const featuredNovels = ref([]);
-    const recentlyUpdated = ref([]);
-    const popularTags: Ref<string[]> = ref([]);
-    const topRatedNovels = ref([]);
-
-    // Placeholder functions - replace these with your actual API calls
-    async function fetchFeaturedNovels() {
-        return [];
+        localStorage.setItem(
+            'layout',
+            JSON.stringify({
+                main: strip(mainItems.value),
+                side: strip(sideItems.value),
+            })
+        );
     }
 
-    async function fetchRecentlyUpdatedNovels() {
-        return [];
-    }
+    function loadLayout() {
+        const saved = JSON.parse(localStorage.getItem('layout') || 'null');
+        if (!saved) return;
 
-    async function fetchTopRatedNovels() {
-        return [];
-    }
+        const inject = (items: LayoutItem[]) =>
+            items.map(item => {
+                return item;
+            });
 
-    async function fetchPopularTags(): Promise<string[]> {
-        return [
-            'Adapted to Manhua',
-            'Transformation Ability',
-            'Transmigration',
-            'Transplanted Memories',
-            'Vampires',
-            'Weak to Strong',
-            'Wealthy Characters',
-            'Werebeasts',
-            'Zombies',
-        ];
+        mainItems.value = inject(saved.main);
+        sideItems.value = inject(saved.side);
     }
 </script>

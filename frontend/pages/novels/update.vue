@@ -70,81 +70,81 @@
 </script>
 
 <template>
-    <>
-    <!-- Input Section -->
-    <div>
-        <!-- Import Button -->
-        <MainButton :disabled="updatingNovels" @click="onSubmit" class="w-full md:w-auto">
-            <div v-if="updatingNovels" class="flex items-center gap-2">
-                <LoadingSpinner class="h-5 w-5" />
-                <span>Updating Novels...</span>
-            </div>
-            <span v-else>Update Novels</span>
-        </MainButton>
-    </div>
-
-    <VerticalSpacer />
-
-    <!-- Status Updates Section -->
-    <section v-if="updatingNovels || showPreview" class="space-y-4">
-        <h2 class="text-lg font-semibold">Novel Update Status</h2>
-
-        <!-- Progress Bar -->
-        <div class="relative h-4 w-full overflow-hidden rounded-full bg-secondary">
-            <div
-                class="h-full bg-secondary-content transition-all duration-300"
-                :style="{
-                    width: `${(completedNovelCount / Object.keys(novelStatuses).length) * 100}%`,
-                }"
-            ></div>
+    <Container>
+        <!-- Input Section -->
+        <div>
+            <!-- Import Button -->
+            <MainButton :disabled="updatingNovels" @click="onSubmit" class="w-full md:w-auto">
+                <div v-if="updatingNovels" class="flex items-center gap-2">
+                    <LoadingSpinner class="h-5 w-5" />
+                    <span>Updating Novels...</span>
+                </div>
+                <span v-else>Update Novels</span>
+            </MainButton>
         </div>
-        <p>
-            Downloading: {{ completedNovelCount }} /
-            {{ Object.keys(novelStatuses).length }}
-        </p>
 
-        <table class="w-full border-collapse">
-            <thead>
-                <tr class="bg-secondary">
-                    <th class="p-2 text-left">NovelUpdatesID</th>
-                    <th class="p-2 text-left">Status</th>
-                    <th class="p-2 text-left">Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr v-for="[novelUpdatesID, status] in paginatedStatuses" :key="novelUpdatesID" class="border-b">
-                    <td class="p-2">{{ novelUpdatesID }}</td>
-                    <td
-                        class="p-2"
-                        :class="{
-                            'text-primary-content': status === 'to download' || status === 'to update',
-                            'text-yellow-500': status === 'in queue',
-                            'text-blue-500': status === 'updating',
-                            'text-green-500': status === 'updated',
-                            'text-red-500': status === 'error',
-                            'text-gray-500': status === 'skipped',
-                        }"
-                    >
-                        {{ status }}
-                    </td>
-                    <td class="p-2">
-                        <button v-if="novelStatuses[novelUpdatesID] === 'error'" @click="retry(novelUpdatesID)">Retry</button>
-                    </td>
-                </tr>
-            </tbody>
-        </table>
-
-        <!-- Pagination -->
-        <NumberedPaginator :totalPages="totalPages" :total="Object.keys(novelStatuses).length" @page-change="handlePageChange" />
-    </section>
-
-    <!-- Preview Section -->
-    <section v-if="showPreview && !novelStatuses" class="space-y-4">
         <VerticalSpacer />
-        <!-- Navigation Button -->
-        <MainButton @click="navigateTo('/')" class="w-full md:w-auto">
-            <span>Go to Home</span>
-        </MainButton>
-    </section>
-    <Container />
+
+        <!-- Status Updates Section -->
+        <section v-if="updatingNovels || showPreview" class="space-y-4">
+            <h2 class="text-lg font-semibold">Novel Update Status</h2>
+
+            <!-- Progress Bar -->
+            <div class="relative h-4 w-full overflow-hidden rounded-full bg-secondary">
+                <div
+                    class="h-full bg-secondary-content transition-all duration-300"
+                    :style="{
+                        width: `${(completedNovelCount / Object.keys(novelStatuses).length) * 100}%`,
+                    }"
+                ></div>
+            </div>
+            <p>
+                Downloading: {{ completedNovelCount }} /
+                {{ Object.keys(novelStatuses).length }}
+            </p>
+
+            <table class="w-full border-collapse">
+                <thead>
+                    <tr class="bg-secondary">
+                        <th class="p-2 text-left">NovelUpdatesID</th>
+                        <th class="p-2 text-left">Status</th>
+                        <th class="p-2 text-left">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr v-for="[novelUpdatesID, status] in paginatedStatuses" :key="novelUpdatesID" class="border-b">
+                        <td class="p-2">{{ novelUpdatesID }}</td>
+                        <td
+                            class="p-2"
+                            :class="{
+                                'text-primary-content': status === 'to download' || status === 'to update',
+                                'text-yellow-500': status === 'in queue',
+                                'text-blue-500': status === 'updating',
+                                'text-green-500': status === 'updated',
+                                'text-red-500': status === 'error',
+                                'text-gray-500': status === 'skipped',
+                            }"
+                        >
+                            {{ status }}
+                        </td>
+                        <td class="p-2">
+                            <button v-if="novelStatuses[novelUpdatesID] === 'error'" @click="retry(novelUpdatesID)">Retry</button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <!-- Pagination -->
+            <NumberedPaginator :totalPages="totalPages" :total="Object.keys(novelStatuses).length" @page-change="handlePageChange" />
+        </section>
+
+        <!-- Preview Section -->
+        <section v-if="showPreview && !novelStatuses" class="space-y-4">
+            <VerticalSpacer />
+            <!-- Navigation Button -->
+            <MainButton @click="navigateTo('/')" class="w-full md:w-auto">
+                <span>Go to Home</span>
+            </MainButton>
+        </section>
+    </Container>
 </template>

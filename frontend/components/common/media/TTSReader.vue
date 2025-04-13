@@ -117,40 +117,43 @@
         }
     });
 
-    watch(fetchingChapters, async () => {
-        fetchingTTS.value = true;
-        paragraphs.value = [];
-        cleanupAudioPlayer();
-        isPlaying.value = false;
+    watch(
+        fetchingChapters,
+        async () => {
+            fetchingTTS.value = true;
+            paragraphs.value = [];
+            cleanupAudioPlayer();
+            isPlaying.value = false;
 
-        if (!chapterStore.chapter || !user.value) return;
+            if (!chapterStore.chapter || !user.value) return;
 
-        if (!user.value.readingPreferences.tts.voice || user.value.readingPreferences.tts.voice === '' || user.value.readingPreferences.tts.voice === ' ') {
-            user.value.readingPreferences.tts.voice = 'en-US-AriaNeural';
-        }
+            if (!user.value.readingPreferences.tts.voice || user.value.readingPreferences.tts.voice === '' || user.value.readingPreferences.tts.voice === ' ') {
+                user.value.readingPreferences.tts.voice = 'en-US-AriaNeural';
+            }
 
-        const ttsRequest: TTSRequest = {
-            text: chapterStore.chapter.body,
-            novelId: chapterStore.chapter.novelId,
-            chapterNo: chapterStore.chapter.chapterNo,
-            voice: user.value.readingPreferences.tts.voice,
-            rate: user.value.readingPreferences.tts.rate || 0,
-        };
+            const ttsRequest: TTSRequest = {
+                text: chapterStore.chapter.body,
+                novelId: chapterStore.chapter.novelId,
+                chapterNo: chapterStore.chapter.chapterNo,
+                voice: user.value.readingPreferences.tts.voice,
+                rate: user.value.readingPreferences.tts.rate || 0,
+            };
 
-        try {
-            await ttsStore.generateTTS(ttsRequest);
-        } catch {}
-        // Reset state for the new chapter
-        currentParagraph.value = 0;
+            try {
+                await ttsStore.generateTTS(ttsRequest);
+            } catch {}
+            // Reset state for the new chapter
+            currentParagraph.value = 0;
 
-        // Start playing audio for the first paragraph
-        if (paragraphs.value.length > 0) {
-            playAudio();
-        }
+            // Start playing audio for the first paragraph
+            if (paragraphs.value.length > 0) {
+                playAudio();
+            }
+        },
         {
-            flush: 'post';
+            immediate: true,
         }
-    });
+    );
 </script>
 
 <template>
