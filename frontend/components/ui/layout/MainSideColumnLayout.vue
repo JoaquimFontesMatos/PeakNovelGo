@@ -59,13 +59,13 @@
 
     function resolveComponent(type: string) {
         const registry: Record<string, Component> = {
-            PaginatedNovelGallery: defineAsyncComponent(() => import('~/components/common/gallery/paginated/PaginatedNovelGallery.vue')),
+            PaginatedNovelGallery: defineAsyncComponent(() => import('~/components/ui/gallery/paginated/PaginatedNovelGallery.vue')),
             TextBlock: defineAsyncComponent(() => import('~/components/container/TextBlock.vue')),
             ImageBlock: defineAsyncComponent(() => import('~/components/container/ImageBlock.vue')),
-            FeaturedNovels: defineAsyncComponent(() => import('~/components/common/sections/FeaturedNovels.vue')),
-            RecentlyUpdatedNovels: defineAsyncComponent(() => import('~/components/common/sections/RecentlyUpdatedNovels.vue')),
-            TopRatedNovels: defineAsyncComponent(() => import('~/components/common/sections/TopRatedNovels.vue')),
-            PopularTags: defineAsyncComponent(() => import('~/components/common/sections/PopularTags.vue')),
+            FeaturedNovels: defineAsyncComponent(() => import('~/components/ui/sections/FeaturedNovels.vue')),
+            RecentlyUpdatedNovels: defineAsyncComponent(() => import('~/components/ui/sections/RecentlyUpdatedNovels.vue')),
+            TopRatedNovels: defineAsyncComponent(() => import('~/components/ui/sections/TopRatedNovels.vue')),
+            PopularTags: defineAsyncComponent(() => import('~/components/ui/sections/PopularTags.vue')),
         };
         return registry[type] || 'div';
     }

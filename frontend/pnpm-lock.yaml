@@ -66,6 +66,9 @@ importers:
       '@iconify-json/fluent':
         specifier: ^1.2.19
         version: 1.2.19
+      '@iconify-json/fluent-mdl2':
+        specifier: ^1.2.1
+        version: 1.2.1
       '@nuxtjs/color-mode':
         specifier: ^3.5.2
         version: 3.5.2(magicast@0.3.5)
@@ -771,6 +774,9 @@ packages:
 
   '@formkit/auto-animate@0.8.2':
     resolution: {integrity: sha512-SwPWfeRa5veb1hOIBMdzI+73te5puUBHmqqaF1Bu7FjvxlYSz/kJcZKSa9Cg60zL0uRNeJL2SbRxV6Jp6Q1nFQ==}
+
+  '@iconify-json/fluent-mdl2@1.2.1':
+    resolution: {integrity: sha512-zFgd1V9r0a+mqA46Z4mOoSf6PbQbhYnY9Uhtpjl3xvw03doNolh4apMtsZoLlC/Y7wO2uj306MgziaqwWdNMwg==}
 
   '@iconify-json/fluent@1.2.19':
     resolution: {integrity: sha512-nqmJzoJlreoBpRiCyJOOoAJXNLa1xHj33yrVdijlJHAQ/vSzXm3rMuu18gP3mZkLHGTstgdVUyRguc8MdgaH+w==}
@@ -5130,6 +5136,10 @@ snapshots:
     optional: true
 
   '@formkit/auto-animate@0.8.2': {}
+
+  '@iconify-json/fluent-mdl2@1.2.1':
+    dependencies:
+      '@iconify/types': 2.0.0
 
   '@iconify-json/fluent@1.2.19':
     dependencies:

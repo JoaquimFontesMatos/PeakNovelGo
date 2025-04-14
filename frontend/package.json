@@ -31,6 +31,7 @@
   },
   "devDependencies": {
     "@iconify-json/fluent": "^1.2.19",
+    "@iconify-json/fluent-mdl2": "^1.2.1",
     "@nuxtjs/color-mode": "^3.5.2",
     "@types/sortablejs": "^1.15.8",
     "prettier": "^3.5.3",
