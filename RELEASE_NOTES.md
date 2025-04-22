@@ -1,3 +1,10 @@
+## v2.6.0 - 2025-04-22
+* Merge branch 'development'
+* fix: fixed some visual bugs
+* fix: fixed settings page to have a more divided layout
+* fix: changed bun to pnpm
+* feat: added a better layout to the home page
+* chore: update release notes and changelog for v2.5.1
 ## v2.5.1 - 2025-04-12
 * Merge branch 'development'
 * fix: fixed a invalid tailwind class
