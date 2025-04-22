@@ -102,7 +102,7 @@
             </section>
 
             <section v-else-if="currentTab === 'display'">
-                <ReadingPreferencesSettings v-if="authStore.isUserLoggedIn()" />
+                <DisplaySettings v-if="authStore.isUserLoggedIn()" />
             </section>
 
             <section v-else-if="currentTab === 'audio'">
@@ -135,6 +135,10 @@
                         </div>
                     </fieldset>
                 </div>
+
+                <SmallVerticalSpacer />
+
+                <AudioSettings v-if="authStore.isUserLoggedIn()" />
             </section>
         </SlidingDrawer>
     </section>

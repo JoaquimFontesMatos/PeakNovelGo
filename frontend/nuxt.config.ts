@@ -17,14 +17,16 @@ export default defineNuxtConfig({
     },
     css: ['~/assets/css/tailwind.css'],
     compatibilityDate: '2025-02-27',
-    devtools: { enabled: true },
+    devtools: {
+        enabled: true,
+    },
     modules: ['@pinia/nuxt', '@formkit/auto-animate/nuxt', '@nuxt/icon', '@nuxt/fonts', '@nuxtjs/color-mode', '@vite-pwa/nuxt'],
     fonts: {
         defaults: {
             weights: [400],
             styles: ['normal', 'italic'],
         },
-        families: [{ name: 'Montserratt' }, { name: 'Noto Sans' }, { name: 'Raleway' }],
+        families: [{ name: 'Montserratt' }, { name: 'Noto Sans' }, { name: 'Raleway' }, { name: 'Shadows Into Light' }, { name: 'Caveat' }, { name: 'Kalam' }],
     },
     runtimeConfig: {
         // Keys within public are also exposed client-side

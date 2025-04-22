@@ -37,9 +37,13 @@
      */
     function resolveComponent(type: string) {
         const registry: Record<string, any> = {
-            'text-block': 'TextBlock',
-            'image-block': 'ImageBlock',
-            'paginated-novel-gallery': 'PaginatedNovelGallery',
+            PaginatedNovelGallery: defineAsyncComponent(() => import('~/components/ui/gallery/paginated/PaginatedNovelGallery.vue')),
+            TextBlock: defineAsyncComponent(() => import('~/components/container/TextBlock.vue')),
+            ImageBlock: defineAsyncComponent(() => import('~/components/container/ImageBlock.vue')),
+            FeaturedNovels: defineAsyncComponent(() => import('~/components/ui/sections/FeaturedNovels.vue')),
+            RecentlyUpdatedNovels: defineAsyncComponent(() => import('~/components/ui/sections/RecentlyUpdatedNovels.vue')),
+            TopRatedNovels: defineAsyncComponent(() => import('~/components/ui/sections/TopRatedNovels.vue')),
+            PopularTags: defineAsyncComponent(() => import('~/components/ui/sections/PopularTags.vue')),
         };
         return registry[type] || 'div';
     }
