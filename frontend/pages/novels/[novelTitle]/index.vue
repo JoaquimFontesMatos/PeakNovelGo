@@ -1,4 +1,6 @@
 <script setup lang="ts">
+    import { useIndexedDB } from '~/composables/useInitCacheDB';
+
     const textUtils = new BaseTextUtils();
 
     const { novelTitle } = useRoute().params as { novelTitle: string };
@@ -32,9 +34,23 @@
     });
 
     const fetchBookmark = async (novelId: string): Promise<void> => {
-        try {
-            await useBookmarkStore().fetchBookmarkedNovelByUser(novelId);
-        } catch {}
+        if (!novel.value) {
+            return;
+        }
+
+        if (import.meta.client) {
+            const cachedBookmark = await bookmarkStore.getCachedBookmark(novel.value.ID);
+
+            if (cachedBookmark) {
+                bookmark.value = cachedBookmark;
+                console.log(`Bookmark from novel with id ${bookmark.value.novelId} loaded from cache`);
+            } else {
+                // If not cached, fetch from the server
+                await useBookmarkStore().fetchBookmarkedNovelByUser(novelId);
+            }
+
+            await bookmarkStore.cacheBookmark();
+        }
     };
 
     const bookmarkNovel = async (novelId: number): Promise<void> => {
@@ -78,10 +94,27 @@
     };
 
     watchEffect(async () => {
-        await Promise.all([useNovelStore().fetchNovel(novelTitle as string), onPageChange(1, 10)]);
+        const novelUpdatesId = novelTitle as string;
+
+        if (import.meta.client) {
+            const cachedNovel = await novelStore.getCachedNovel(novelUpdatesId);
+
+            if (cachedNovel) {
+                novel.value = cachedNovel;
+                console.log(`Novel ${novelUpdatesId} loaded from cache`);
+            } else {
+                // If not cached, fetch from the server
+                await useNovelStore().fetchNovel(novelUpdatesId);
+            }
+        }
+        await onPageChange(1, 10);
 
         if (authStore.isUserLoggedIn()) {
-            await fetchBookmark(novelTitle as string), onPageChange(1, 10);
+            await fetchBookmark(novelUpdatesId), onPageChange(1, 10);
+        }
+
+        if (import.meta.client) {
+            await novelStore.cacheRecentlyVisitedNovel();
         }
     });
 </script>
@@ -254,18 +287,14 @@
                         </div>
                         <LoadingIndicator v-show="fetchingChapters" />
                         <section v-show="!fetchingChapters">
-                            <div v-if="paginatedChapterData?.data?.length">
-                                <section class="flex gap-4">
-                                    <MainButton v-if="paginatedChapterData && !fetchingChapters && bookmark?.currentChapter === 1" class="grow">
-                                        <NuxtLink class="block h-full w-full text-center" :to="'/novels/' + novelTitle + '/' + 1">Start Reading</NuxtLink>
-                                    </MainButton>
-                                    <MainButton v-if="paginatedChapterData && !fetchingChapters && bookmark && bookmark.currentChapter > 1" class="grow">
-                                        <NuxtLink class="block h-full w-full text-center" :to="'/novels/' + novelTitle + '/' + bookmark.currentChapter">
-                                            Continue {{ bookmark.currentChapter }}
-                                        </NuxtLink>
-                                    </MainButton>
-                                </section>
-                            </div>
+                            <MainButton v-if="paginatedChapterData && !fetchingChapters && bookmark?.currentChapter === 1" class="grow">
+                                <NuxtLink class="block h-full w-full text-center" :to="'/novels/' + novelTitle + '/' + 1">Start Reading</NuxtLink>
+                            </MainButton>
+                            <MainButton v-if="bookmark && bookmark.currentChapter > 1" class="grow">
+                                <NuxtLink class="block h-full w-full text-center" :to="'/novels/' + novelTitle + '/' + bookmark.currentChapter">
+                                    Continue {{ bookmark.currentChapter }}
+                                </NuxtLink>
+                            </MainButton>
                         </section>
                     </div>
                 </div>

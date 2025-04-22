@@ -1,5 +1,6 @@
 <script setup lang="ts">
     import { useScroll } from '@vueuse/core';
+    import { useIndexedDB } from '~/composables/useInitCacheDB';
 
     const { novelTitle, chapterNo } = useRoute().params as {
         novelTitle: string;
@@ -25,21 +26,38 @@
     const avgReadingSpeed = 238;
 
     const chapterStore = useChapterStore();
+    const novelStore = useNovelStore();
     const bookmarkStore = useBookmarkStore();
     const userStore = useUserStore();
     const authStore = useAuthStore();
     const currentChapter = ref(0);
 
-    const { chapter, fetchingChapters, paginatedChapterData } = storeToRefs(chapterStore);
+    const { cachedChapters, chapter, fetchingChapters, paginatedChapterData } = storeToRefs(chapterStore);
 
     const { bookmark, fetchingBookmarkedNovel, updatingBookmark } = storeToRefs(bookmarkStore);
 
     const { user, isReaderMode } = storeToRefs(userStore);
 
+    const { novel } = storeToRefs(novelStore);
+
     const fetchBookmark = async (novelId: string): Promise<void> => {
-        try {
-            await useBookmarkStore().fetchBookmarkedNovelByUser(novelId);
-        } catch {}
+        if (!novel.value) {
+            return;
+        }
+
+        if (import.meta.client) {
+            const cachedBookmark = await bookmarkStore.getCachedBookmark(novel.value.ID);
+
+            if (cachedBookmark) {
+                bookmark.value = cachedBookmark;
+                console.log(`Bookmark from novel with id ${bookmark.value.novelId} loaded from cache`);
+            } else {
+                // If not cached, fetch from the server
+                await useBookmarkStore().fetchBookmarkedNovelByUser(novelId);
+            }
+
+            await bookmarkStore.cacheBookmark();
+        }
     };
 
     const goToPreviousChapter = async (): Promise<void> => {
@@ -90,7 +108,17 @@
         currentChapter.value = chapterNum;
 
         try {
-            await chapterStore.fetchChapter(novelUpdatesId, currentChapter.value);
+            if (import.meta.client) {
+                const cachedChapter = await chapterStore.getCachedChapter(novelUpdatesId, currentChapter.value);
+
+                if (cachedChapter) {
+                    chapter.value = cachedChapter;
+                    console.log(`Chapter ${currentChapter.value} loaded from cache`);
+                } else {
+                    // If not cached, fetch from the server
+                    await chapterStore.fetchChapter(novelUpdatesId, currentChapter.value);
+                }
+            }
         } catch {}
 
         if (authStore.isUserLoggedIn()) {
@@ -99,6 +127,10 @@
 
         if (paginatedChapterData.value === null) {
             await chapterStore.fetchChapters(novelUpdatesId, 1, 10);
+        }
+
+        if (import.meta.client) {
+            await chapterStore.cacheNextChapters(novelUpdatesId, currentChapter.value, 5);
         }
     });
 

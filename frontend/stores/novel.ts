@@ -1,10 +1,13 @@
-import type {ErrorHandler} from '~/interfaces/ErrorHandler';
-import type {HttpClient} from '~/interfaces/HttpClient';
-import type {ResponseParser} from '~/interfaces/ResponseParser';
-import type {NovelService} from '~/interfaces/services/NovelService';
-import type {Novel, NovelSchema} from '~/schemas/Novel';
-import type {PaginatedServerResponse} from '~/schemas/PaginatedServerResponse';
-import {BaseNovelService} from '~/services/NovelService';
+import type { ErrorHandler } from '~/interfaces/ErrorHandler';
+import type { HttpClient } from '~/interfaces/HttpClient';
+import type { ResponseParser } from '~/interfaces/ResponseParser';
+import type { NovelService } from '~/interfaces/services/NovelService';
+import type { Novel, NovelSchema } from '~/schemas/Novel';
+import type { PaginatedServerResponse } from '~/schemas/PaginatedServerResponse';
+import { BaseNovelService } from '~/services/NovelService';
+import { useIndexedDB } from '~/composables/useInitCacheDB';
+
+const RECENTLY_VISITED_NOVEL_STORE = 'recentlyVisitedNovels';
 
 export const useNovelStore = defineStore('Novel', () => {
     const runtimeConfig = useRuntimeConfig();
@@ -14,8 +17,12 @@ export const useNovelStore = defineStore('Novel', () => {
     const $novelService: NovelService = new BaseNovelService(url, httpClient, responseParser);
     const $errorHandler: ErrorHandler = new BaseErrorHandler();
 
+    const { initDB } = useIndexedDB();
+
+    const cachedRecentlyVisitedNovels = ref<Novel[]>([]);
+
     const novel = shallowRef<Novel | null>(null);
-    const fetchingNovel = ref(true);
+    const fetchingNovel = ref(false);
 
     const paginatedNovelsData = shallowRef<PaginatedServerResponse<typeof NovelSchema> | null>(null);
 
@@ -30,13 +37,103 @@ export const useNovelStore = defineStore('Novel', () => {
     const updatingNovels = ref(false);
     const novelStatuses = ref<Record<string, string>>({});
 
+    const cacheRecentlyVisitedNovel = async () => {
+        try {
+            const dbInstance = await initDB();
+
+            if (!novel.value) {
+                return;
+            }
+
+            const novelUpdatesId = novel.value.novelUpdatesId;
+
+            if (await getCachedNovel(novelUpdatesId)) {
+                return;
+            }
+
+            const cacheKey = `${novelUpdatesId}`;
+
+            const transaction = dbInstance.transaction(RECENTLY_VISITED_NOVEL_STORE, 'readonly');
+            const store = transaction.objectStore(RECENTLY_VISITED_NOVEL_STORE);
+            const request = store.get(cacheKey);
+
+            request.onsuccess = event => {
+                const cachedNovel = (event.target as IDBRequest<Novel>).result;
+                if (cachedNovel) {
+                    console.log(`Novel ${novelUpdatesId} loaded from cache`);
+                    cachedRecentlyVisitedNovels.value.push(cachedNovel);
+                    return;
+                }
+
+                const cacheTransaction = dbInstance.transaction(RECENTLY_VISITED_NOVEL_STORE, 'readwrite');
+                const cacheStore = cacheTransaction.objectStore(RECENTLY_VISITED_NOVEL_STORE);
+                cacheStore.put({ ...novel.value, cacheKey });
+                console.log(`Novel ${novelUpdatesId} cached`);
+            };
+            request.onerror = event => {
+                console.error('Error getting novel from IndexedDB:', (event.target as IDBRequest).error);
+            };
+        } catch (error) {
+            console.error('IndexedDB initialization error:', error);
+        }
+    };
+
+    const getCachedNovel = async (novelUpdatesId: string): Promise<Novel | null> => {
+        try {
+            const dbInstance = await initDB();
+
+            const cacheKey = `${novelUpdatesId}`;
+
+            const transaction = dbInstance.transaction(RECENTLY_VISITED_NOVEL_STORE, 'readonly');
+            const store = transaction.objectStore(RECENTLY_VISITED_NOVEL_STORE);
+            const request = store.get(cacheKey);
+
+            return new Promise((resolve, reject) => {
+                request.onsuccess = event => {
+                    resolve((event.target as IDBRequest<Novel | undefined>).result || null);
+                };
+
+                request.onerror = event => {
+                    console.error('Error getting novel from IndexedDB:', (event.target as IDBRequest).error);
+                    reject(null);
+                };
+            });
+        } catch (error) {
+            console.error('Error accessing IndexedDB:', error);
+            return null;
+        }
+    };
+
+    const getCachedNovels = async (): Promise<void> => {
+        try {
+            const dbInstance = await initDB();
+
+            const transaction = dbInstance.transaction(RECENTLY_VISITED_NOVEL_STORE, 'readonly');
+            const store = transaction.objectStore(RECENTLY_VISITED_NOVEL_STORE);
+
+            // Method 1: Using getAll() (Simpler, but potentially less efficient for large datasets)
+            const request = store.getAll();
+            return new Promise((resolve, reject) => {
+                request.onsuccess = event => {
+                    cachedRecentlyVisitedNovels.value = (event.target as IDBRequest<Novel[]>).result; // Resolve with the array of novels
+                };
+                request.onerror = event => {
+                    console.error('Error getting novels from IndexedDB:', (event.target as IDBRequest).error);
+                    reject([]); // Reject with an empty array if an error occurs
+                };
+            });
+        } catch (error) {
+            console.error('Error accessing IndexedDB:', error);
+        }
+    };
+
     const fetchNovel = async (novelUpdatesId: string): Promise<void> => {
         fetchingNovel.value = true;
 
         try {
             novel.value = await $novelService.fetchNovel(novelUpdatesId);
         } catch (error) {
-            $errorHandler.handleError(error, {novelUpdatesId: novelUpdatesId, location: 'novel.ts -> fetchNovel'});
+            $errorHandler.handleError(error, { novelUpdatesId: novelUpdatesId, location: 'novel.ts -> fetchNovel' });
             novel.value = null;
             throw error;
         } finally {
@@ -50,7 +147,7 @@ export const useNovelStore = defineStore('Novel', () => {
         try {
             paginatedNovelsData.value = await $novelService.fetchNovels(page, limit);
         } catch (error) {
-            $errorHandler.handleError(error, {page: page, limit: limit, location: 'novel.ts -> fetchNovels'});
+            $errorHandler.handleError(error, { page: page, limit: limit, location: 'novel.ts -> fetchNovels' });
             paginatedNovelsData.value = null;
             throw error;
         } finally {
@@ -68,7 +165,7 @@ export const useNovelStore = defineStore('Novel', () => {
                 tag: tag,
                 page: page,
                 limit: limit,
-                location: 'novel.ts -> fetchNovelsByTag'
+                location: 'novel.ts -> fetchNovelsByTag',
             });
             paginatedNovelsDataByTag.value = null;
             throw error;
@@ -87,7 +184,7 @@ export const useNovelStore = defineStore('Novel', () => {
                 author: author,
                 page: page,
                 limit: limit,
-                location: 'novel.ts -> fetchNovelsByAuthor'
+                location: 'novel.ts -> fetchNovelsByAuthor',
             });
             paginatedNovelsDataByAuthor.value = null;
             throw error;
@@ -106,7 +203,7 @@ export const useNovelStore = defineStore('Novel', () => {
                 genre: genre,
                 page: page,
                 limit: limit,
-                location: 'novel.ts -> fetchNovelsByGenre'
+                location: 'novel.ts -> fetchNovelsByGenre',
             });
             paginatedNovelsDataByGenre.value = null;
             throw error;
@@ -123,7 +220,7 @@ export const useNovelStore = defineStore('Novel', () => {
         } catch (error) {
             $errorHandler.handleError(error, {
                 novelUpdatesId: novelUpdatesId,
-                location: 'novel.ts -> importByNovelUpdatesId'
+                location: 'novel.ts -> importByNovelUpdatesId',
             });
             novel.value = null;
             throw error;
@@ -151,7 +248,7 @@ export const useNovelStore = defineStore('Novel', () => {
             const decoder = new TextDecoder();
 
             if (!reader) {
-                throw new Error("Failed to read SSE stream");
+                throw new Error('Failed to read SSE stream');
             }
 
             let buffer = '';
@@ -182,7 +279,7 @@ export const useNovelStore = defineStore('Novel', () => {
                         try {
                             novelStatuses.value = JSON.parse(eventData);
                         } catch (error) {
-                            console.error("Failed to parse status update:", error);
+                            console.error('Failed to parse status update:', error);
                         }
                     } else if (eventType === 'error' && eventData) {
                         useToastStore().addToast(eventData, 'error', 'novel');
@@ -194,8 +291,8 @@ export const useNovelStore = defineStore('Novel', () => {
                 buffer = events[events.length - 1]; // Keep incomplete data
             }
         } catch (error) {
-            console.error("SSE stream error:", error);
-            useToastStore().addToast("Failed to update novels", 'error', 'novel');
+            console.error('SSE stream error:', error);
+            useToastStore().addToast('Failed to update novels', 'error', 'novel');
         } finally {
             updatingNovels.value = false;
         }
@@ -211,13 +308,17 @@ export const useNovelStore = defineStore('Novel', () => {
         importingNovel,
         updatingNovels,
         novelStatuses,
+        cachedRecentlyVisitedNovels,
+        getCachedNovel,
+        getCachedNovels,
+        cacheRecentlyVisitedNovel,
         fetchNovel,
         fetchNovels,
         fetchNovelsByAuthor,
         fetchNovelsByGenre,
         fetchNovelsByTag,
         importByNovelUpdatesId,
-        batchUpdateNovels
+        batchUpdateNovels,
     };
 });
 
