@@ -13,9 +13,9 @@
     const randomizeDragonProps = () => {
         dragonProps.value = {
             animationDelay: Math.random() * 5,
-            // Delay between 0 to 5 seconds
+            // Delay between 0 and 5 seconds
             animationDuration: 8 + Math.random() * 5,
-            // Duration between 8 to 13 seconds
+            // Duration between 8 and 13 seconds
             scale: 0.8 + Math.random() * 0.5,
             // Scale between 0.8 to 1.3
             zIndex: Math.floor(Math.random() * 3),
@@ -23,7 +23,7 @@
         };
     };
 
-    let intervalId: NodeJS.Timeout;
+    let intervalId: ReturnType<typeof setTimeout>;
     onMounted(() => {
         // Re-randomize dragon properties every 10 seconds
         intervalId = setInterval(randomizeDragonProps, dragonProps.value.animationDuration * 1000 + dragonProps.value.animationDelay * 1000);
@@ -51,7 +51,7 @@
             :key="`cloud-$ {i}`"
             class="cloud h-12"
             :style="{
-                animationDelay: `$ {cloudDelays[i - 1]}s`,
+                animationDelay: `${cloudDelays[i - 1]}s`,
                 zIndex: Math.floor(i / 6),
             }"
             :src="getCloudImage(i)"
@@ -63,9 +63,9 @@
             src="/img/dragon.png"
             class="dragon"
             :style="{
-                animationDelay: `$ {dragonProps.animationDelay}s`,
-                animationDuration: `$ {dragonProps.animationDuration}s`,
-                transform: `scale($ {dragonProps.scale})`,
+                animationDelay: `${dragonProps.animationDelay}s`,
+                animationDuration: `${dragonProps.animationDuration}s`,
+                transform: `scale(${dragonProps.scale})`,
                 zIndex: dragonProps.zIndex,
             }"
             alt=""

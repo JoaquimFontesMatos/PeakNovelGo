@@ -26,7 +26,7 @@ export default defineNuxtConfig({
             weights: [400],
             styles: ['normal', 'italic'],
         },
-        families: [{ name: 'Montserratt' }, { name: 'Noto Sans' }, { name: 'Raleway' }],
+        families: [{ name: 'Montserratt' }, { name: 'Noto Sans' }, { name: 'Raleway' }, { name: 'Shadows Into Light' }, { name: 'Caveat' }, { name: 'Kalam' }],
     },
     runtimeConfig: {
         // Keys within public are also exposed client-side

@@ -48,6 +48,10 @@ const handleChangeReadingPreferences = async () => {
                     <option value="font-montserrat">Montserrat</option>
                     <option value="font-noto">Noto Sans</option>
                     <option value="font-raleway">Raleway</option>
+                    <option value="font-shadows-into-light">Shadows Into Light</option>
+                  <option value="font-caveat">Caveat</option>
+                  <option value="font-kalam">Kalam</option>
+
                 </select>
                 <p class="mt-2" :class="user.readingPreferences.font">Preview: The quick brown fox jumps over the lazy dog.</p>
             </div>
