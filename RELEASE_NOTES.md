@@ -1,3 +1,7 @@
+## v2.7.0 - 2025-04-22
+* Merge branch 'development'
+* feat: added cache
+* chore: update release notes and changelog for v2.6.0
 ## v2.6.0 - 2025-04-22
 * Merge branch 'development'
 * fix: fixed some visual bugs
