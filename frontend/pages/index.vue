@@ -33,11 +33,16 @@
     const mainItems: Ref<LayoutItem[]> = ref([
         {
             id: '1',
-            type: 'RecentlyUpdatedNovels',
+            type: 'RecentlyVisitedNovels',
             props: {},
         },
         {
             id: '2',
+            type: 'RecentlyUpdatedNovels',
+            props: {},
+        },
+        {
+            id: '3',
             type: 'FeaturedNovels',
             props: {},
         },
@@ -45,11 +50,11 @@
 
     const sideItems: Ref<LayoutItem[]> = ref([
         {
-            id: '3',
+            id: '4',
             type: 'TopRatedNovels',
         },
         {
-            id: '4',
+            id: '5',
             type: 'PopularTags',
         },
     ]);

@@ -66,6 +66,7 @@
             RecentlyUpdatedNovels: defineAsyncComponent(() => import('~/components/ui/sections/RecentlyUpdatedNovels.vue')),
             TopRatedNovels: defineAsyncComponent(() => import('~/components/ui/sections/TopRatedNovels.vue')),
             PopularTags: defineAsyncComponent(() => import('~/components/ui/sections/PopularTags.vue')),
+            RecentlyVisitedNovels: defineAsyncComponent(() => import('~/components/ui/sections/RecentlyVisitedNovels.vue')),
         };
         return registry[type] || 'div';
     }
