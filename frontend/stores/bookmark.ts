@@ -119,6 +119,7 @@ export const useBookmarkStore = defineStore('Bookmark', () => {
             }
 
             bookmark.value = await $bookmarkService.bookmarkNovel(novelId, user.value.ID);
+            await cacheBookmark();
         } catch (error) {
             $errorHandler.handleError(error, {
                 user: user,
@@ -145,6 +146,7 @@ export const useBookmarkStore = defineStore('Bookmark', () => {
             }
 
             bookmark.value = await $bookmarkService.updateBookmark(updatedBookmark);
+            await cacheBookmark();
         } catch (error) {
             $errorHandler.handleError(error, {
                 user: user,

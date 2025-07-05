@@ -3,6 +3,7 @@
   "short_name": "PeakNovelGo",
   "start_url": "/",
   "display": "standalone",
+  "display_override": ["fullscreen", "standalone", "minimal-ui"],
   "background_color": "#ffffff",
   "theme_color": "#000000",
   "icons": [

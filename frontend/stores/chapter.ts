@@ -42,55 +42,111 @@ export const useChapterStore = defineStore('Chapter', () => {
         try {
             const dbInstance = await initDB();
 
-            for (let i = 1; i <= numToCache; i++) {
-                const prevChapterNo = currentChapter - 1;
-                const nextChapterNo = currentChapter + i;
-                const cacheKey = `${novelUpdatesId}-${nextChapterNo}`;
-                const prevCacheKey = `${novelUpdatesId}-${prevChapterNo}`;
+            // First delete older chapters (everything before currentChapter)
+            const deleteRange = IDBKeyRange.bound(`${novelUpdatesId}-0`, `${novelUpdatesId}-${currentChapter - 1}`);
 
+            await new Promise((resolve, reject) => {
                 const deleteTransaction = dbInstance.transaction(CHAPTER_STORE, 'readwrite');
                 const deleteStore = deleteTransaction.objectStore(CHAPTER_STORE);
-                const deleteRequest = deleteStore.delete(prevCacheKey);
-
-                const transaction = dbInstance.transaction(CHAPTER_STORE, 'readonly');
-                const store = transaction.objectStore(CHAPTER_STORE);
-                const request = store.get(cacheKey);
+                const deleteRequest = deleteStore.delete(deleteRange);
 
                 deleteRequest.onsuccess = () => {
-                    console.log(`Chapter ${prevChapterNo} deleted from cache`);
+                    console.log(`Deleted chapters before ${currentChapter}`);
+                    resolve(true);
                 };
+
                 deleteRequest.onerror = event => {
-                    console.error('Error deleting chapter from IndexedDB:', (event.target as IDBRequest).error);
+                    console.error('Delete error:', (event.target as IDBRequest).error);
+                    reject(new Error('Failed to delete old chapters'));
                 };
+            });
 
-                request.onsuccess = event => {
-                    const cachedChapter = (event.target as IDBRequest<Chapter>).result;
-                    if (cachedChapter) {
-                        console.log(`Chapter ${nextChapterNo} loaded from cache`);
-                        cachedChapters.value.push(cachedChapter);
-                        return;
-                    }
+            // Then cache new chapters (current + next N)
+            for (let i = 0; i <= numToCache; i++) {
+                const chapterNo = currentChapter + i;
+                const cacheKey = `${novelUpdatesId}-${chapterNo}`;
 
-                    $chapterService
-                        .fetchChapter(novelUpdatesId, nextChapterNo)
-                        .then(nextChapter => {
-                            if (nextChapter) {
-                                const cacheTransaction = dbInstance.transaction(CHAPTER_STORE, 'readwrite');
-                                const cacheStore = cacheTransaction.objectStore(CHAPTER_STORE);
-                                cacheStore.put({ ...nextChapter, cacheKey });
-                                console.log(`Chapter ${nextChapterNo} cached`);
-                            }
-                        })
-                        .catch(error => {
-                            console.error(`Error caching chapter ${nextChapterNo}:`, error);
+                // Check cache first
+                const cached = await new Promise<Chapter | null>(resolve => {
+                    const transaction = dbInstance.transaction(CHAPTER_STORE, 'readonly');
+                    const store = transaction.objectStore(CHAPTER_STORE);
+                    const request = store.get(cacheKey);
+
+                    request.onsuccess = event => resolve((event.target as IDBRequest<Chapter>).result || null);
+                    request.onerror = () => resolve(null);
+                });
+
+                if (cached) {
+                    console.log(`Chapter ${chapterNo} already cached`);
+                    cachedChapters.value.push(cached);
+                    continue;
+                }
+
+                // Fetch and cache if not found
+                try {
+                    const chapter = await $chapterService.fetchChapter(novelUpdatesId, chapterNo);
+                    if (chapter) {
+                        await new Promise(resolve => {
+                            const transaction = dbInstance.transaction(CHAPTER_STORE, 'readwrite');
+                            const store = transaction.objectStore(CHAPTER_STORE);
+                            const request = store.put({
+                                ...chapter,
+                                cacheKey,
+                                novelUpdatesId,
+                                chapterNo,
+                            });
+
+                            request.onsuccess = () => {
+                                console.log(`Chapter ${chapterNo} cached`);
+                                resolve(true);
+                            };
+
+                            request.onerror = () => resolve(false);
                         });
-                };
-                request.onerror = event => {
-                    console.error('Error getting chapter from IndexedDB:', (event.target as IDBRequest).error);
-                };
+                    }
+                } catch (error) {
+                    console.error(`Error caching chapter ${chapterNo}:`, error);
+                }
             }
         } catch (error) {
-            console.error('IndexedDB initialization error:', error);
+            console.error('Cache operation failed:', error);
+        }
+    };
+
+    const getAllCachedChapters = async (novelUpdatesId?: string): Promise<void> => {
+        try {
+            const dbInstance = await initDB();
+            const transaction = dbInstance.transaction(CHAPTER_STORE, 'readonly');
+            const store = transaction.objectStore(CHAPTER_STORE);
+            const currentChapters: Chapter[] = [];
+
+            let request;
+            if (novelUpdatesId) {
+                request = store.openCursor(IDBKeyRange.bound(`${novelUpdatesId}-`, `${novelUpdatesId}-\uffff`));
+            } else {
+                request = store.openCursor();
+            }
+
+            return new Promise((resolve, reject) => {
+                request.onsuccess = event => {
+                    const cursor = (event.target as IDBRequest<IDBCursorWithValue>).result;
+                    if (cursor) {
+                        currentChapters.push(cursor.value);
+                        cursor.continue();
+                    } else {
+                        cachedChapters.value = currentChapters;
+                        resolve(); // Resolve the Promise when done
+                    }
+                };
+
+                request.onerror = event => {
+                    console.error('Cursor error:', (event.target as IDBRequest).error);
+                    reject(new Error('Failed to read cached chapters'));
+                };
+            });
+        } catch (error) {
+            console.error('Error accessing IndexedDB:', error);
+            throw error; // Propagate the error to the caller
         }
     };
 
@@ -302,6 +358,7 @@ export const useChapterStore = defineStore('Chapter', () => {
         novelProgress,
         cacheNextChapters,
         getCachedChapter,
+        getAllCachedChapters,
         fetchChapter,
         fetchChapters,
         importChapters,
