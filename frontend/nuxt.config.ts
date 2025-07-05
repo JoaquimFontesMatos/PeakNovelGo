@@ -48,9 +48,11 @@ export default defineNuxtConfig({
         manifest: {
             name: 'PeakNovelGo',
             short_name: 'PeakNovelGo',
-            theme_color: '#ffffff',
+            theme_color: '#000000',
+            background_color: '#ffffff',
             start_url: '/',
             display: 'standalone',
+            display_override: ['fullscreen', 'standalone'],
             icons: [
                 {
                     src: '/android-chrome-192x192.png',
@@ -63,6 +65,9 @@ export default defineNuxtConfig({
                     type: 'image/png',
                 },
             ],
+        },
+        workbox: {
+            navigateFallback: '/',
         },
     },
 });
