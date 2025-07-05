@@ -1,3 +1,9 @@
+## v2.7.1 - 2025-07-05
+* Merge branch 'development'
+* fix: fixed cache
+* fix: fixed layout
+* Merge branch 'main' into development
+* chore: update release notes and changelog for v2.7.0
 ## v2.7.0 - 2025-04-22
 * Merge branch 'development'
 * feat: added cache
