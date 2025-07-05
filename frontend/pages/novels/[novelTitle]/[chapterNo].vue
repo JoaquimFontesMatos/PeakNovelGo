@@ -122,7 +122,9 @@
         } catch {}
 
         if (authStore.isUserLoggedIn()) {
-            await fetchBookmark(novelTitle as string);
+            if (!bookmark.value || (chapter.value && bookmark.value.novelId !== chapter.value.novelId)) {
+                await fetchBookmark(novelTitle as string);
+            }
         }
 
         if (paginatedChapterData.value === null) {

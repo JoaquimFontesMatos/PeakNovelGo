@@ -1,5 +1,7 @@
 <script setup lang="ts">
     import { useIndexedDB } from '~/composables/useInitCacheDB';
+    import type { PaginatedServerResponse } from '~/schemas/PaginatedServerResponse';
+    import type { ChapterSchema } from '~/schemas/Chapter';
 
     const textUtils = new BaseTextUtils();
 
@@ -25,7 +27,7 @@
     const authStore = useAuthStore();
 
     const { novel, fetchingNovel } = storeToRefs(novelStore);
-    const { paginatedChapterData, fetchingChapters } = storeToRefs(chapterStore);
+    const { paginatedChapterData, fetchingChapters, cachedChapters } = storeToRefs(chapterStore);
 
     const { bookmark, fetchingBookmarkedNovel, bookmarkingNovel, updatingBookmark } = storeToRefs(bookmarkStore);
 
@@ -93,6 +95,11 @@
         } catch {}
     };
 
+    const hasCachedChapter = (chapterNo: number) => {
+        if (!cachedChapters.value?.length) return false;
+        return cachedChapters.value.some(chapter => chapter.chapterNo === chapterNo);
+    };
+
     watchEffect(async () => {
         const novelUpdatesId = novelTitle as string;
 
@@ -106,11 +113,23 @@
                 // If not cached, fetch from the server
                 await useNovelStore().fetchNovel(novelUpdatesId);
             }
+
+            await chapterStore.getAllCachedChapters(novelUpdatesId);
         }
         await onPageChange(1, 10);
 
         if (authStore.isUserLoggedIn()) {
-            await fetchBookmark(novelUpdatesId), onPageChange(1, 10);
+            if (import.meta.client && novel.value) {
+                const cachedBookmark = await bookmarkStore.getCachedBookmark(novel.value.ID);
+
+                if (cachedBookmark) {
+                    bookmark.value = cachedBookmark;
+                    console.log(`Bookmark ${novelUpdatesId} loaded from cache`);
+                } else {
+                    // If not cached, fetch from the server
+                    await fetchBookmark(novelUpdatesId);
+                }
+            }
         }
 
         if (import.meta.client) {
@@ -287,11 +306,19 @@
                         </div>
                         <LoadingIndicator v-show="fetchingChapters" />
                         <section v-show="!fetchingChapters">
-                            <MainButton v-if="paginatedChapterData && !fetchingChapters && bookmark?.currentChapter === 1" class="grow">
-                                <NuxtLink class="block h-full w-full text-center" :to="'/novels/' + novelTitle + '/' + 1">Start Reading</NuxtLink>
-                            </MainButton>
-                            <MainButton v-if="bookmark && bookmark.currentChapter > 1" class="grow">
-                                <NuxtLink class="block h-full w-full text-center" :to="'/novels/' + novelTitle + '/' + bookmark.currentChapter">
+                            <MainButton v-if="bookmark && (hasCachedChapter(bookmark.currentChapter) || !fetchingChapters)" class="grow">
+                                <NuxtLink
+                                    v-show="bookmark.currentChapter === 1"
+                                    class="block h-full w-full text-center"
+                                    :to="'/novels/' + novelTitle + '/' + 1"
+                                >
+                                    Start Reading
+                                </NuxtLink>
+                                <NuxtLink
+                                    v-show="bookmark.currentChapter > 1"
+                                    class="block h-full w-full text-center"
+                                    :to="'/novels/' + novelTitle + '/' + bookmark.currentChapter"
+                                >
                                     Continue {{ bookmark.currentChapter }}
                                 </NuxtLink>
                             </MainButton>
