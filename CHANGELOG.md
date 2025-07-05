@@ -1,3 +1,58 @@
+## v2.7.0 - 2025-04-22
+* Merge branch 'development'
+* feat: added cache
+* chore: update release notes and changelog for v2.6.0
+## v2.6.0 - 2025-04-22
+* Merge branch 'development'
+* fix: fixed some visual bugs
+* fix: fixed settings page to have a more divided layout
+* fix: changed bun to pnpm
+* feat: added a better layout to the home page
+* chore: update release notes and changelog for v2.5.1
+## v2.5.1 - 2025-04-12
+* Merge branch 'development'
+* fix: fixed a invalid tailwind class
+* chore: update release notes and changelog for v2.5.0
+## v2.5.0 - 2025-04-12
+* Merge branch 'development'
+* fix: fixed some tts bugs
+* fix: removed vee validate dependency and bumped zod to v4 beta
+* fix: fixed some auth pages not redirecting to the previous page, instead they redirected to home
+* fix: reorganized the component folder, now i use nuxt component auto-import
+* fix: fixed some bugs
+* fix: fixed the styles of the novel gallery
+* fix: updated tailwind to v4. Now I have access to container queries
+* feat: feet
+* chore: update release notes and changelog for v2.4.0
+## v2.4.0 - 2025-04-08
+* Merge branch 'development'
+* feat: added a reorderable layout component
+* feat: added animations to the drawer
+* fixed the drawer
+* chore: update release notes and changelog for v2.3.0
+## v2.3.0 - 2025-04-06
+* Merge branch 'development'
+* fix: fixed a button
+* fix: fixed border colors
+* fix: temp fix
+* feat: changed the chapter settings
+* fix: removel incorrect comments
+* chore: update release notes and changelog for v2.2.0
+## v2.2.0 - 2025-03-30
+* Merge branch 'development'
+* fix: novel import thread errors
+* fix: fixed chapter import to have more status
+* feat: fixed the novel importer and added an retrier
+* chore: update release notes and changelog for v2.1.5
+## v2.1.5 - 2025-03-29
+* Merge branch 'development'
+* fix: optimized dockerfile
+* chore: update release notes and changelog for v2.1.4
+## v2.1.4 - 2025-03-29
+* Merge branch 'development'
+* fix: fixed the dockerfile
+* fix: documentation
+* chore: update release notes and changelog for v2.1.3
 ## v2.1.3 - 2025-03-24
 * Merge remote-tracking branch 'origin/main'
 * fix: changed chapter page
