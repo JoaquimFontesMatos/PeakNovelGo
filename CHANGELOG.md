@@ -1,3 +1,6 @@
+## v2.7.2 - 2025-07-06
+* fix: solved lag issue
+* chore: update release notes and changelog for v2.7.1
 ## v2.7.1 - 2025-07-05
 * Merge branch 'development'
 * fix: fixed cache
