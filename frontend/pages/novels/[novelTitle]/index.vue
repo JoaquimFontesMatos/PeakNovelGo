@@ -116,8 +116,6 @@
 
             await chapterStore.getAllCachedChapters(novelUpdatesId);
         }
-        await onPageChange(1, 10);
-
         if (authStore.isUserLoggedIn()) {
             if (import.meta.client && novel.value) {
                 const cachedBookmark = await bookmarkStore.getCachedBookmark(novel.value.ID);
@@ -131,6 +129,8 @@
                 }
             }
         }
+
+        await onPageChange(1, 10);
 
         if (import.meta.client) {
             await novelStore.cacheRecentlyVisitedNovel();
