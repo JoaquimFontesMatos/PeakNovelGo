@@ -3,72 +3,108 @@ package config
 import (
 	"backend/internal/models"
 	"fmt"
+	"gorm.io/gorm/logger"
 	"log"
 	"os"
+	"path/filepath"
+	"time"
 
 	"github.com/glebarez/sqlite"
-	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
 
-// ConnectDB establishes a database connection based on the provided boolean flag.  If `isTest` is true, it uses an in-memory
-// SQLite database for testing; otherwise, it connects to a PostgreSQL database using environment variables.
-//
-// Parameters:
-//   - isTest (bool): Indicates whether to connect to an in-memory SQLite database (true) or a PostgreSQL database (false).
-//
-// Returns:
-//   - *gorm.DB: A pointer to the established GORM database connection.
-//
-// Error types:
-//   - error: If connection to the database fails, a fatal error is logged, and the program terminates.
+// ConnectDB establishes a database connection with proper production handling
 func ConnectDB(isTest bool) *gorm.DB {
 	var db *gorm.DB
-	var dsn string
 	var errConnect error
 
 	if isTest {
-		// In-memory SQLite connection for testing
+		// In-memory SQLite for tests
 		db, errConnect = gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
-		if errConnect != nil {
-			log.Fatalf("Failed to connect to in-memory database: %v", errConnect)
-		}
-		fmt.Println("Connected to in-memory SQLite database for testing.")
 	} else {
-		// Read environment variables or configuration for PostgreSQL
-		dbHost := os.Getenv("DB_HOST")
-		dbPort := os.Getenv("DB_PORT")
-		dbUser := os.Getenv("DB_USER")
-		dbPassword := os.Getenv("DB_PASSWORD")
-		dbName := os.Getenv("DB_NAME")
-		sslMode := os.Getenv("DB_SSL_MODE")
+		// Get proper database path
+		dbPath := getDbPath()
 
-		// Build DSN (Data Source Name) for PostgreSQL
-		dsn = fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=%s TimeZone=UTC",
-			dbHost, dbUser, dbPassword, dbName, dbPort, sslMode)
-
-		// Open database connection using GORM for PostgreSQL
-		db, errConnect = gorm.Open(postgres.Open(dsn), &gorm.Config{})
-		if errConnect != nil {
-			log.Fatalf("Failed to connect to PostgreSQL database: %v", errConnect)
+		// Ensure directory exists
+		if err := os.MkdirAll(filepath.Dir(dbPath), 0755); err != nil {
+			log.Fatalf("Failed to create database directory: %v", err)
 		}
 
-		// Test PostgreSQL connection (optional)
-		sqlDB, err := db.DB()
-		if err != nil {
-			log.Fatalf("Failed to initialize PostgreSQL database connection: %v", err)
-		}
-		if err := sqlDB.Ping(); err != nil {
-			log.Fatalf("Database is unreachable: %v", err)
-		}
+		// Production SQLite configuration
+		connString := fmt.Sprintf("file:%s?cache=shared&_busy_timeout=5000&_journal_mode=WAL", dbPath)
+		db, errConnect = gorm.Open(sqlite.Open(connString), &gorm.Config{
+			Logger: logger.Default.LogMode(logger.Warn),
+		})
 
-		fmt.Println("Connected to PostgreSQL database.")
+		// Configure connection pool
+		sqlDB, _ := db.DB()
+		sqlDB.SetMaxOpenConns(1)
+		sqlDB.SetMaxIdleConns(1)
+		sqlDB.SetConnMaxLifetime(time.Hour)
 	}
 
-	// Automatically migrate database schema for models
-	autoMigrate(db)
+	if errConnect != nil {
+		log.Fatalf("Failed to connect to database: %v", errConnect)
+	}
 
+	// Initialize database (now with migrations)
+	initializeDatabase(db)
 	return db
+}
+
+// getDbPath returns the appropriate database path based on environment
+func getDbPath() string {
+	if os.Getenv("DEV") == "false" {
+		configDir, err := os.UserConfigDir()
+		if err != nil {
+			log.Printf("Warning: Could not get config dir, using current directory: %v", err)
+			return "novels.db"
+		}
+		return filepath.Join(configDir, "PeakNovelGo", "novels.db")
+	}
+	return "novels.db" // Dev/test path
+}
+
+// initializeDatabase handles both schema migration and data seeding
+func initializeDatabase(db *gorm.DB) {
+	// First run schema migrations
+	if err := runMigrations(db); err != nil {
+		log.Fatalf("Database migration failed: %v", err)
+	}
+}
+
+// runMigrations executes database schema changes in controlled way
+func runMigrations(db *gorm.DB) error {
+	// For production, replace AutoMigrate with proper migrations
+	if os.Getenv("DEV") != "false" {
+		// Development mode - use AutoMigrate for convenience
+
+		autoMigrate(db)
+		return nil
+	}
+
+	// Production mode - use proper migrations
+	// Implementation using golang-migrate:
+	// 1. Create migration files in your project (e.g., /migrations/*.sql)
+	// 2. Use the migration tool to apply them
+
+	// Example migration setup (pseudo-code):
+	/*
+		m, err := migrate.New(
+			"file:///migrations",
+			fmt.Sprintf("sqlite3://%s", getDbPath()))
+		if err != nil {
+			return err
+		}
+		if err := m.Up(); err != nil && err != migrate.ErrNoChange {
+			return err
+		}
+	*/
+
+	// For now, we'll fall back to AutoMigrate in production too
+	// TODO: Replace with real migrations before production deployment
+	autoMigrate(db)
+	return nil
 }
 
 // autoMigrate performs database migrations for all defined models.
